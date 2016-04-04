@@ -1,0 +1,2 @@
+--verbose --wait --rdonly /home/arjun/Desktop/A87C01ECEA07_2015-07-08-09.gyro.csv --trunc --wronly ~/Desktop/A87C01ECEA07_2015-07-08-09.gyro.csv.gz --command 0 1 1 gzip
+EOF

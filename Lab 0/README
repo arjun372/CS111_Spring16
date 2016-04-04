@@ -1,0 +1,20 @@
+CS 111 Lab 1
+
+Arjun
+504078752
+
+* MACRO -> FILE MODE is set to 0644 in main.c. Please feel free to change it & rebuild if you like.
+* MACRO -> DEBUG     is set to    0 in main.c. Please keep it that way :) 
+
+------------------
+Known Bugs
+------------------
+
+1. After --wait, subcommand exit status is printed correctly but argument list is garbled.
+   This is a particularly nasty bug, since argv[] index value for each arg is listed correctly,
+   however, printing argv[index] always results in a garbled value. On the other hand, --verbose
+   lists the --command as well as it's arguments correctly every time, and arguments passed to
+   execvp are also correct, and they all refer to the same argv variable. 
+
+2. Arguments to subcommands are passed correctly but short options create an error message on
+   getopt_long. 
