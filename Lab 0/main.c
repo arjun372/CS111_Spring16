@@ -22,7 +22,7 @@
 #include <getopt.h>
 #include <error.h>
 #include <errno.h>
-#include <signal.h>
+
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -32,15 +32,19 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+/* signal(2) include headers */
+#include <signal.h>
+
+static char *ptr = NULL;
 static int FID[2] = {-1,-1}; /* indicates that fd will be std, stdout */
 static int exit_status = 0;
 static char buffer[BUF_SIZE] = {0};
 
 static struct option long_options[] = {
-  {"catch",    no_argument, 0, 'c'},
   {"input",    required_argument, 0, 'r'},
   {"output",   required_argument, 0, 'w'},
   {"segfault", no_argument, 0, 's'},
+  {"catch",    no_argument, 0, 'c'},
 };
 
 /* function definitions */
@@ -62,9 +66,8 @@ int main(int argc, char **argv) {
 
       switch(opt)
       {
-        case 'r':              /* --input  arg1 */
-        case 'w':              /* --output arg1 */
-        case 'c':
+        case 'r':    /* --input  arg1 */
+        case 'w':    /* --output arg1 */
 
           if(isOption(optarg))
           /* error check 1 -- argument is an option (ambigous fname) */
@@ -73,8 +76,14 @@ int main(int argc, char **argv) {
             goto fopen_err;
           }
 
+        case 's':    /* --segfault    */
+        case 'c':    /* --catch  sigN */
+
           if(DEBUG)
             debug_log(opt_index, &optarg, 1);
+
+          if(opt=='s')
+            *ptr=opt;
 
           if(opt=='r' && ((FID[I_FD] = open(optarg, O_RDONLY, FILE_MODE)) >= 0))
             continue;
@@ -92,7 +101,7 @@ int main(int argc, char **argv) {
 return 0;
 }
 
-/* Checks if the givent string is a valid option as defined by the spec.    *
+/* Checks if the given string is a valid option as defined by the spec.    *
  * Helps in checking whether arguments passed to options are valid or not. */
 static int isOption(const char *opt)
 {
