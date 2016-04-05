@@ -1,7 +1,7 @@
-/** 
+/**
     UCLA CS 111 - Spring '16
     Lab 1 - Project 0
-    Arjun 504078752 
+    Arjun 504078752
 **/
 
 #define _GNU_SOURCE
@@ -55,7 +55,7 @@ static pid_t  mPID;
 static pid_t  gPID;
 
 static struct option long_options[] = {
-/* 5 command & file_access options, eval. in switch statement */ 
+/* 5 command & file_access options, eval. in switch statement */
   {"input",    required_argument, 0, 'r'},
   {"output",   required_argument, 0, 'w'},
   {"segfault", required_argument, 0, 's'},
@@ -71,7 +71,7 @@ static int    isNumber(const char *optarg);
 static size_t init_process(const int sargv_offset, const int sargc);
 static void   handleSignal(int sig, siginfo_t *si, void *context);
 
-int main (int argc, char **argv) 
+int main (int argc, char **argv)
 {
   //  sVal.sa_flags = SA_SIGINFO;
   //sVal.sa_sigaction = handleSignal;
@@ -88,14 +88,14 @@ int main (int argc, char **argv)
   int status;
   pid_t pid;
   size_t IGNORE = 0, N[3],I;
-  
+
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
-      
+
       if(opt == -1)
 	break;
-      
+
       switch(opt)
 	{
 	case 'w':               /* --wronly arg1 */
@@ -104,18 +104,18 @@ int main (int argc, char **argv)
 
 	case 'r':               /* --rdonly arg1 */
 	  flag = O_RDONLY;
-
+isOption
 	fopen_exec:
 	  /* If supplied argument is actually an option, return an error */
 	  if(isOption(optarg))
 	    goto fopen_err;
-	  
+
 	  verbose_log(opt_index, &optarg, 1);
 
 	  /* Open file with supplied flags. If successful, add new FID to array) */
 	  if(add_fid(open(optarg, flag, FILE_MODE)) >= 0)
 	    goto fopen_good;
-	
+
 	fopen_err:
 	  EXIT_STATUS = (EXIT_STATUS > 1) ? EXIT_STATUS : 1;
 	  error (0, errno, "--%s %s", long_options[opt_index].name, optarg);
@@ -124,9 +124,9 @@ int main (int argc, char **argv)
 	  for(i=0;i<11;i++)
 	    CS_FLAGS[i] = 0;
 	  break;
-	  
+
 	case 'C': /* Close the given FID */
-	  
+
 	  /* Check if arg1 is a valid number between (0 -> +INF) */
 	  /* Check if arg1 is < total number of FIDs ever allocated */
 	  /* Check if FID arg1 is already not closed */
@@ -137,7 +137,7 @@ int main (int argc, char **argv)
 
 	  /* FID closed successfully */
 	  if(close(FIDs[I]) >= 0)
-	    {  
+	    {
 	      FIDs[I] = -1; // Set FID in array to -1;
 	      goto fclose_good;
 	    }
@@ -168,11 +168,11 @@ int main (int argc, char **argv)
 	  /* Check # arguments supplied for --command */
 	  while(!isOption(argv[(optind-1)+argcc]) && ((optind+argcc++) < argc))
 	    argvc[argcc-1] = &argv[(optind-1)+argcc-1];
-	  
+
 	  /* Invalid argument size */
 	  if (argcc < 4)
 	    goto cmd_err;
-	    
+
 	  /* check if first 3 args are numbers and valid-usable FIDs */
 	  for (i=0;i<3;i++)
 	    if(!(isNumber(*argvc[i]) && ((I=atoi(*argvc[i])) < FIDs_size) && (FIDs[I] != -1)))
@@ -227,43 +227,43 @@ int main (int argc, char **argv)
 	  flag = pause();
 	  printf("Paused ended :: %d\n",flag);
 	  break;
-	
+
 	case 'H': /* Catch signal N and pass it to handler */
 	  if(!(isNumber(optarg) && (atoi(optarg) >= 0)))
 	     goto ign_err;
 	  verbose_log(opt_index, &optarg, 1);
 	  sigaction(atoi(optarg), &sVal, NULL);
 	  break;
-	
+
 	case 'D': /* Default N :: Set default behavior for signal N */
 	  mSIG = SIG_DFL;
 	  goto ign_exec;
-	case 'I': /* Ignore N  :: Ignore signal N */ 
-	  mSIG = SIG_IGN;  
+	case 'I': /* Ignore N  :: Ignore signal N */
+	  mSIG = SIG_IGN;
 	ign_exec:
 	  if(!(isNumber(optarg) && (atoi(optarg) >= 0)))
 	     goto ign_err;
-	  
+
 	  verbose_log(opt_index, &optarg, 1);
 	  signal(atoi(optarg), mSIG);
 	  goto ign_good;
-	  
+
 	ign_err:
 	     EXIT_STATUS = (EXIT_STATUS > 1) ? EXIT_STATUS : 1;
 	     error (0, errno, "--%s %s", long_options[opt_index].name, optarg);
 	ign_good:
 	  break;
-	
+
 	case 'A': /* Abort now using segfault */
 	  killpg(0,SIGSEGV);
 	  //abort();
 	  break;
-	  
+
 	case 0:
 	  verbose_log(opt_index, &optarg, 0);
 	  break;
 
-	case '?':  
+	case '?':
 	  printf("? mark\n");
 	  break;
 
@@ -282,7 +282,7 @@ int main (int argc, char **argv)
 
   if(PROCs_size)
     free(PROCs);
-  
+
   exit(EXIT_STATUS);
 }
 
@@ -386,16 +386,16 @@ static pid_t execute_command (const size_t proc_index)
 
   if(DEBUG) printf("Parent PID:: %d\n",getpid());
 
-  /* fork() this process */  
+  /* fork() this process */
   switch(pid = fork())
     {
-      
+
     case -1: /* fork() Failed */
       usage(errno,long_options[COMMAND_INDEX].name, strerror(errno));
       printf("*** ERROR: forking child process failed\n");
       return -1;
 
-    /* FIRST CHILD's process */  
+    /* FIRST CHILD's process */
     case 0:
       if(DEBUG) printf("In Child, PID :: %d\n",pid);
       dup2(FIDs[atoi(argv[0])], STDIN_FILENO);
@@ -405,7 +405,7 @@ static pid_t execute_command (const size_t proc_index)
       if(DEBUG) printf("Child %d Done\n",pid);
       exit(0);
 
-    /* Parent's process */  
+    /* Parent's process */
     default:
       /* Return FIRST child PID */
       return pid;

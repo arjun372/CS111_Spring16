@@ -1,10 +1,21 @@
-CS 111 Lab 1
+UCLA CS111 - Spring '16
+Arjun 504078752
+Lab 0
 
-Arjun
-504078752
+----------------------
+Implementation details
+----------------------
 
-* MACRO -> FILE MODE is set to 0644 in main.c. Please feel free to change it & rebuild if you like.
-* MACRO -> DEBUG     is set to    0 in main.c. Please keep it that way :) 
+1. If multiple --input or --output parameters are supplied, the most recent one
+   is used. The previous ones are discarded.
+
+2. Macro FILE_MODE is set to 0644 in main.c. Feel free to change it for other
+   file permission settings.
+
+3. Macro DEBUG is set to 0 in main.c. In order to have a line-by-line verbose
+   output of the input arguments, set DEBUG to 1.
+
+4.
 
 ------------------
 Known Bugs
@@ -14,7 +25,7 @@ Known Bugs
    This is a particularly nasty bug, since argv[] index value for each arg is listed correctly,
    however, printing argv[index] always results in a garbled value. On the other hand, --verbose
    lists the --command as well as it's arguments correctly every time, and arguments passed to
-   execvp are also correct, and they all refer to the same argv variable. 
+   execvp are also correct, and they all refer to the same argv variable.
 
 2. Arguments to subcommands are passed correctly but short options create an error message on
-   getopt_long. 
+   getopt_long.

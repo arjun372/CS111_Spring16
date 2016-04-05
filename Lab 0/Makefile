@@ -7,29 +7,22 @@ CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror
 LAB = 0
 DISTDIR = lab$(LAB)-arjun
 
-all: lab1
+all: lab$(LAB)
 
 SCREENSHOTS = $(wildcard screenshot*.png)
 TESTS = $(wildcard test*.sh)
 TEST_BASES = $(subst .sh,,$(TESTS))
 
-SOURCES = \
-  alloc.c \
-  main.c \
-  read-command.c \
-  print-command.c
+SOURCES = main.c \
 
 OBJECTS = $(subst .c,.o,$(SOURCES))
 
 DIST_SOURCES = \
-  $(OBJECTS) alloc.h command.h command-internals.h Makefile \
+  $(OBJECTS) Makefile \
   $(TESTS) $(SCREENSHOTS) check-dist README
 
-lab1: $(OBJECTS) $(CC) $(CFLAGS) -o $@ $(OBJECTS)
-
-alloc.o: alloc.h
-execute-command.o main.o print-command.o read-command.o: command.h
-execute-command.o print-command.o read-command.o: command-internals.h
+lab$(LAB): $(OBJECTS)
+	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
 
 dist: $(DISTDIR).tar.gz
 
@@ -41,10 +34,10 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES) check-dist
 
 check: $(TEST_BASES)
 
-$(TEST_BASES): lab1
+$(TEST_BASES): lab$(LAB)
 	./$@.sh
 
 clean:
-	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp lab1 $(DISTDIR)
+	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp lab$(LAB) $(DISTDIR)
 
 .PHONY: all dist check $(TEST_BASES) clean
