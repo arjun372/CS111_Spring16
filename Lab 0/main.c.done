@@ -38,20 +38,17 @@
 /* read(2), write(2) include headers */
 #include <unistd.h>
 
-
 static char BYTE;
-static int VERBOSE = 0;
 static char *ptr = NULL;
 static int FID[2] = {STDIN_FILENO, STDOUT_FILENO}; /* indicates that fd will be std, stdout */
 static int exit_status = 0;
 static char buffer[BUF_SIZE] = {0};
 
 static struct option long_options[] = {
-  {"input",    required_argument,  0, 'r'},
-  {"output",   required_argument,  0, 'w'},
-  {"segfault", no_argument,        0, 's'},
-  {"catch",    no_argument,        0, 'c'},
-  {"verbose",  no_argument, &VERBOSE,   1},
+  {"input",    required_argument, 0, 'r'},
+  {"output",   required_argument, 0, 'w'},
+  {"segfault", no_argument, 0, 's'},
+  {"catch",    no_argument, 0, 'c'},
 };
 
 /* function definitions */
@@ -85,16 +82,16 @@ int main(int argc, char **argv) {
         case 's':    /* --segfault    */
         case 'c':    /* --catch  sigN */
 
-          if(VERBOSE)
+          if(DEBUG)
             debug_log(opt_index, &optarg, 1);
 
           if(opt=='s') /* create segmentation fault */
             *ptr=opt;
 
-          if(opt=='r' && (close(STDIN_FILENO)==0) && (open(optarg, O_RDONLY, FILE_MODE) >= 0))
+          if(opt=='r' && ((FID[I_FD] = open(optarg, O_RDONLY, FILE_MODE)) >= 0))
             continue;
 
-          if(opt=='w' && (close(STDOUT_FILENO)==0) && (open(optarg, O_WRONLY|O_CREAT, FILE_MODE) >= 0))
+          if(opt=='w' && ((FID[O_FD] = open(optarg, O_WRONLY|O_CREAT, FILE_MODE)) >= 0))
             continue;
 
           /* Unable to open file, show error */
@@ -106,8 +103,8 @@ int main(int argc, char **argv) {
     }
 ssize_t noUse;
 
-  while(read(STDIN_FILENO, &BYTE, 1))
-    noUse = write(STDOUT_FILENO, &BYTE, 1);
+  while(read(FID[I_FD], &BYTE, 1))
+    noUse = write(FID[O_FD], &BYTE, 1);
 
 exit(0);
 }
@@ -132,8 +129,8 @@ static int isOption(const char *opt)
 static void debug_log(const int opt_index, char **optarg, const int argc)
 {
   int i;
-  fprintf(stderr,"--%s", long_options[opt_index].name);
+  printf("--%s", long_options[opt_index].name);
   for(i = 0; i < argc; i++)
-    fprintf(stderr," %s", optarg[i]);
-  fprintf(stderr,"\n");
+    printf(" %s", optarg[i]);
+  printf("\n");
 }

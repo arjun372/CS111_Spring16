@@ -10,8 +10,6 @@ DISTDIR = lab$(LAB)-arjun
 all: lab$(LAB)
 
 SCREENSHOTS = $(wildcard screenshot*.png)
-TESTS = $(wildcard test*.sh)
-TEST_BASES = $(subst .sh,,$(TESTS))
 
 SOURCES = main.c \
 
@@ -19,7 +17,7 @@ OBJECTS = $(subst .c,.o,$(SOURCES))
 
 DIST_SOURCES = \
   $(OBJECTS) Makefile \
-  $(TESTS) $(SCREENSHOTS) check-dist README
+  $(SCREENSHOTS) check-dist README
 
 lab$(LAB): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
@@ -40,4 +38,4 @@ $(TEST_BASES): lab$(LAB)
 clean:
 	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp lab$(LAB) $(DISTDIR)
 
-.PHONY: all dist check $(TEST_BASES) clean
+.PHONY: all dist check clean lab$(LAB)

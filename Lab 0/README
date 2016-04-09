@@ -2,6 +2,25 @@ UCLA CS111 - Spring '16
 Arjun 504078752
 Lab 0
 
+------
+Files
+------
+
+1. Makefile :: Commands for building the executable, running checks, and creating
+               a tarball for submission.
+
+2. main.c   :: Source code that implements 'lab0' as per the specification.
+
+3. screenshot_1.png ::
+
+4. screenshot_2.png ::
+
+5. screenshot_3.png ::
+
+6. screenshot_4.png ::
+
+7. README :: (self)
+
 ----------------------
 Implementation details
 ----------------------
