@@ -7,8 +7,11 @@ CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror
 LAB = 0
 DISTDIR = lab$(LAB)-arjun
 
-PASS=$(\x1b[32;01m)[PASSED]$(\x1b[0m)
-FAIL=$(\x1b[31;01m)[FAILED]$(\x1b[0m)
+G=\x1b[32;01m
+R=\x1b[31;01m
+W=\x1b[0m
+PASS=$(G)[PASSED]$(W)
+FAIL=$(R)[FAILED]$(W)
 
 all: lab$(LAB)
 
@@ -56,17 +59,17 @@ check: all
 	@echo -en "\tCHECK 1/5 :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@$(CMD_2)  && echo -n "CHECK 2/5 : Output File Integrity : $(CMD_2) :: "
-	@$(CHECK_2) && echo "PASSED" || echo "FAILED"
+	@echo -en "\tCHECK 2/5 :: $(CHECK_2) :: "
+	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@$(CMD_3)  && echo -n "CHECK 3/5 : Output File Integrity : $(CMD_3) :: "
-	@$(CHECK_3) && echo "PASSED" || echo "FAILED"
+	@echo -en "\tCHECK 3/5 :: $(CHECK_2) :: "
+	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@$(CMD_4)  && echo -n "CHECK 4/5 : Output File Integrity : $(CMD_4) :: "
-	@$(CHECK_4) && echo "PASSED" || echo "FAILED"
+	@echo -en "\tCHECK 4/5 :: $(CHECK_2) :: "
+	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@$(CMD_5)  && echo -n "CHECK 5/5 : Output File Integrity : $(CMD_5) :: "
-	@$(CHECK_5) && echo "PASSED" || echo "FAILED"
+	@echo -en "\tCHECK 5/5 :: $(CHECK_2) :: "
+	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@echo -n "Cleaning up temporary files..."
 	@rm random.blk* && echo "done."
