@@ -91,7 +91,7 @@ int main(int argc, char **argv) {
 
           if(opt=='s') /* create segmentation fault */
             {
-	      *ptr = opt;
+	            *ptr = opt;
               //raise(SIGSEGV);
               continue;
             }

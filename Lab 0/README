@@ -11,13 +11,13 @@ Files
 
 2. main.c   :: Source code that implements 'lab0' as per the specification.
 
-3. screenshot_1.png ::
+3. screenshot_1_fault.png :: Shows the segmentation fault.
 
-4. screenshot_2.png ::
+4. screenshot_2_backtrace.png :: shows the stack backtrace
 
-5. screenshot_3.png ::
+5. screenshot_3_breakpoint.png :: shows the breakpoint before the code is executed
 
-6. screenshot_4.png ::
+6. screenshot_4_NULL.png :: shows that the 'ptr' variable is 0x0 (NULL)
 
 7. README :: (self)
 
