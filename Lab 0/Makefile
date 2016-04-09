@@ -55,21 +55,44 @@ check: all
 
 	@dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
 
-	@echo "COMMAND :: $(CMD_1)" && $(CMD_1)
-	@echo -en "\tCHECK 1/5 :: $(CHECK_1) :: "
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -en "\tCHECK 2/5 :: $(CHECK_2) :: "
-	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -en "\tCHECK 3/5 :: $(CHECK_2) :: "
-	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -en "\tCHECK 4/5 :: $(CHECK_2) :: "
-	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 
-	@echo -en "\tCHECK 5/5 :: $(CHECK_2) :: "
-	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@echo -n "Cleaning up temporary files..."
 	@rm random.blk* && echo "done."
