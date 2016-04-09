@@ -53,8 +53,8 @@ check: all
 	@dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
 
 	@echo "COMMAND :: $(CMD_1)" && $(CMD_1)
-	@echo -n "\tCHECK 1/5 :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo "$(PASS)" || echo "$(FAIL)"
+	@echo -en "\tCHECK 1/5 :: $(CHECK_1) :: "
+	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@$(CMD_2)  && echo -n "CHECK 2/5 : Output File Integrity : $(CMD_2) :: "
 	@$(CHECK_2) && echo "PASSED" || echo "FAILED"
