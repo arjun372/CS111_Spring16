@@ -51,7 +51,7 @@ CMD_4   = ./lab$(LAB) --catch --segfault
 CHECK_6 = echo $?
 
 check: all
-	@echo -e "\t\x1b[1;01m Generate files for test :"
+	@echo -e "\x1b[1;01m Generate files for test :"
 	dd if=/dev/urandom of=random.blk bs=4096 count=1
 	@echo -e "\x1b[0m"
 
@@ -68,7 +68,7 @@ check: all
 	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
 	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_3) \x1b[0m" && ${CMD_3}
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_3) \x1b[0m" && {$CMD_3}
 	@echo -en "\t\x1b[1;01m [CHECK 1/1] \x1b[0m :: $(CHECK_5) :: "
 	@$(CHECK_5) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
