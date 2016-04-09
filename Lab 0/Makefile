@@ -2,10 +2,12 @@
 # Project-0 : Spring 2016
 # Arjun 504078752
 
+UID = 504078752
+
 CC = gcc
 CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror
 LAB = 0
-DISTDIR = lab$(LAB)-arjun
+DISTDIR = lab$(LAB)-$(UID)
 
 G=\x1b[32;01m
 R=\x1b[31;01m
@@ -21,9 +23,9 @@ SOURCES = main.c \
 
 OBJECTS = $(subst .c,.o,$(SOURCES))
 
-DIST_SOURCES = \
+DIST_SOURCES = lab$(LAB) \
   $(OBJECTS) Makefile \
-  $(SCREENSHOTS) README
+  $(SCREENSHOTS) README main.c
 
 lab$(LAB): $(OBJECTS)
 	$(CC) $(CFLAGS) -o $@ $(OBJECTS)
@@ -58,7 +60,7 @@ check: all
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_2) :: "
+	@echo -en "\t\x1b[1;01m [CHECK 2/5] \x1b[0m :: $(CHECK_2) :: "
 	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 	@rm random.blk.tmp
 
