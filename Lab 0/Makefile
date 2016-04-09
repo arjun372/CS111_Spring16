@@ -51,9 +51,8 @@ CMD_4   = ./lab$(LAB) --catch --segfault
 CHECK_6 = echo $?
 
 check: all
-	@echo ""
-	@echo -e "\x1b[34;01mGenerate files for test :"
-	dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
+	@echo -e "\t\x1b[1;01m Generate files for test :"
+	dd if=/dev/urandom of=random.blk bs=4096 count=1
 	@echo -e "\x1b[0m"
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
