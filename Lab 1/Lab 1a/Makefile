@@ -1,12 +1,12 @@
-# CS 111 Lab0 Makefile
-# Project-0 : Spring 2016
+# CS 111 Lab1a Makefile
+# Project-1a : Spring 2016
 # Arjun 504078752
 
 UID = 504078752
 
 CC = gcc
 CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror
-LAB = 0
+LAB = 1a
 DISTDIR = lab$(LAB)-$(UID)
 
 G=\x1b[32;01m

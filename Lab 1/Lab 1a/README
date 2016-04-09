@@ -1,0 +1,65 @@
+UCLA CS111 - Spring '16
+Arjun 504078752
+Lab 1a
+
+------
+Files
+------
+
+1. Makefile :: Commands for building the executable, running checks, and creating
+               a tarball for submission.
+
+2. main.c   :: Source code that implements 'lab0' as per the specification.
+
+3. screenshot_1_fault.png :: Shows the segmentation fault.
+
+4. screenshot_2_backtrace.png :: shows the stack backtrace
+
+5. screenshot_3_breakpoint.png :: shows the breakpoint before the code is executed
+
+6. screenshot_4_NULL.png :: shows that the 'ptr' variable is 0x0 (NULL)
+
+7. README :: (self)
+
+------------
+Smoke tests
+------------
+
+There are a total of 5 smoke tests, all of which ensure that program behavior
+is defined as per the specification.
+
+CHECK_1 : Ensure that the output file is generated, indicating that the creation
+          flags executed correctly for open(2) and that the output file is readable.
+
+CHECK_2 : Checks to see if the input file was copied correctly to the output file.
+
+CHECK_3 : Checks to see if the arguments and their options are parsed correctly.
+   &      This is done by flipping the order of the arguments and ensuring that
+CHECK_4   the output does not differ in anyway or that the program does not exit
+          with an error or segmentation fault.
+
+CHECK_5 : trap function checks to see if the segmentation fault occurs as intended.
+
+CHECK_6 : Catches the segmentation fault and ensures that the program continues
+          to execute correctly and outputs the correct files.
+
+----------------------
+Implementation details
+----------------------
+
+1. If multiple --input or --output parameters are supplied, the most recent one
+   is used. The previous ones are discarded.
+
+2. Macro FILE_MODE is set to 0644 in main.c. Feel free to change it for other
+   file permission settings.
+
+---------------
+Extra features
+---------------
+
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging code.
+
+2. The code performs additional checks, such as checking whether the supplied
+   argument for an option is actually an option or not. It would be illegal to
+   an option as an argument. This has been implemented in the 'isOption' function.
