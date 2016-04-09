@@ -37,45 +37,38 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 	@echo "tarball created :: $@"
 
 CMD_1   = ./lab$(LAB) --input random.blk --output random.blk.tmp
-CHECK_1 = diff random.blk random.blk.tmp 2>/dev/null
-
-CMD_2   = ./lab$(LAB) --input random.blk --output random.blk.tmp
+CHECK_1 = [ -f random.blk.tmp ]
 CHECK_2 = diff random.blk random.blk.tmp 2>/dev/null
 
-CMD_3   = ./lab$(LAB) --input random.blk --output random.blk.tmp
-CHECK_3 = diff random.blk random.blk.tmp 2>/dev/null
-
-CMD_4   = ./lab$(LAB) --input random.blk --output random.blk.tmp
+CMD_2   = ./lab$(LAB) --output random.blk.tmp --input random.blk
+CHECK_3 = [ -f random.blk.tmp ]
 CHECK_4 = diff random.blk random.blk.tmp 2>/dev/null
 
-CMD_5   = ./lab$(LAB) --input random.blk --output random.blk.tmp
-CHECK_5 = diff random.blk random.blk.tmp 2>/dev/null
+CMD_3   = ./lab$(LAB) --segfault
+CHECK_5 = echo $?
+
+CMD_3   = ./lab$(LAB) --catch --segfault 
+CHECK_5 = echo $?
 
 check: all
-
-	@dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
-
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo "Generate files for test :"
+	dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
+	@echo ""
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
+	@echo -en "\t\x1b[1;01m [CHECK 1/2] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_2) :: "
+	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@rm random.blk.tmp
 
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_2) \x1b[0m" && $(CMD_2)
+	@echo -en "\t\x1b[1;01m [CHECK 1/2] \x1b[0m :: $(CHECK_3) :: "
+	@$(CHECK_3) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
+	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
+	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@echo -n "Cleaning up temporary files..."
 	@rm random.blk* && echo "done."
