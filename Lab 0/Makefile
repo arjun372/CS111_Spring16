@@ -60,24 +60,9 @@ check: all
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
-	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
@@ -86,11 +71,9 @@ check: all
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
