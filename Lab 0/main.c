@@ -19,10 +19,14 @@
 
 #define MAX_LONG_OPTIONS 4
 
+/* Argument Options parse headers */
 #include <getopt.h>
+
+/* Error handling include headers */
 #include <error.h>
 #include <errno.h>
 
+/* Stdio function headers */
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -42,9 +46,6 @@
 static char BYTE;
 static int VERBOSE = 0;
 static char *ptr = NULL;
-static int FID[2] = {STDIN_FILENO, STDOUT_FILENO}; /* indicates that fd will be std, stdout */
-static int exit_status = 0;
-static char buffer[BUF_SIZE] = {0};
 
 static struct option long_options[] = {
   {"input",    required_argument,  0, 'r'},
@@ -55,10 +56,13 @@ static struct option long_options[] = {
 };
 
 /* function definitions */
-static int isOption(const char *opt);
-static pid_t execute_command (const size_t proc_index);
+static int  isOption(const char *opt);
 static void debug_log(const int opt_index, char **optarg, const int argc);
-static int usage (const int errNum, const char *opt_name, const char *optarg);
+
+void sig_handler(int sigN) {
+  fprintf(stderr, "Caught SIGNAL %d\n", sigN);
+  exit(CATC_ERR);
+}
 
 int main(int argc, char **argv) {
   int fopen_flag, opt=0, opt_index=0;
@@ -83,13 +87,14 @@ int main(int argc, char **argv) {
           }
 
         case 's':    /* --segfault    */
-        case 'c':    /* --catch  sigN */
 
-          if(VERBOSE)
-            debug_log(opt_index, &optarg, 1);
 
           if(opt=='s') /* create segmentation fault */
-            *ptr=opt;
+            {
+              raise(SIGSEGV);
+              continue;
+            }
+
 
           if(opt=='r' && (close(STDIN_FILENO)==0) && (open(optarg, O_RDONLY, FILE_MODE) >= 0))
             continue;
@@ -101,11 +106,17 @@ int main(int argc, char **argv) {
           perror(optarg);
           fopen_err:
           fprintf(stderr, "--%s %s :: %d\n", long_options[opt_index].name, optarg, errno);
-          exit(opt=='r'? OPEN_ERR : (opt=='w' ? CREA_ERR : CATC_ERR));
+          exit(opt=='r' ? OPEN_ERR : (opt=='w' ? CREA_ERR : CATC_ERR));
+
+          case 'c':    /* --catch  sigN */
+          debug_log(opt_index, &optarg, 1);
+          if(signal(SIGSEGV, sig_handler) == SIG_ERR)
+            goto fopen_err;
+          break;
       }
     }
-ssize_t noUse;
 
+ssize_t noUse;
   while(read(STDIN_FILENO, &BYTE, 1))
     noUse = write(STDOUT_FILENO, &BYTE, 1);
 
@@ -131,6 +142,9 @@ static int isOption(const char *opt)
 /* Logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc)
 {
+  if(!VERBOSE)
+    return;
+
   int i;
   fprintf(stderr,"--%s", long_options[opt_index].name);
   for(i = 0; i < argc; i++)

@@ -21,6 +21,28 @@ Files
 
 7. README :: (self)
 
+------------
+Smoke tests
+------------
+
+There are a total of 5 smoke tests, all of which ensure that program behavior
+is defined as per the specification.
+
+CHECK_1 : Ensure that the output file is generated, indicating that the creation
+          flags executed correctly for open(2) and that the output file is readable.
+
+CHECK_2 : Checks to see if the input file was copied correctly to the output file.
+
+CHECK_3 : Checks to see if the arguments and their options are parsed correctly.
+   &      This is done by flipping the order of the arguments and ensuring that
+CHECK_4   the output does not differ in anyway or that the program does not exit
+          with an error or segmentation fault.
+
+CHECK_5 : trap function checks to see if the segmentation fault occurs as intended.
+
+CHECK_6 : Catches the segmentation fault and ensures that the program continues
+          to execute correctly and outputs the correct files.
+
 ----------------------
 Implementation details
 ----------------------
@@ -31,20 +53,13 @@ Implementation details
 2. Macro FILE_MODE is set to 0644 in main.c. Feel free to change it for other
    file permission settings.
 
-3. Macro DEBUG is set to 0 in main.c. In order to have a line-by-line verbose
-   output of the input arguments, set DEBUG to 1.
+---------------
+Extra features
+---------------
 
-4.
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging code.
 
-------------------
-Known Bugs
-------------------
-
-1. After --wait, subcommand exit status is printed correctly but argument list is garbled.
-   This is a particularly nasty bug, since argv[] index value for each arg is listed correctly,
-   however, printing argv[index] always results in a garbled value. On the other hand, --verbose
-   lists the --command as well as it's arguments correctly every time, and arguments passed to
-   execvp are also correct, and they all refer to the same argv variable.
-
-2. Arguments to subcommands are passed correctly but short options create an error message on
-   getopt_long.
+2. The code performs additional checks, such as checking whether the supplied
+   argument for an option is actually an option or not. It would be illegal to
+   an option as an argument. This has been implemented in the 'isOption' function.

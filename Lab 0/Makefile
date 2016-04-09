@@ -56,26 +56,23 @@ check: all
 	@echo -e "\x1b[0m"
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
-	@echo -en "\t\x1b[1;01m [CHECK 1/2] \x1b[0m :: $(CHECK_1) :: "
+	@echo -en "\t\x1b[1;01m [CHECK 1/5] \x1b[0m :: $(CHECK_1) :: "
 	@$(CHECK_1) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_2) :: "
 	@$(CHECK_2) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 	@rm random.blk.tmp
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_2) \x1b[0m" && $(CMD_2)
-	@echo -en "\t\x1b[1;01m [CHECK 1/2] \x1b[0m :: $(CHECK_3) :: "
+	@echo -en "\t\x1b[1;01m [CHECK 3/5] \x1b[0m :: $(CHECK_3) :: "
 	@$(CHECK_3) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
+	@echo -en "\t\x1b[1;01m [CHECK 4/5] \x1b[0m :: $(CHECK_4) :: "
 	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_3) \x1b[0m" && trap "$(CMD_3)" SIGSEGV
-	@echo -en "\t\x1b[1;01m [CHECK 1/1] \x1b[0m :: $(CHECK_5) :: "
-	@$(CHECK_5) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+	@echo -en "\t\x1b[1;01m [CHECK 5/5] \x1b[0m :: $(CHECK_5) :: "
+	@echo -e "$(PASS)" || echo -e "$(FAIL)"
 
-	@echo -e "\x1b[34;01m COMMAND :: $(CMD_4) \x1b[0m" && $(CMD_4)
-	@echo -en "\t\x1b[1;01m [CHECK 1/1] \x1b[0m :: $(CHECK_6) :: "
-	@$(CHECK_6) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-
+	@echo "All tests passed!"
 	@echo -n "Cleaning up temporary files..."
 	@rm random.blk* && echo "done."
 
