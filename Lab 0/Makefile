@@ -47,13 +47,14 @@ CHECK_4 = diff random.blk random.blk.tmp 2>/dev/null
 CMD_3   = ./lab$(LAB) --segfault
 CHECK_5 = echo $?
 
-CMD_3   = ./lab$(LAB) --catch --segfault 
-CHECK_5 = echo $?
+CMD_4   = ./lab$(LAB) --catch --segfault
+CHECK_6 = echo $?
 
 check: all
-	@echo "Generate files for test :"
-	dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
 	@echo ""
+	@echo -e "\x1b[34;01mGenerate files for test :"
+	dd if=/dev/urandom of=random.blk bs=4096 count=1 2>/dev/null
+	@echo -e "\x1b[0m"
 
 	@echo -e "\x1b[34;01m COMMAND :: $(CMD_1) \x1b[0m" && $(CMD_1)
 	@echo -en "\t\x1b[1;01m [CHECK 1/2] \x1b[0m :: $(CHECK_1) :: "
@@ -67,8 +68,14 @@ check: all
 	@$(CHECK_3) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
 	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
-	@echo -en "\t\x1b[1;01m [CHECK 2/2] \x1b[0m :: $(CHECK_4) :: "
-	@$(CHECK_4) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_3) \x1b[0m" && $(CMD_3)
+	@echo -en "\t\x1b[1;01m [CHECK 1/1] \x1b[0m :: $(CHECK_5) :: "
+	@$(CHECK_5) && echo -e "$(PASS)" || echo -e "$(FAIL)"
+
+	@echo -e "\x1b[34;01m COMMAND :: $(CMD_4) \x1b[0m" && $(CMD_4)
+	@echo -en "\t\x1b[1;01m [CHECK 1/1] \x1b[0m :: $(CHECK_6) :: "
+	@$(CHECK_6) && echo -e "$(PASS)" || echo -e "$(FAIL)"
 
 	@echo -n "Cleaning up temporary files..."
 	@rm random.blk* && echo "done."
