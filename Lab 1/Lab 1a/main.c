@@ -14,6 +14,11 @@
 
 #define MAX_LONG_OPTIONS 5
 
+/* To get & set Terminal attributes */
+#include <termios.h>
+static struct termios *termInitial;
+static struct termios *termRAW;
+
 /* Argument Options parse headers */
 #include <getopt.h>
 
@@ -43,16 +48,12 @@ static int VERBOSE = 0;
 static char *ptr = NULL;
 
 static struct option long_options[] = {
-  {"input",    required_argument,  0, 'r'},
-  {"output",   required_argument,  0, 'w'},
-  {"segfault", no_argument,        0, 's'},
-  {"catch",    no_argument,        0, 'c'},
-  {"verbose",  no_argument, &VERBOSE,   1},
+  {"shell", no_argument,        0, 's'},
 };
 
 /* function definitions */
-static int  isOption(const char *opt);
 static void debug_log(const int opt_index, char **optarg, const int argc);
+static int isOption(const char *opt);
 
 void sig_handler(int sigN) {
   fprintf(stderr, "Caught SIGNAL %d\n", sigN);
@@ -62,6 +63,12 @@ void sig_handler(int sigN) {
 int main(int argc, char **argv) {
   int fopen_flag, opt=0, opt_index=0;
   ssize_t noUse;
+
+ /* Save current terminal settings */
+ int getStatus = tcgetattr(STDIN_FILENO, termInitial);
+ fprintf(stdout, "tcgetattr status: %d\n", getStatus);
+ 
+ /* Put console into RAW mode */
 
   while(TRUE)
     {
@@ -118,7 +125,7 @@ int main(int argc, char **argv) {
 
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
-  
+
   exit(0);
 }
 
