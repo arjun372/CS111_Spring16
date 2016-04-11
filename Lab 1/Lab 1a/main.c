@@ -6,6 +6,7 @@
 
 #define TRUE  1
 
+#define ERR_NO_RAW 1
 #define OPEN_ERR 1
 #define CREA_ERR 2
 #define CATC_ERR 3
@@ -16,8 +17,7 @@
 
 /* To get & set Terminal attributes */
 #include <termios.h>
-static struct termios *termInitial;
-static struct termios *termRAW;
+static struct termios term_initial;
 
 /* Argument Options parse headers */
 #include <getopt.h>
@@ -44,6 +44,10 @@ static struct termios *termRAW;
 
 
 static char BYTE;
+static char CR  = 0x0D;
+static char LF  = 0x0A;
+static char eof = 0x04;
+
 static int VERBOSE = 0;
 static char *ptr = NULL;
 
@@ -53,96 +57,79 @@ static struct option long_options[] = {
 
 /* function definitions */
 static void debug_log(const int opt_index, char **optarg, const int argc);
-static int isOption(const char *opt);
 
 void sig_handler(int sigN) {
   fprintf(stderr, "Caught SIGNAL %d\n", sigN);
   exit(CATC_ERR);
 }
 
-int main(int argc, char **argv) {
-  int fopen_flag, opt=0, opt_index=0;
-  ssize_t noUse;
-
- /* Save current terminal settings */
- int getStatus = tcgetattr(STDIN_FILENO, termInitial);
- fprintf(stdout, "tcgetattr status: %d\n", getStatus);
- 
- /* Put console into RAW mode */
-
-  while(TRUE)
-    {
-      opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
-
-      // all options have been read
-      if(opt==-1)
-        break;
-
-      switch(opt)
-      {
-        case 'r':    /* --input  arg1 */
-        case 'w':    /* --output arg1 */
-
-          if(isOption(optarg))
-          /* error check 1 -- argument is an option (ambigous fname) */
-          {
-            fprintf(stderr, "--%s %s :: argument '%s' is an option!\n", long_options[opt_index].name, optarg, optarg);
-            goto fopen_err;
-          }
-
-        case 's':    /* --segfault    */
-
-
-          if(opt=='s') /* create segmentation fault */
-            {
-	      *ptr = opt;//raise(SIGSEGV);
-              continue;
-            }
-
-
-          if(opt=='r' && (close(STDIN_FILENO)==0) && (open(optarg, O_RDONLY, FILE_MODE) >= 0))
-            continue;
-
-          if(opt=='w' && (close(STDOUT_FILENO)==0) && (open(optarg, O_WRONLY|O_CREAT, FILE_MODE) >= 0))
-            continue;
-
-          /* Unable to open file, show error */
-          perror(optarg);
-          fopen_err:
-          fprintf(stderr, "--%s %s :: %d\n", long_options[opt_index].name, optarg, errno);
-          exit(opt=='r' ? OPEN_ERR : (opt=='w' ? CREA_ERR : CATC_ERR));
-
-          case 'c':    /* --catch  sigN */
-          debug_log(opt_index, &optarg, 1);
-          if(signal(SIGSEGV, sig_handler) == SIG_ERR)
-            goto fopen_err;
-          break;
-      }
-    }
-
-  while(read(STDIN_FILENO, &BYTE, 1))
-    noUse = write(STDOUT_FILENO, &BYTE, 1);
+static void setTC_initial() {
+  fprintf(stderr, "ON EXIT:: Set INITIAL mode....");
+  if(tcsetattr(STDIN_FILENO, TCSANOW, &term_initial) == 0)
+    fprintf(stderr, "SUCCESS\n");
+  else
+    fprintf(stderr, "FAILED\n");
 
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
-
-  exit(0);
 }
 
-/* Checks if the given string is a valid option as defined by the spec.    *
- * Helps in checking whether arguments passed to options are valid or not. */
-static int isOption(const char *opt)
-{
-  int i;
-  for(i=0; i<(MAX_LONG_OPTIONS-1); i++)
-    {
-      char str[20];
-      strcpy(str, "--");
-      strcat(str, long_options[i].name);
-      if(strcmp(opt,str) == 0)
-        return 1;
-    }
-  return 0;
+static void setTC_cooked() {
+  struct termios term_cooked = {
+    .c_iflag = (term_initial.c_iflag | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON ),
+    .c_cflag = (term_initial.c_cflag | OPOST ),
+    .c_oflag = (term_initial.c_oflag | ECHO | ECHONL | ICANON | ISIG | IEXTEN ),
+    .c_lflag = (term_initial.c_lflag | CSIZE | PARENB ),
+  };
+  fprintf(stderr, "ON EXIT:: Set COOKED mode.\n");
+
+  if(tcsetattr(STDIN_FILENO, TCSANOW, &term_cooked) == 0)
+    fprintf(stderr, "SUCCESS\n");
+  else
+    fprintf(stderr, "FAILED\n");
+
+  close(STDIN_FILENO);
+  close(STDOUT_FILENO);
+}
+
+/* To be run at exit */
+int main(int argc, char **argv) {
+
+ int ARGC = argc; char **ARGV = argv;
+
+ /* STEP 1/12 :: Save current terminal settings */
+ /* STEP 2/12 :: atexit, set terminal to initial/cooked mode */
+ if(tcgetattr(STDIN_FILENO, &term_initial) == 0)
+  atexit(setTC_initial);
+ else {
+  fprintf(stderr, "Unable to get tty attr, will set to COOKED on exit.\n");
+  atexit(setTC_cooked);
+}
+
+ /* Step 3/12 :: Put console into RAW mode */
+ struct termios term_raw = term_initial;
+ cfmakeraw(&term_raw);
+ if(tcsetattr(STDIN_FILENO, TCSANOW, &term_raw) != 0)
+   fprintf(stderr, "FATAL :: Unable to switch to RAW mode, no guanrantees from this point on!\n");
+
+
+ /* Step 4/12 :: Read char-by-char  */
+ /* Step 5/12 :: write char-by-char */
+ int byte_written;
+ while(read(STDIN_FILENO, &BYTE, 1))
+ {
+   if(BYTE == 0x04)
+     break;
+
+   if(BYTE == CR || BYTE == LF) {
+     byte_written = write(STDOUT_FILENO, &CR, 1);
+     BYTE = LF;
+   }
+
+   byte_written = write(STDOUT_FILENO, &BYTE, 1);
+ }
+
+  exit(0);
 }
 
 /* Logs to stdout */
