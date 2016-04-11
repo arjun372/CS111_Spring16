@@ -39,8 +39,9 @@ static struct termios TERM_INIT;
 static char CR   = 0x0D;
 static char LF   = 0x0A;
 static char mEOF = 0x04;
-static char BYTE;
+static char mSIGINT = 0x03;
 
+static pid_t CHILD_PID = -2;
 static int VERBOSE = 0;
 static int SHELL   = 0;
 static char *ptr = NULL;
@@ -72,13 +73,17 @@ int main(int argc, char **argv) {
   atexit(setTC_initial);
  else
   {
-    fprintf(stderr, "Unable to get tty attr, will set to COOKED on exit.\n");
+    if(VERBOSE) fprintf(stderr, "Unable to get tty attr, will set to COOKED on exit.\n");
     atexit(setTC_cooked);
   }
 
  /* Step 3/12 :: Put console into RAW mode */
  struct termios term_raw = TERM_INIT;
  cfmakeraw(&term_raw);
+ term_raw.c_cc[VMIN]  = 1;
+ term_raw.c_cc[VTIME] = 0;
+ term_raw.c_lflag &= ~ISIG;
+
  if(tcsetattr(STDIN_FILENO, TCSANOW, &term_raw) != 0)
    fprintf(stderr, "FATAL :: Unable to switch to RAW mode, no guanrantees from this point on!\n");
 
@@ -96,19 +101,24 @@ static void shell_mode() {
   if(signal(SIGINT, sig_handler) == SIG_ERR)
       fprintf(stderr, "ERROR(%d): unable to catch SIGINT\n", errno);
 
-  if(signal(SIGINT, sig_handler) == SIG_ERR)
-    fprintf(stderr, "ERROR(%d): unable to catch SIGINT\n", errno);
+  // TODO :: Only child should be able to send you pipe!
+  if(signal(SIGPIPE, sig_handler) == SIG_ERR)
+    fprintf(stderr, "ERROR(%d): unable to catch SIGPIPE from CHILD\n", errno);
 
   char * cmds[] = {
     "/bin/bash",
     "-c",
+//    "watch -n 1.5 'aplay /usr/share/sounds/alsa/Side_Right.wav'",
+//    "-c",
     "cat '/home/arjun/Desktop/file.html'",
     NULL
   };
 
-  int byte_written = 0; char bytes;
+  int byte_written = 0;
+  char READ_STDIN, READ_PIPE, S_BYTE, P_BYTE;
+
   /* Create 2 pipes */
-  if(pipe2(I_PIPE_FD, O_CLOEXEC) < 0 || pipe2(O_PIPE_FD, O_CLOEXEC) < 0) /* Creating pipe failed */
+  if(pipe2(I_PIPE_FD, 0) < 0 || pipe2(O_PIPE_FD, 0) < 0) /* Creating pipe failed */
     exit(2);
 
   pid_t pPID = getpid();
@@ -130,25 +140,41 @@ static void shell_mode() {
       break;
 
       default:
-        while(read(STDIN_FILENO, &BYTE, 1))
+        CHILD_PID = pPID;
+        while((READ_PIPE = read(I_PIPE_FD[0], &P_BYTE, 1)) || (READ_STDIN = read(STDIN_FILENO, &S_BYTE, 1)))
         {
-          /*Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0)*/
-          if(BYTE == mEOF)
-          {
-              close(O_PIPE_FD[0]);
-              close(O_PIPE_FD[1]);
-              kill(-2, SIGHUP);
-              exit(0);
+          if(READ_PIPE) {
+            if(P_BYTE == mEOF) {
+              fprintf(stderr, "EOFFFFFF\n");
+              exit(1);}
+            //TODO :: Should close pipes!
+            byte_written = write(STDOUT_FILENO, &P_BYTE, 1);
           }
 
-          /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-          if(BYTE == CR || BYTE == LF)
-          {
-            byte_written = write(STDOUT_FILENO, &CR, 1);
-            BYTE = LF;
+          if(READ_STDIN) {
+            if(S_BYTE == mSIGINT)
+            {
+              if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
+              kill(CHILD_PID, SIGINT);
+            }
+              /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
+            if(S_BYTE == mEOF)
+            {
+                close(O_PIPE_FD[0]);
+                close(O_PIPE_FD[1]);
+                kill(CHILD_PID, SIGHUP);
+                exit(0);
+            }
+
+            /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
+            if(S_BYTE == CR || S_BYTE == LF)
+            {
+              byte_written = write(STDOUT_FILENO, &CR, 1);
+              S_BYTE = LF;
+            }
+            byte_written = write(STDOUT_FILENO, &S_BYTE, 1);
+            byte_written = write(O_PIPE_FD[1], &S_BYTE, 1);
           }
-          byte_written = write(STDOUT_FILENO, &BYTE, 1);
-          byte_written = write(O_PIPE_FD[1], &BYTE, 1);
         }
         break;
     }
@@ -158,6 +184,7 @@ static void basic_mode() {
  /* Step 4/12 :: Read char-by-char  */
  /* Step 5/12 :: write char-by-char */
  int byte_written;
+ char BYTE;
  while(read(STDIN_FILENO, &BYTE, 1))
  {
    if(BYTE == mEOF)
@@ -174,16 +201,26 @@ static void basic_mode() {
 
 void sig_handler(int sigN) {
   /* Step 8/12 [part 1/2] :: Send SIGINT to shell */
-  if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to child\n", sigN);
-  kill(-2, sigN);
+  switch (sigN)
+  {
+    case SIGINT:
+      if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", sigN, CHILD_PID);
+      kill(CHILD_PID, sigN);
+      break;
+
+    case SIGPIPE:
+      if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d from CHILD %d\n", sigN, CHILD_PID);
+      exit(1);
+  }
+
 }
 
 static void setTC_initial() {
-  fprintf(stderr, "ON EXIT:: Set INITIAL mode....");
+  if(VERBOSE)fprintf(stderr, "ON EXIT:: Set INITIAL mode....");
   if(tcsetattr(STDIN_FILENO, TCSANOW, &TERM_INIT) == 0)
-    fprintf(stderr, "SUCCESS\n");
+    {if(VERBOSE)fprintf(stderr, "SUCCESS\n");}
   else
-    fprintf(stderr, "FAILED\n");
+    {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
@@ -196,12 +233,11 @@ static void setTC_cooked() {
     .c_oflag = (TERM_INIT.c_oflag | ECHO | ECHONL | ICANON | ISIG | IEXTEN ),
     .c_lflag = (TERM_INIT.c_lflag | CSIZE | PARENB ),
   };
-  fprintf(stderr, "ON EXIT:: Set COOKED mode.\n");
-
+  if(VERBOSE)fprintf(stderr, "ON EXIT:: Set COOKED mode.\n");
   if(tcsetattr(STDIN_FILENO, TCSANOW, &term_cooked) == 0)
-    fprintf(stderr, "SUCCESS\n");
+    {if(VERBOSE)fprintf(stderr, "SUCCESS\n");}
   else
-    fprintf(stderr, "FAILED\n");
+    {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
