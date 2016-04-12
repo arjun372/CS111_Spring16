@@ -4,13 +4,14 @@
     Lab 1a
 **/
 
-#define TRUE     1
-#define FALSE    0
-#define NRAW_ERR 1
-#define OPEN_ERR 1
-#define CREA_ERR 2
-#define CATC_ERR 3
-#define FILE_MOD 0664
+#define N_THREADS 1
+#define TRUE      1
+#define FALSE     0
+#define NRAW_ERR  1
+#define OPEN_ERR  1
+#define CREA_ERR  2
+#define CATC_ERR  3
+#define FILE_MOD  0664
 
 #define _GNU_SOURCE /* for pipe2 */
 
@@ -27,12 +28,15 @@
 #include <stdio.h>
 /* open(2) include headers */
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 /* signal(2) include headers */
 #include <signal.h>
 /* read(2), write(2) include headers */
 #include <unistd.h>
+/* pthreads include headers */
+#include <pthread.h>
 
 
 static struct termios TERM_INIT;
@@ -45,6 +49,12 @@ static pid_t CHILD_PID = -2;
 static int VERBOSE = 0;
 static int SHELL   = 0;
 static char *ptr = NULL;
+
+/* pthread Worker Pool */
+static pthread_t thread_pool[N_THREADS];
+static unsigned int validThreads[N_THREADS];
+static unsigned long long  R_THREADS = 0;
+static unsigned long long  worker_n;
 
 static int I_PIPE_FD[2] = {-1, -1};
 static int O_PIPE_FD[2] = {-1, -1};
@@ -60,6 +70,9 @@ static void setTC_cooked();
 static void basic_mode();
 static void shell_mode();
 void sig_handler(int sigN);
+
+/* pThread worker functions */
+void *doWork_SHELL_2_STDOUT(void *val);
 
 /* To be run at exit */
 int main(int argc, char **argv) {
@@ -105,14 +118,7 @@ static void shell_mode() {
   if(signal(SIGPIPE, sig_handler) == SIG_ERR)
     fprintf(stderr, "ERROR(%d): unable to catch SIGPIPE from CHILD\n", errno);
 
-  char * cmds[] = {
-    "/bin/bash",
-    "-c",
-//    "watch -n 1.5 'aplay /usr/share/sounds/alsa/Side_Right.wav'",
-//    "-c",
-    "cat '/home/arjun/Desktop/file.html'",
-    NULL
-  };
+  char * cmds[] = {"/bin/bash", NULL};
 
   int byte_written = 0;
   char READ_STDIN, READ_PIPE, S_BYTE, P_BYTE;
@@ -120,6 +126,20 @@ static void shell_mode() {
   /* Create 2 pipes */
   if(pipe2(I_PIPE_FD, 0) < 0 || pipe2(O_PIPE_FD, 0) < 0) /* Creating pipe failed */
     exit(2);
+
+  /* Step 11/12 :: read input from shell pipe and echo it to STDOUT_FILENO */
+  /* Create N new threads */
+  void *(*workFunctionPtr)(void *);
+  workFunctionPtr = doWork_SHELL_2_STDOUT;
+  for(worker_n = 0; worker_n < N_THREADS; worker_n++)
+    {
+      if(pthread_create(&thread_pool[worker_n], NULL, workFunctionPtr, (void *)(NULL)) == 0)
+  	   {
+  	      R_THREADS++;
+  	      validThreads[worker_n] = 1;
+  	   }
+      else validThreads[worker_n] = 0;
+    }
 
   pid_t pPID = getpid();
   if(VERBOSE) fprintf(stderr, "Parent PID : %d\n", pPID);
@@ -141,23 +161,15 @@ static void shell_mode() {
 
       default:
         CHILD_PID = pPID;
-        while((READ_PIPE = read(I_PIPE_FD[0], &P_BYTE, 1)) || (READ_STDIN = read(STDIN_FILENO, &S_BYTE, 1)))
+        while(read(STDIN_FILENO, &S_BYTE, 1))
         {
-          if(READ_PIPE) {
-            if(P_BYTE == mEOF) {
-              fprintf(stderr, "EOFFFFFF\n");
-              exit(1);}
-            //TODO :: Should close pipes!
-            byte_written = write(STDOUT_FILENO, &P_BYTE, 1);
-          }
-
-          if(READ_STDIN) {
             if(S_BYTE == mSIGINT)
             {
               if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
               kill(CHILD_PID, SIGINT);
             }
-              /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
+
+            /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
             if(S_BYTE == mEOF)
             {
                 close(O_PIPE_FD[0]);
@@ -172,9 +184,9 @@ static void shell_mode() {
               byte_written = write(STDOUT_FILENO, &CR, 1);
               S_BYTE = LF;
             }
+
             byte_written = write(STDOUT_FILENO, &S_BYTE, 1);
             byte_written = write(O_PIPE_FD[1], &S_BYTE, 1);
-          }
         }
         break;
     }
@@ -222,6 +234,12 @@ static void setTC_initial() {
   else
     {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
+  if(SHELL)
+  {
+    int child_status = 8888;
+    waitpid(CHILD_PID, &child_status, 0);
+    printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
+  }
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
 }
@@ -239,6 +257,29 @@ static void setTC_cooked() {
   else
     {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
+    if(SHELL)
+    {
+      int child_status = 8888;
+      waitpid(CHILD_PID, &child_status, 0);
+      printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
+    }
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
+}
+
+void * doWork_SHELL_2_STDOUT(void *val) {
+  int byte_written, P_BYTE;
+  void *x = val;
+  while(read(I_PIPE_FD[0], &P_BYTE, 1))
+    {
+      if(P_BYTE == mEOF)
+      {
+        fprintf(stderr, "EOFFFFFF\n");
+        //TODO :: Should close pipes!
+        exit(1);
+      }
+
+      byte_written = write(STDOUT_FILENO, &P_BYTE, 1);
+    }
+  pthread_exit(NULL);
 }

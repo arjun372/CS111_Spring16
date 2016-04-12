@@ -5,7 +5,9 @@
 UID = 504078752
 
 CC = gcc
-CFLAGS = -ggdb -Wall -O2 -Wextra -Wno-unused -Werror
+CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror -lrt
+LDLIBS = -lm
+LDFLAGS = -lpthread
 LAB = 1a
 DISTDIR = lab$(LAB)-$(UID)
 
