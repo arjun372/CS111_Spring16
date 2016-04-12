@@ -38,7 +38,6 @@
 /* pthreads include headers */
 #include <pthread.h>
 
-
 static struct termios TERM_INIT;
 static char CR   = 0x0D;
 static char LF   = 0x0A;
@@ -69,7 +68,7 @@ static void setTC_initial();
 static void setTC_cooked();
 static void basic_mode();
 static void shell_mode();
-void sig_handler(int sigN);
+static void sig_handler(int sigN);
 
 /* pThread worker functions */
 void *doWork_SHELL_2_STDOUT(void *val);
@@ -80,8 +79,8 @@ int main(int argc, char **argv) {
  while(getopt_long_only(argc, argv, "", long_options, NULL) != -1)
   continue;
 
- /* STEP 1/12 :: Save current terminal settings */
- /* STEP 2/12 :: atexit, set terminal to initial/cooked mode */
+ /* STEP 13/13 :: Save current terminal settings */
+ /* STEP 13/13 :: atexit, set terminal to initial/cooked mode */
  if(tcgetattr(STDIN_FILENO, &TERM_INIT) == 0)
   atexit(setTC_initial);
  else
@@ -90,7 +89,7 @@ int main(int argc, char **argv) {
     atexit(setTC_cooked);
   }
 
- /* Step 3/12 :: Put console into RAW mode */
+ /* Step 1/13 :: Put console into RAW mode */
  struct termios term_raw = TERM_INIT;
  cfmakeraw(&term_raw);
  term_raw.c_cc[VMIN]  = 1;
@@ -116,18 +115,15 @@ static void shell_mode() {
 
   // TODO :: Only child should be able to send you pipe!
   if(signal(SIGPIPE, sig_handler) == SIG_ERR)
-    fprintf(stderr, "ERROR(%d): unable to catch SIGPIPE from CHILD\n", errno);
+    fprintf(stderr, "ERROR(%d): unable to catch SIGPIPE\n", errno);
 
   char * cmds[] = {"/bin/bash", NULL};
-
-  int byte_written = 0;
-  char READ_STDIN, READ_PIPE, S_BYTE, P_BYTE;
+  int byte_written, S_BYTE, P_BYTE;
 
   /* Create 2 pipes */
   if(pipe2(I_PIPE_FD, 0) < 0 || pipe2(O_PIPE_FD, 0) < 0) /* Creating pipe failed */
     exit(2);
 
-  /* Step 11/12 :: read input from shell pipe and echo it to STDOUT_FILENO */
   /* Create N new threads */
   void *(*workFunctionPtr)(void *);
   workFunctionPtr = doWork_SHELL_2_STDOUT;
@@ -144,7 +140,7 @@ static void shell_mode() {
   pid_t pPID = getpid();
   if(VERBOSE) fprintf(stderr, "Parent PID : %d\n", pPID);
 
-  /* Step 6/12 :: Fork a new process */
+  /* Step 4/13 :: Fork a new process */
   switch(pPID = fork())
     {
       case -1 : /* fork() failed */
@@ -156,11 +152,16 @@ static void shell_mode() {
       dup2(O_PIPE_FD[0], STDIN_FILENO);
       dup2(I_PIPE_FD[1], STDOUT_FILENO);
       dup2(I_PIPE_FD[1], STDERR_FILENO);
+      close(I_PIPE_FD[0]);
       execvp(cmds[0], cmds);
       break;
 
       default:
         CHILD_PID = pPID;
+        close(I_PIPE_FD[1]);
+        /* Step 2/13 :: Read char-by-char   */
+        /* Step 3/13 :: Handles long inputs */
+        /* Step 5/13 :: write char-by-char  */
         while(read(STDIN_FILENO, &S_BYTE, 1))
         {
             if(S_BYTE == mSIGINT)
@@ -193,8 +194,9 @@ static void shell_mode() {
   return;
 }
 static void basic_mode() {
- /* Step 4/12 :: Read char-by-char  */
- /* Step 5/12 :: write char-by-char */
+ /* Step 2/13 :: Read char-by-char   */
+ /* Step 3/13 :: Handles long inputs */
+ /* Step 5/13 :: write char-by-char  */
  int byte_written;
  char BYTE;
  while(read(STDIN_FILENO, &BYTE, 1))
@@ -211,8 +213,7 @@ static void basic_mode() {
  }
 }
 
-void sig_handler(int sigN) {
-  /* Step 8/12 [part 1/2] :: Send SIGINT to shell */
+static void sig_handler(int sigN) {
   switch (sigN)
   {
     case SIGINT:
@@ -267,6 +268,7 @@ static void setTC_cooked() {
   close(STDOUT_FILENO);
 }
 
+/* Step 6/13 :: Do work in separate thread */
 void * doWork_SHELL_2_STDOUT(void *val) {
   int byte_written, P_BYTE;
   void *x = val;
@@ -274,12 +276,13 @@ void * doWork_SHELL_2_STDOUT(void *val) {
     {
       if(P_BYTE == mEOF)
       {
-        fprintf(stderr, "EOFFFFFF\n");
-        //TODO :: Should close pipes!
+        if(VERBOSE)fprintf(stderr, "EOF from shell, exiting (1)\n");
         exit(1);
       }
-
       byte_written = write(STDOUT_FILENO, &P_BYTE, 1);
     }
+    if(VERBOSE)fprintf(stderr, "EOF from shell, exiting (1)\n");
+    exit(1);
+
   pthread_exit(NULL);
 }
