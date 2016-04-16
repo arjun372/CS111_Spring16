@@ -1,5 +1,5 @@
 # CS 111 Lab1a Makefile
-# Project-1a : Spring 2016
+# Project-1b : Spring 2016
 # Arjun 504078752
 
 UID = 504078752
@@ -8,20 +8,28 @@ CC = gcc
 CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror -lrt
 LDLIBS = -lm
 LDFLAGS = -pthread
-LAB = 1a
+LAB = 1b
 DISTDIR = lab$(LAB)-$(UID)
 
 all: lab$(LAB)
 
-SOURCES = main.c \
+CLI_SRC = client.c
+SRV_SRC = server.c
 
-OBJECTS = $(subst .c,.o,$(SOURCES))
+CLI_OBJ = $(subst .c,.o,$(CLI_SRC))
 
-DIST_SOURCES = lab$(LAB) \
-  $(OBJECTS) Makefile README main.c
+SRV_OBJ = $(subst .c,.o,$(SRV_SRC))
 
-lab$(LAB): $(OBJECTS)
-	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJECTS) $(LDLIBS)
+DIST_SOURCES = client server  \
+  $(CLI_OBJ) $(SRV_OBJ) Makefile README server.c client.c
+
+lab$(LAB): client server
+
+client: $(CLI_OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(CLI_OBJ) $(LDLIBS)
+
+server: $(SRV_OBJ)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRV_OBJ) $(LDLIBS)
 
 dist: $(DISTDIR).tar.gz
 
@@ -32,6 +40,6 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 	@echo "tarball created :: $@"
 
 clean:
-	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp lab$(LAB) $(DISTDIR)
+	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp client server $(DISTDIR)
 
 .PHONY: all dist check clean
