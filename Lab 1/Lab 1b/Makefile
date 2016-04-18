@@ -40,6 +40,6 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 	@echo "tarball created :: $@"
 
 clean:
-	rm -rf *.o *~ *.bak *.tar.gz core *.core *.tmp client server $(DISTDIR)
+	rm -rf *.log *.o *~ *.bak *.tar.gz core *.core *.tmp client server $(DISTDIR)
 
 .PHONY: all dist check clean
