@@ -73,9 +73,7 @@ int main(int argc, char **argv) {
 
         case 'e' :
             ENCRYPT = 1;
-            //TODO :: more encryption stuff
             a = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
-            //TODO :: more encryption stuff
             if((I_FD = open("my.key", O_RDONLY, FILE_MODE)))
               readd = read(I_FD, &key, 16);
             mcrypt_generic_init(a, key, 16, IV);
@@ -211,7 +209,8 @@ int main(int argc, char **argv) {
     close(SOCKET_FD);
     kill(CHILD_PID, SIGHUP);
     exit(1);
-  exit(0);
+  }
+exit(0);
 }
 /* Step 6/13 :: Do work in separate thread */
 void * doWork_SHELL_2_STDOUT(void *val) {
