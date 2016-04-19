@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
     //   byte_written = write(STDOUT_FILENO, &CR, 1);
     //   O_BYTE = LF;
     // }
-    // byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
+    byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
 
     /* Write to socket. If successful && log_on, then write to log_file */
     if(write(SOCKET_FD, &O_BYTE, 1) && (LOG_FD > -1)) {
