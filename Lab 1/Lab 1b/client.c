@@ -38,15 +38,15 @@ static int LOG_FD    = -1;
 static int ENCRYPT   =  0;
 static int SOCKET_FD = -1;
 
-static int mCR = '\r';
-static char BUFFER[16] = {0};
+static char BUFFER[16]   = {0};
+static char I_BUFFER[16] = {0};
 
 /* pthread Worker Pool */
 static pthread_t thread_pool[N_THREADS];
 static unsigned int validThreads[N_THREADS];
 static unsigned long long  R_THREADS = 0;
 static unsigned long long  worker_n;
-static MCRYPT a,b;
+static MCRYPT a;
 
 static struct option long_options[] = {
   {"verbose",       no_argument,    &VERBOSE,   1},
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
     else {
       if(O_BYTE == '\r' || O_BYTE == '\n')
       {
-        byte_written = write(STDOUT_FILENO, &mCR, 1);
+        byte_written = write(STDOUT_FILENO, &CR, 1);
         O_BYTE = '\n';
       }
       byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
@@ -190,15 +190,43 @@ int main(int argc, char **argv) {
 void * doWork_SOCK_2_STDOUT(void *val) {
   int byte_written, I_BYTE;
   void *x = val;
-  while(read(SOCKET_FD, &I_BYTE, 1))
+  if(ENCRYPT)
+  {
+    while((byte_written = read(SOCKET_FD, &I_BUFFER, 16)))
+      {
+        /* Log pre-decrypted data to file */
+        if(LOG_FD > -1)
+         {
+           dprintf(LOG_FD, "RECEIVED %d bytes: ", byte_written);
+           byte_written = write(LOG_FD, &I_BUFFER, 16);
+           dprintf(LOG_FD, "\n");
+         }
+        /* decrypt the data */
+        mdecrypt_generic(a, I_BUFFER, 16);
+        I_BUFFER[0] = I_BYTE;
+        /* write single meaningful byte to STDOUT */
+        byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+      }
+  }
+
+  else /* Not encrypted, write byte-by-byte to STDOUT & LOG file */
     {
-      if(I_BYTE == mEOF)
-        break;
-      byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
-      dprintf(LOG_FD, "RECEIVED 1 bytes: ");
-      byte_written = write(LOG_FD, &I_BYTE, 1);
-      dprintf(LOG_FD, "\n");
+        while(read(SOCKET_FD, &I_BYTE, 1))
+        {
+          if(I_BYTE == mEOF)
+            break;
+
+          byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+
+          if(byte_written && (LOG_FD > -1))
+           {
+             dprintf(LOG_FD, "RECEIVED 1 bytes: ");
+             byte_written = write(LOG_FD, &I_BYTE, 1);
+             dprintf(LOG_FD, "\n");
+           }
+        }
     }
+
   if(VERBOSE) fprintf(stderr, "EOF from socket, exiting (1)\n");
   close(SOCKET_FD);
   exit(1);

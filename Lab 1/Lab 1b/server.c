@@ -40,6 +40,10 @@ static pid_t CHILD_PID = -2;
 static int I_PIPE_FD[2] = {-1, -1};
 static int O_PIPE_FD[2] = {-1, -1};
 
+
+static char BUFFER[16] = {0};
+static MCRYPT a;
+
 static struct option long_options[] = {
   {"verbose",       no_argument,    &VERBOSE,   1},
   {"encrypt",       no_argument,           0, 'e'},
@@ -54,6 +58,10 @@ static void debug_log(const int opt_index, char **optarg, const int argc);
 int main(int argc, char **argv) {
   int opt=0, opt_index=0, byte_written;
   char BYTE;
+  int readd;
+  int I_FD = -1;
+  char * IV = "ARJUNARJUNARJUNA";
+  char key[16];
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
@@ -66,6 +74,11 @@ int main(int argc, char **argv) {
         case 'e' :
             ENCRYPT = 1;
             //TODO :: more encryption stuff
+            a = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
+            //TODO :: more encryption stuff
+            if((I_FD = open("my.key", O_RDONLY, FILE_MODE)))
+              readd = read(I_FD, &key, 16);
+            mcrypt_generic_init(a, key, 16, IV);
             if(VERBOSE) debug_log(opt_index, &optarg, 0);
             break;
 
@@ -150,6 +163,20 @@ int main(int argc, char **argv) {
         /* Step 5/13 :: write char-by-char  */
         if(VERBOSE) dprintf(STDERR_FILENO, "IN PARENT STDERR\n");
         if(VERBOSE) dprintf(STDOUT_FILENO, "IN PARENT STDOUT\n");
+        if(ENCRYPT) {
+          while(read(STDIN_FILENO, &BUFFER, 16))
+             mdecrypt_generic(a, BUFFER, 16);
+             BUFFER[0] = O_BYTE;
+             byte_written = write(STDOUT_FILENO, &BUFFER, 16);
+             byte_written = write(SOCKET_FD, &BUFFER, 16);
+             if(byte_written && (LOG_FD > -1)) {
+               dprintf(LOG_FD, "SENT %d bytes: ", byte_written);
+               byte_written = write(LOG_FD, &BUFFER, 16);
+               dprintf(LOG_FD, "\n");
+             }
+           }
+          /* DO NOT ENCRYPT */
+        else {
         while(read(STDIN_FILENO, &BYTE, 1))
         {
             if(BYTE == mSIGINT)
@@ -177,14 +204,13 @@ int main(int argc, char **argv) {
           //  byte_written = write(STDOUT_FILENO, &BYTE, 1);
             byte_written = write(O_PIPE_FD[1], &BYTE, 1);
         }
-        /* read error or EOF on network connection */
-        if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
-        close(newSOCKET_FD);
-        close(SOCKET_FD);
-        kill(CHILD_PID, SIGHUP);
-        exit(1);
     }
-
+    /* read error or EOF on network connection */
+    if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
+    close(newSOCKET_FD);
+    close(SOCKET_FD);
+    kill(CHILD_PID, SIGHUP);
+    exit(1);
   exit(0);
 }
 /* Step 6/13 :: Do work in separate thread */
