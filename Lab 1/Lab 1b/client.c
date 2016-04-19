@@ -13,12 +13,17 @@
 #include <unistd.h>    /* FD numbers */
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <error.h>    /* Error handling include headers */
+#include <error.h>      /* Error handling include headers */
 #include <errno.h>
-#include <mcrypt.h>    /* for RIJNDAEL-128 w/ CBC */
+#include <mcrypt.h>     /* for RIJNDAEL-128 w/ CBC */
+#include <netinet/in.h> /* for htons, and server setup */
+#include <netdb.h>
+#include <fcntl.h>
+#include <pthread.h>
 
 #define TRUE      1
 #define FALSE     0
+#define N_THREADS 1
 
 static struct termios TERM_INIT;
 static char CR      = 0x0D;
@@ -32,7 +37,11 @@ static int LOG_FD    = -1;
 static int ENCRYPT   =  0;
 static int SOCKET_FD = -1;
 
-static struct sockaddr_in SRV_ADDR;
+/* pthread Worker Pool */
+static pthread_t thread_pool[N_THREADS];
+static unsigned int validThreads[N_THREADS];
+static unsigned long long  R_THREADS = 0;
+static unsigned long long  worker_n;
 
 static struct option long_options[] = {
   {"verbose",       no_argument,    &VERBOSE,   1},
@@ -42,12 +51,13 @@ static struct option long_options[] = {
 };
 
 /* function definitions */
-static void setTC_initial();
 static void setTC_cooked();
+static void setTC_initial();
+void *doWork_SOCK_2_STDOUT(void *val); /* pThread worker functions */
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
-  int opt=0, opt_index=0, byte_written, BYTE;
+  int opt=0, opt_index=0;
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
@@ -98,24 +108,59 @@ int main(int argc, char **argv) {
   if (SOCKET_FD < 0)
         fprintf(stderr, "FATAL: error opening socket\n");
 
-  /* SRV_ADDR = */
-  while(read(STDIN_FILENO, &BYTE, 1)) {
-    /* ^D entered */
-    if(BYTE == mEOF) {
-      // TODO 1 : close network connection
-      // Restore terminal modes & exit with RC = 0
+  /* Connect to the server */
+  struct sockaddr_in SRV_ADDR;
+  struct hostent *server = gethostbyname("localhost");
+  bzero((char *) &SRV_ADDR, sizeof(SRV_ADDR));
+  SRV_ADDR.sin_family = AF_INET;
+  bcopy((char *)server->h_addr, (char *)&SRV_ADDR.sin_addr.s_addr,server->h_length);
+  SRV_ADDR.sin_port = htons(PORT);
+  if (connect(SOCKET_FD, (struct sockaddr *) &SRV_ADDR,sizeof(SRV_ADDR)) < 0) {
+    close(SOCKET_FD);
+    exit(1);
+    fprintf(stderr, "FATAL: error connecting to host (localhost)\n");
+  }
+  else if(VERBOSE)
+    fprintf(stderr, "SUCCESS: connected to host (localhost)\n");
+
+  /* In a new thread, output data from socket to the display */
+  pthread_t socket_thread;
+  pthread_create(&socket_thread, NULL, (void *)doWork_SOCK_2_STDOUT, (void *)(NULL));
+
+  /* Read input from keyboard */
+  int log_written, byte_written, O_BYTE;
+  while(read(STDIN_FILENO, &O_BYTE, 1)) {
+
+    /* ^D entered :: Restore terminal modes & exit with RC = 0*/
+    if(O_BYTE == mEOF) {
+      close(SOCKET_FD);
       exit(0);
     }
 
-    if(BYTE == CR || BYTE == LF) {
-        byte_written = write(STDOUT_FILENO, &CR, 1);
-        BYTE = LF;
+    /* Echo out to the display */
+    byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
+
+    /* Write to socket. If successful && log_on, then write to log_file */
+    if(write(SOCKET_FD, &O_BYTE, 1) && (LOG_FD > -1))
+      log_written = write(LOG_FD, &O_BYTE, 1);
     }
 
-    byte_written = write(STDOUT_FILENO, &BYTE, 1);
-  }
-
   exit(0);
+}
+
+void * doWork_SOCK_2_STDOUT(void *val) {
+  int byte_written, I_BYTE;
+  void *x = val;
+  while(read(SOCKET_FD, &I_BYTE, 1))
+    {
+      if(I_BYTE == mEOF)
+        break;
+      byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+    }
+  if(VERBOSE) fprintf(stderr, "EOF from socket, exiting (1)\n");
+  close(SOCKET_FD);
+  exit(1);
+  pthread_exit(NULL);
 }
 
 static void setTC_initial() {
