@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
             /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
             if(BYTE == CR || BYTE == LF)
             {
-              byte_written = write(O_PIPE_FD[1], &CR, 1);
+              byte_written = write(O_PIPE_FD[1], &LF, 1);
               BYTE = LF;
             }
           //  byte_written = write(STDOUT_FILENO, &BYTE, 1);
