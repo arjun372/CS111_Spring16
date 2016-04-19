@@ -24,6 +24,7 @@
 #define TRUE      1
 #define FALSE     0
 #define N_THREADS 1
+#define FILE_MODE 0664
 
 static struct termios TERM_INIT;
 static char CR      = 0x0D;
@@ -82,6 +83,9 @@ int main(int argc, char **argv) {
         case 'l' :
             /*TODO: Parse the fileName, Open it and set FD */
             if(VERBOSE) debug_log(opt_index, &optarg, 1);
+            LOG_FD = open(optarg, O_WRONLY|O_CREAT, FILE_MODE);
+            if(LOG_FD < 0)
+              fprintf(stderr, "Unable to open file %s\n", optarg);
             break;
       }
     }
@@ -138,11 +142,20 @@ int main(int argc, char **argv) {
     }
 
     /* Echo out to the display */
+    /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
+    if(O_BYTE == CR || O_BYTE == LF)
+    {
+      byte_written = write(STDOUT_FILENO, &CR, 1);
+      O_BYTE = LF;
+    }
     byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
 
     /* Write to socket. If successful && log_on, then write to log_file */
-    if(write(SOCKET_FD, &O_BYTE, 1) && (LOG_FD > -1))
-      log_written = write(LOG_FD, &O_BYTE, 1);
+    if(write(SOCKET_FD, &O_BYTE, 1) && (LOG_FD > -1)) {
+      dprintf(LOG_FD, "SENT 1 bytes: ");
+      byte_written = write(LOG_FD, &O_BYTE, 1);
+      dprintf(LOG_FD, "\n");
+    }
     }
 
   exit(0);
@@ -156,6 +169,9 @@ void * doWork_SOCK_2_STDOUT(void *val) {
       if(I_BYTE == mEOF)
         break;
       byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+      dprintf(LOG_FD, "RECEIVED 1 bytes: ");
+      byte_written = write(LOG_FD, &I_BYTE, 1);
+      dprintf(LOG_FD, "\n");
     }
   if(VERBOSE) fprintf(stderr, "EOF from socket, exiting (1)\n");
   close(SOCKET_FD);
@@ -176,6 +192,7 @@ static void setTC_initial() {
     waitpid(CHILD_PID, &child_status, 0);
     printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
   }*/
+  if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
 }
@@ -199,6 +216,7 @@ static void setTC_cooked() {
       waitpid(CHILD_PID, &child_status, 0);
       printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
     }*/
+  if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
 }

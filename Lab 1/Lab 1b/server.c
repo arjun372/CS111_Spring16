@@ -12,6 +12,7 @@
 #include <stdio.h>     /* Stdio function headers */
 #include <unistd.h>    /* FD numbers */
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/socket.h>
 #include <error.h>      /* Error handling include headers */
 #include <errno.h>
@@ -46,8 +47,7 @@ static struct option long_options[] = {
 };
 
 /* function definitions */
-static void setTC_cooked();
-static void setTC_initial();
+static void child_status();
 void *doWork_SHELL_2_STDOUT(void *val);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
@@ -124,6 +124,7 @@ int main(int argc, char **argv) {
       case -1 : /* fork() failed */
       fprintf(stderr, "FATAL: error forking child process\n");
       close(newSOCKET_FD);
+      close(SOCKET_FD);
       exit(2);
       break;
 
@@ -137,6 +138,7 @@ int main(int argc, char **argv) {
       break;
 
       default:
+        atexit(child_status);
         CHILD_PID = pPID;
         close(I_PIPE_FD[1]);
         /* Redirect server process STDIN, STDOUT, STDERR to SOCKET_FD */
@@ -157,41 +159,29 @@ int main(int argc, char **argv) {
             /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
             if(BYTE == mEOF)
             {
+                if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
                 close(O_PIPE_FD[0]);
                 close(O_PIPE_FD[1]);
                 kill(CHILD_PID, SIGHUP);
-                exit(0);
+                exit(1);
             }
 
             /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-            // if(S_BYTE == CR || S_BYTE == LF)
+            // if(BYTE == CR || BYTE == LF)
             // {
             //   byte_written = write(STDOUT_FILENO, &CR, 1);
-            //   S_BYTE = LF;
+            //   BYTE = LF;
             // }
-            //byte_written = write(STDOUT_FILENO, &BYTE, 1);
+            // byte_written = write(STDOUT_FILENO, &BYTE, 1);
             byte_written = write(O_PIPE_FD[1], &BYTE, 1);
         }
         /* read error or EOF on network connection */
+        if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
         close(newSOCKET_FD);
+        close(SOCKET_FD);
         kill(CHILD_PID, SIGHUP);
         exit(1);
     }
-  // while(read(STDIN_FILENO, &BYTE, 1)) {
-  //   /* ^D entered */
-  //   if(BYTE == mEOF) {
-  //     // TODO 1 : close network connection
-  //     // Restore terminal modes & exit with RC = 0
-  //     exit(0);
-  //   }
-  //
-  //   if(BYTE == CR || BYTE == LF) {
-  //       byte_written = write(STDOUT_FILENO, &CR, 1);
-  //       BYTE = LF;
-  //   }
-  //
-  //   byte_written = write(STDOUT_FILENO, &BYTE, 1);
-  // }
 
   exit(0);
 }
@@ -212,49 +202,20 @@ void * doWork_SHELL_2_STDOUT(void *val) {
     /* Server gets EOF or SIGPIPE from shell */
     if(VERBOSE)fprintf(stderr, "EOF or SIGPIPE from shell, exiting (2)\n");
     close(newSOCKET_FD);
+    close(SOCKET_FD);
     kill(CHILD_PID, SIGHUP);
     exit(2);
 
   pthread_exit(NULL);
 }
-static void setTC_initial() {
-  if(VERBOSE)fprintf(stderr, "ON EXIT:: Set INITIAL mode....");
-  if(tcsetattr(STDIN_FILENO, TCSANOW, &TERM_INIT) == 0)
-    {if(VERBOSE)fprintf(stderr, "SUCCESS\n");}
-  else
-    {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
-  /*if(SHELL)
-  {
-    int child_status = 8888;
-    waitpid(CHILD_PID, &child_status, 0);
-    printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
-  }*/
+static void child_status() {
+  int child_status = 8888;
+  waitpid(CHILD_PID, &child_status, 0);
+  if(VERBOSE) fprintf(stderr, "Child exited with status : %d\n", WEXITSTATUS(child_status));
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
-}
-
-static void setTC_cooked() {
-  struct termios term_cooked = {
-    .c_iflag = (TERM_INIT.c_iflag | IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON ),
-    .c_cflag = (TERM_INIT.c_cflag | OPOST ),
-    .c_oflag = (TERM_INIT.c_oflag | ECHO | ECHONL | ICANON | ISIG | IEXTEN ),
-    .c_lflag = (TERM_INIT.c_lflag | CSIZE | PARENB ),
-  };
-  if(VERBOSE)fprintf(stderr, "ON EXIT:: Set COOKED mode.\n");
-  if(tcsetattr(STDIN_FILENO, TCSANOW, &term_cooked) == 0)
-    {if(VERBOSE)fprintf(stderr, "SUCCESS\n");}
-  else
-    {if(VERBOSE)fprintf(stderr, "FAILED\n");}
-
-  /*  if(SHELL)
-    {
-      int child_status = 8888;
-      waitpid(CHILD_PID, &child_status, 0);
-      printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
-    }*/
-  close(STDIN_FILENO);
-  close(STDOUT_FILENO);
+  close(STDERR_FILENO);
 }
 
 /* Logs to stdout */
