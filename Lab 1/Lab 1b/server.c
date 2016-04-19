@@ -52,7 +52,8 @@ void *doWork_SHELL_2_STDOUT(void *val);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
-  int opt=0, opt_index=0, byte_written, BYTE;
+  int opt=0, opt_index=0, byte_written;
+  char BYTE;
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
@@ -188,7 +189,8 @@ int main(int argc, char **argv) {
 }
 /* Step 6/13 :: Do work in separate thread */
 void * doWork_SHELL_2_STDOUT(void *val) {
-  int byte_written, P_BYTE;
+  int byte_written;
+  char P_BYTE;
   void *x = val;
   while(read(I_PIPE_FD[0], &P_BYTE, 1))
     {

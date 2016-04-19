@@ -27,9 +27,9 @@
 #define FILE_MODE 0664
 
 static struct termios TERM_INIT;
-static int CR      = 0x0D;
-static int LF      = 0x0A;
-static int mEOF    = 0x04;
+static char CR      = 0x0D;
+static char LF      = 0x0A;
+static char mEOF    = 0x04;
 static char mSIGINT = 0x03;
 
 static int VERBOSE   =  0;
@@ -134,7 +134,8 @@ int main(int argc, char **argv) {
   pthread_create(&socket_thread, NULL, (void *)doWork_SOCK_2_STDOUT, (void *)(NULL));
 
   /* Read input from keyboard */
-  int log_written, byte_written, O_BYTE;
+  int log_written, byte_written;
+  char O_BYTE;
   while(read(STDIN_FILENO, &O_BYTE, 1)) {
 
     /* ^D entered :: Restore terminal modes & exit with RC = 0*/
