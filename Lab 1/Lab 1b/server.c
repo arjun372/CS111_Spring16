@@ -22,8 +22,10 @@
 #include <netdb.h>
 #include <pthread.h>
 #include <signal.h>
+
 #define TRUE      1
 #define FALSE     0
+#define FILE_MODE 0644
 
 static struct termios TERM_INIT;
 static char CR      = 0x0D;
@@ -165,7 +167,7 @@ int main(int argc, char **argv) {
         if(ENCRYPT) {
           while(read(STDIN_FILENO, &BUFFER, 16))
              mdecrypt_generic(a, BUFFER, 16);
-             BUFFER[0] = O_BYTE;
+             BUFFER[0] = BYTE;
              byte_written = write(STDOUT_FILENO, &BUFFER, 16);
              byte_written = write(SOCKET_FD, &BUFFER, 16);
              if(byte_written && (LOG_FD > -1)) {
