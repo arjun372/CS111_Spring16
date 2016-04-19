@@ -12,6 +12,7 @@
 #include <stdio.h>     /* Stdio function headers */
 #include <unistd.h>    /* FD numbers */
 #include <sys/types.h>
+#include <fcntl.h>
 #include <sys/wait.h>
 #include <sys/socket.h>
 #include <error.h>      /* Error handling include headers */
