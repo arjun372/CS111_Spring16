@@ -171,8 +171,8 @@ int main(int argc, char **argv) {
             if(BYTE == '\r')
             {
               byte_written = write(O_PIPE_FD[1], &CR, 1);
-            //  BYTE = LF;
-          } else
+              BYTE = LF;
+          } //else
           //  byte_written = write(STDOUT_FILENO, &BYTE, 1);
             byte_written = write(O_PIPE_FD[1], &BYTE, 1);
         }
