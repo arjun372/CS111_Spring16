@@ -143,11 +143,16 @@ int main(int argc, char **argv) {
 
     /* Echo out to the display */
     /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-    // if(O_BYTE == CR || O_BYTE == LF)
-    // {
-    //   byte_written = write(STDOUT_FILENO, &CR, 1);
-    //   O_BYTE = LF;
-    // }
+    if(O_BYTE == CR || O_BYTE == LF)
+    {
+      byte_written = write(STDOUT_FILENO, &CR, 1);
+      if(write(SOCKET_FD, &CR, 1) && (LOG_FD > -1)) {
+        dprintf(LOG_FD, "SENT 1 bytes: ");
+        byte_written = write(LOG_FD, &O_BYTE, 1);
+        dprintf(LOG_FD, "\n");
+      }
+      O_BYTE = LF;
+    }
     byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
 
     /* Write to socket. If successful && log_on, then write to log_file */
