@@ -117,9 +117,6 @@ int main(int argc, char **argv) {
 
   pid_t pPID = getpid();
   if(VERBOSE) fprintf(stderr, "Parent PID : %d\n", pPID);
-  dup2(newSOCKET_FD, STDIN_FILENO);
-  dup2(newSOCKET_FD, STDOUT_FILENO);
-  dup2(newSOCKET_FD, STDERR_FILENO);
   /* Step 4/13 :: Fork a new process */
   switch(pPID = fork())
     {
@@ -144,12 +141,14 @@ int main(int argc, char **argv) {
         CHILD_PID = pPID;
         close(I_PIPE_FD[1]);
         /* Redirect server process STDIN, STDOUT, STDERR to SOCKET_FD */
-        // dup2(newSOCKET_FD, STDIN_FILENO);
-        // dup2(newSOCKET_FD, STDOUT_FILENO);
-        // dup2(newSOCKET_FD, STDERR_FILENO);
-        // /* Step 2/13 :: Read char-by-char   */
+        dup2(newSOCKET_FD, STDIN_FILENO);
+        dup2(newSOCKET_FD, STDOUT_FILENO);
+        dup2(newSOCKET_FD, STDERR_FILENO);
+        /* Step 2/13 :: Read char-by-char   */
         /* Step 3/13 :: Handles long inputs */
         /* Step 5/13 :: write char-by-char  */
+        if(VERBOSE) fprintf(stderr, "IN PARENT STDERR");
+        if(VERBOSE) fprintf(stdout, "IN PARENT STDOUT");
         while(read(STDIN_FILENO, &BYTE, 1))
         {
             if(BYTE == mSIGINT)
