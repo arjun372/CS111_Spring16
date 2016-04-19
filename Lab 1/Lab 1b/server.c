@@ -56,6 +56,7 @@ static struct option long_options[] = {
 /* function definitions */
 static void child_status();
 void *doWork_SHELL_2_STDOUT(void *val);
+static void process_single_byte(char BYTE);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
@@ -159,61 +160,58 @@ int main(int argc, char **argv) {
         dup2(newSOCKET_FD, STDIN_FILENO);
         dup2(newSOCKET_FD, STDOUT_FILENO);
         dup2(newSOCKET_FD, STDERR_FILENO);
-        /* Step 2/13 :: Read char-by-char   */
-        /* Step 3/13 :: Handles long inputs */
-        /* Step 5/13 :: write char-by-char  */
-        if(VERBOSE) dprintf(STDERR_FILENO, "IN PARENT STDERR\n");
-        if(VERBOSE) dprintf(STDOUT_FILENO, "IN PARENT STDOUT\n");
-        if(ENCRYPT) {
-          while(read(STDIN_FILENO, &BUFFER, 16))
-             mdecrypt_generic(a, BUFFER, 16);
-             BUFFER[0] = BYTE;
-             byte_written = write(STDOUT_FILENO, &BUFFER, 16);
-             byte_written = write(SOCKET_FD, &BUFFER, 16);
-             if(byte_written && (LOG_FD > -1)) {
-               dprintf(LOG_FD, "SENT %d bytes: ", byte_written);
-               byte_written = write(LOG_FD, &BUFFER, 16);
-               dprintf(LOG_FD, "\n");
-             }
-           }
-          /* DO NOT ENCRYPT */
-        else {
-        while(read(STDIN_FILENO, &BYTE, 1))
-        {
-            if(BYTE == mSIGINT)
-            {
-              if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
-              kill(CHILD_PID, SIGINT);
-            }
 
-            /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
-            if(BYTE == mEOF)
-            {
-                if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
-                close(O_PIPE_FD[0]);
-                close(O_PIPE_FD[1]);
-                kill(CHILD_PID, SIGHUP);
-                exit(1);
+        if(ENCRYPT){
+           while(read(STDIN_FILENO, &BUFFER, 16)){
+              mdecrypt_generic(a, BUFFER, 16);
+              process_single_byte(BUFFER[0]);
             }
-
-            /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-          //   if(BYTE == '\r')
-          //   {
-          //     byte_written = write(O_PIPE_FD[1], &CR, 1);
-          //     BYTE = LF;
-          // } //else
-          //  byte_written = write(STDOUT_FILENO, &BYTE, 1);
-            byte_written = write(O_PIPE_FD[1], &BYTE, 1);
         }
+        else /* DO NOT ENCRYPT */
+          while(read(STDIN_FILENO, &BYTE, 1))
+            process_single_byte(BYTE);
+        /* read error or EOF on network connection */
+        if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
+        close(newSOCKET_FD);
+        close(SOCKET_FD);
+        kill(CHILD_PID, SIGHUP);
+        exit(1);
+        break;
     }
-    /* read error or EOF on network connection */
-    if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
-    close(newSOCKET_FD);
-    close(SOCKET_FD);
-    kill(CHILD_PID, SIGHUP);
-    exit(1);
+  exit(0);
+}
+
+static void process_single_byte(char BYTE) {
+  if(BYTE == mSIGINT)
+  {
+    if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
+    kill(CHILD_PID, SIGINT);
   }
-exit(0);
+
+  /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
+  if(BYTE == mEOF)
+  {
+      if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
+      close(O_PIPE_FD[0]);
+      close(O_PIPE_FD[1]);
+      kill(CHILD_PID, SIGHUP);
+      exit(1);
+  }if(BYTE == mSIGINT)
+  {
+    if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
+    kill(CHILD_PID, SIGINT);
+  }
+
+  /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
+  if(BYTE == mEOF)
+  {
+      if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
+      close(O_PIPE_FD[0]);
+      close(O_PIPE_FD[1]);
+      kill(CHILD_PID, SIGHUP);
+      exit(1);
+  }
+  byte_written = write(O_PIPE_FD[1], &BYTE, 1);
 }
 /* Step 6/13 :: Do work in separate thread */
 void * doWork_SHELL_2_STDOUT(void *val) {
