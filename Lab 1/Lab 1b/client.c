@@ -46,6 +46,7 @@ static pthread_t thread_pool[N_THREADS];
 static unsigned int validThreads[N_THREADS];
 static unsigned long long  R_THREADS = 0;
 static unsigned long long  worker_n;
+static MCRYPT a,b;
 
 static struct option long_options[] = {
   {"verbose",       no_argument,    &VERBOSE,   1},
@@ -64,7 +65,7 @@ int main(int argc, char **argv) {
   int opt=0, opt_index=0;
   int readd;
   int I_FD = -1;
-  MCRYPT a,b;
+
   char * IV = "ARJUNARJUNARJUNA";
   char key[16];
 
@@ -207,6 +208,12 @@ static void setTC_initial() {
     waitpid(CHILD_PID, &child_status, 0);
     printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
   }*/
+
+  if(ENCRYPT)
+  {
+    mcrypt_generic_deinit(a);
+    mcrypt_module_close(a);
+  }
   if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
@@ -231,6 +238,13 @@ static void setTC_cooked() {
       waitpid(CHILD_PID, &child_status, 0);
       printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
     }*/
+
+      if(ENCRYPT)
+      {
+        mcrypt_generic_deinit(a);
+        mcrypt_module_close(a);
+      }
+
   if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
