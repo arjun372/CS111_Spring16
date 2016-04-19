@@ -147,8 +147,8 @@ int main(int argc, char **argv) {
         /* Step 2/13 :: Read char-by-char   */
         /* Step 3/13 :: Handles long inputs */
         /* Step 5/13 :: write char-by-char  */
-        if(VERBOSE) fprintf(stderr, "IN PARENT STDERR");
-        if(VERBOSE) fprintf(stdout, "IN PARENT STDOUT");
+        if(VERBOSE) dprintf(STDERR_FILENO, "IN PARENT STDERR");
+        if(VERBOSE) dprintf(STDOUT_FILENO, "IN PARENT STDOUT");
         while(read(STDIN_FILENO, &BYTE, 1))
         {
             if(BYTE == mSIGINT)
