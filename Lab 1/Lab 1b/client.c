@@ -38,6 +38,8 @@ static int LOG_FD    = -1;
 static int ENCRYPT   =  0;
 static int SOCKET_FD = -1;
 
+static int mCR = '\r';
+
 /* pthread Worker Pool */
 static pthread_t thread_pool[N_THREADS];
 static unsigned int validThreads[N_THREADS];
@@ -143,10 +145,15 @@ int main(int argc, char **argv) {
 
     /* Echo out to the display */
     /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-    if(O_BYTE == CR || O_BYTE == LF)
+    // if(O_BYTE == CR || O_BYTE == LF)
+    // {
+    //   byte_written = write(STDOUT_FILENO, &CR, 1);
+    //   O_BYTE = LF;
+    // }
+    if(O_BYTE == '\r' || O_BYTE == '\n')
     {
-      byte_written = write(STDOUT_FILENO, &CR, 1);
-      O_BYTE = LF;
+      byte_written = write(STDOUT_FILENO, &mCR, 1);
+      O_BYTE = '\n';
     }
      byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
 
