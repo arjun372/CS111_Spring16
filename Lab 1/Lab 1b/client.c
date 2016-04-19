@@ -155,24 +155,34 @@ int main(int argc, char **argv) {
       close(SOCKET_FD);
       exit(0);
     }
-    if(ENCRYPT)
-     {
-
+    if(ENCRYPT){
+       BUFFER[0] = O_BYTE;
+       mcrypt_generic(a, BUFFER, 16);
+       byte_written = write(STDOUT_FILENO, &BUFFER, 16);
+       byte_written = write(SOCKET_FD, &BUFFER, 16);
+       if(byte_written && (LOG_FD > -1)) {
+         dprintf(LOG_FD, "SENT %d bytes: ", byte_written);
+         byte_written = write(LOG_FD, &BUFFER, 16);
+         dprintf(LOG_FD, "\n");
+       }
      }
-    if(O_BYTE == '\r' || O_BYTE == '\n')
-    {
-      byte_written = write(STDOUT_FILENO, &mCR, 1);
-      O_BYTE = '\n';
+    /* DO NOT ENCRYPT */
+    else {
+      if(O_BYTE == '\r' || O_BYTE == '\n')
+      {
+        byte_written = write(STDOUT_FILENO, &mCR, 1);
+        O_BYTE = '\n';
+      }
+      byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
+      byte_written = write(SOCKET_FD, &O_BYTE, 1);
+      /* Write to socket. If successful && log_on, then write to log_file */
+      if(byte_written && (LOG_FD > -1)) {
+        dprintf(LOG_FD, "SENT 1 bytes: ");
+        byte_written = write(LOG_FD, &O_BYTE, 1);
+        dprintf(LOG_FD, "\n");
+      }
     }
-     byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
-     byte_written = write(SOCKET_FD, &O_BYTE, 1);
-    /* Write to socket. If successful && log_on, then write to log_file */
-    if(byte_written && (LOG_FD > -1)) {
-      dprintf(LOG_FD, "SENT 1 bytes: ");
-      byte_written = write(LOG_FD, &O_BYTE, 1);
-      dprintf(LOG_FD, "\n");
-    }
-    }
+  }
 
   exit(0);
 }
