@@ -153,12 +153,12 @@ int main(int argc, char **argv) {
     if(O_BYTE == '\r' || O_BYTE == '\n')
     {
       byte_written = write(STDOUT_FILENO, &mCR, 1);
-      O_BYTE = '\r';
+      O_BYTE = '\n';
     }
      byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
-
+     byte_written = write(SOCKET_FD, &O_BYTE, 1);
     /* Write to socket. If successful && log_on, then write to log_file */
-    if(write(SOCKET_FD, &O_BYTE, 1) && (LOG_FD > -1)) {
+    if(byte_written && (LOG_FD > -1)) {
       dprintf(LOG_FD, "SENT 1 bytes: ");
       byte_written = write(LOG_FD, &O_BYTE, 1);
       dprintf(LOG_FD, "\n");
