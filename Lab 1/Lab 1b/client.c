@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
     if(O_BYTE == '\r' || O_BYTE == '\n')
     {
       byte_written = write(STDOUT_FILENO, &mCR, 1);
-      O_BYTE = '\n';
+      O_BYTE = '\r';
     }
      byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
 
