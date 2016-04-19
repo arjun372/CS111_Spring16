@@ -5,7 +5,7 @@
 UID = 504078752
 
 CC = gcc
-CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror -lrt
+CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror -lrt -lmcrypt
 LDLIBS = -lm
 LDFLAGS = -pthread
 LAB = 1b

@@ -39,6 +39,7 @@ static int ENCRYPT   =  0;
 static int SOCKET_FD = -1;
 
 static int mCR = '\r';
+static char BUFFER[16] = {0};
 
 /* pthread Worker Pool */
 static pthread_t thread_pool[N_THREADS];
@@ -61,6 +62,12 @@ static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
   int opt=0, opt_index=0;
+  int readd;
+  int I_FD = -1;
+  MCRYPT a,b;
+  char * IV = "ARJUNARJUNARJUNA";
+  char key[16];
+
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
@@ -72,7 +79,11 @@ int main(int argc, char **argv) {
 
         case 'e' :
             ENCRYPT = 1;
+            a = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
             //TODO :: more encryption stuff
+            if((I_FD = open("my.key", O_RDONLY, FILE_MODE)))
+              readd = read(I_FD, &key, 16);
+            mcrypt_generic_init(a, key, 16, IV);
             if(VERBOSE) debug_log(opt_index, &optarg, 0);
             break;
 
@@ -143,14 +154,10 @@ int main(int argc, char **argv) {
       close(SOCKET_FD);
       exit(0);
     }
+    if(ENCRYPT)
+     {
 
-    /* Echo out to the display */
-    /* Step 7/12 :: Pipe to shell, NO ECHO on PIPE */
-    // if(O_BYTE == CR || O_BYTE == LF)
-    // {
-    //   byte_written = write(STDOUT_FILENO, &CR, 1);
-    //   O_BYTE = LF;
-    // }
+     }
     if(O_BYTE == '\r' || O_BYTE == '\n')
     {
       byte_written = write(STDOUT_FILENO, &mCR, 1);
