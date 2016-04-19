@@ -27,9 +27,9 @@
 #define FILE_MODE 0664
 
 static struct termios TERM_INIT;
-static char CR      = 0x0D;
-static char LF      = 0x0A;
-static char mEOF    = 0x04;
+static int CR      = 0x0D;
+static int LF      = 0x0A;
+static int mEOF    = 0x04;
 static char mSIGINT = 0x03;
 
 static int VERBOSE   =  0;
