@@ -26,6 +26,10 @@
 #define TRUE      1
 #define FALSE     0
 #define FILE_MODE 0644
+#define KEY_FILE  "my.key"
+#define KEY_SIZE  16             /* 128-bit */
+#define CIPHER    "twofish"
+#define C_MODE    "cfb"
 
 static struct termios TERM_INIT;
 static char CR      = 0x0D;
@@ -38,6 +42,13 @@ static int PORT      =  0;
 static int LOG_FD    = -1;
 static int ENCRYPT   =  0;
 static int SOCKET_FD = -1, newSOCKET_FD;
+
+/* Encryption Parameters */
+static MCRYPT CRYPT;
+static char   O_BUFFER;
+static char   I_BUFFER;
+static char*  IV;
+static char KEY[16] = {0};
 
 static pid_t CHILD_PID = -2;
 static int I_PIPE_FD[2] = {-1, -1};
@@ -60,15 +71,12 @@ static void process_single_byte(char BYTE);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
-  int opt=0, opt_index=0, byte_written;
+  int opt=0, opt_index=0, byte_written=0, bytes_read=0, K_FD=-1;
   char BYTE;
-  int readd;
-  int I_FD = -1;
-  char * IV = "ARJUNARJUNARJUNA";
-  char key[16];
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
+      
       // all options have been read
       if(opt==-1)
         break;
@@ -76,12 +84,26 @@ int main(int argc, char **argv) {
       switch(opt) {
 
         case 'e' :
-            ENCRYPT = 1;
-            a = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
-            if((I_FD = open("my.key", O_RDONLY, FILE_MODE)))
-              readd = read(I_FD, &key, 16);
-            mcrypt_generic_init(a, key, 16, IV);
-            if(VERBOSE) debug_log(opt_index, &optarg, 0);
+	    if(VERBOSE) debug_log(opt_index, &optarg, 0);
+	    ENCRYPT = 1;
+            CRYPT = mcrypt_module_open(CIPHER, NULL, C_MODE, NULL);
+            if(CRYPT == MCRYPT_FAILED)
+              goto ENCRYPT_ERR;
+            K_FD = open(KEY_FILE, O_RDONLY, FILE_MODE);
+            if(K_FD < 0)
+              goto ENCRYPT_ERR;
+            bytes_read = read(K_FD, &KEY, KEY_SIZE);
+            if(bytes_read != KEY_SIZE)
+              goto ENCRYPT_ERR;
+            IV = malloc(mcrypt_enc_get_iv_size(CRYPT));
+            for(bytes_read = 0; bytes_read < mcrypt_enc_get_iv_size(CRYPT); bytes_read++)
+              IV[bytes_read]=rand();
+            if(mcrypt_generic_init(CRYPT, KEY, KEY_SIZE, IV) < 0)
+              goto ENCRYPT_ERR;
+            break;
+      ENCRYPT_ERR:
+            fprintf(stderr, "FATAL: Unable to read 'my.key' file correctly, turning encryption off.\n");
+            ENCRYPT = 0;
             break;
 
         case 'p' :
@@ -156,20 +178,36 @@ int main(int argc, char **argv) {
         atexit(child_status);
         CHILD_PID = pPID;
         close(I_PIPE_FD[1]);
-        /* Redirect server process STDIN, STDOUT, STDERR to SOCKET_FD */
+        
+	/* Redirect server process STDIN, STDOUT, STDERR to SOCKET_FD */
         dup2(newSOCKET_FD, STDIN_FILENO);
         dup2(newSOCKET_FD, STDOUT_FILENO);
         dup2(newSOCKET_FD, STDERR_FILENO);
+	
+	while(read(STDIN_FILENO, &BYTE, 1))
+	  {
+	    if(ENCRYPT)
+	      mdecrypt_generic(CRYPT, &BYTE, 1);
+	    
+	    if(BYTE == mSIGINT)
+	      {
+		if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
+		kill(CHILD_PID, SIGINT);
+	      }
 
-        if(ENCRYPT){
-           while(read(STDIN_FILENO, &BUFFER, 16)){
-              mdecrypt_generic(a, BUFFER, 16);
-              process_single_byte(BUFFER[0]);
-            }
-        }
-        else /* DO NOT ENCRYPT */
-          while(read(STDIN_FILENO, &BYTE, 1))
-            process_single_byte(BYTE);
+	    /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
+	    if(BYTE == mEOF)
+	      {
+		if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
+		close(O_PIPE_FD[0]);
+		close(O_PIPE_FD[1]);
+		kill(CHILD_PID, SIGHUP);
+		exit(1);
+	      }
+
+	    byte_written = write(O_PIPE_FD[1], &BYTE, 1);
+          }
+
         /* read error or EOF on network connection */
         if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
         close(newSOCKET_FD);
@@ -181,38 +219,6 @@ int main(int argc, char **argv) {
   exit(0);
 }
 
-static void process_single_byte(char BYTE) {
-  if(BYTE == mSIGINT)
-  {
-    if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
-    kill(CHILD_PID, SIGINT);
-  }
-
-  /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
-  if(BYTE == mEOF)
-  {
-      if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
-      close(O_PIPE_FD[0]);
-      close(O_PIPE_FD[1]);
-      kill(CHILD_PID, SIGHUP);
-      exit(1);
-  }if(BYTE == mSIGINT)
-  {
-    if(VERBOSE) fprintf(stderr,"CAUGHT SIGNAL %d, forwarding to CHILD %d\n", mSIGINT, CHILD_PID);
-    kill(CHILD_PID, SIGINT);
-  }
-
-  /* Step 9/12 :: upon EOF, close pipe, send SIGHUP, restore & exit(0) */
-  if(BYTE == mEOF)
-  {
-      if(VERBOSE) fprintf(stderr, "EOF or read error from network client, exiting (1)\n");
-      close(O_PIPE_FD[0]);
-      close(O_PIPE_FD[1]);
-      kill(CHILD_PID, SIGHUP);
-      exit(1);
-  }
-  byte_written = write(O_PIPE_FD[1], &BYTE, 1);
-}
 /* Step 6/13 :: Do work in separate thread */
 void * doWork_SHELL_2_STDOUT(void *val) {
   int byte_written;
@@ -225,6 +231,10 @@ void * doWork_SHELL_2_STDOUT(void *val) {
         if(VERBOSE)fprintf(stderr, "EOF from shell, exiting (1)\n");
         exit(1);
       }
+      
+      if(ENCRYPT)
+	mcrypt_generic(CRYPT, &P_BYTE, 1);
+
       byte_written = write(STDOUT_FILENO, &P_BYTE, 1);
     }
 
@@ -239,6 +249,14 @@ void * doWork_SHELL_2_STDOUT(void *val) {
 }
 
 static void child_status() {
+
+  if(ENCRYPT)
+    {
+      free(IV);
+      mcrypt_generic_deinit(CRYPT);
+      mcrypt_module_close(CRYPT);
+    }
+
   int child_status = 8888;
   waitpid(CHILD_PID, &child_status, 0);
   if(VERBOSE) fprintf(stderr, "Child exited with status : %d\n", WEXITSTATUS(child_status));

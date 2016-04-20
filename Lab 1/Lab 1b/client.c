@@ -15,7 +15,7 @@
 #include <sys/socket.h>
 #include <error.h>      /* Error handling include headers */
 #include <errno.h>
-#include <mcrypt.h>     /* for RIJNDAEL-128 w/ CBC */
+#include <mcrypt.h>
 #include <netinet/in.h> /* for htons, and server setup */
 #include <netdb.h>
 #include <fcntl.h>
@@ -25,6 +25,10 @@
 #define FALSE     0
 #define N_THREADS 1
 #define FILE_MODE 0664
+#define KEY_FILE  "my.key"
+#define KEY_SIZE  16             /* 128-bit */
+#define CIPHER    "twofish"
+#define C_MODE    "cfb"
 
 static struct termios TERM_INIT;
 static char CR      = 0x0D;
@@ -38,15 +42,18 @@ static int LOG_FD    = -1;
 static int ENCRYPT   =  0;
 static int SOCKET_FD = -1;
 
-static char BUFFER[16]   = {0};
-static char I_BUFFER[16] = {0};
+/* Encryption Parameters */
+static MCRYPT CRYPT; 
+static char   O_BUFFER;
+static char   I_BUFFER;
+static char*  IV;
+static char KEY[16] = {0};
 
 /* pthread Worker Pool */
 static pthread_t thread_pool[N_THREADS];
 static unsigned int validThreads[N_THREADS];
 static unsigned long long  R_THREADS = 0;
 static unsigned long long  worker_n;
-static MCRYPT a;
 
 static struct option long_options[] = {
   {"verbose",       no_argument,    &VERBOSE,   1},
@@ -62,16 +69,11 @@ void *doWork_SOCK_2_STDOUT(void *val); /* pThread worker functions */
 static void debug_log(const int opt_index, char **optarg, const int argc);
 
 int main(int argc, char **argv) {
-  int opt=0, opt_index=0;
-  int readd;
-  int I_FD = -1;
-
-  char * IV = "ARJUNARJUNARJUNA";
-  char key[16];
-
+  int opt=0, opt_index=0, bytes_read=0, K_FD=-1;
   while(TRUE)
     {
       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
+      
       // all options have been read
       if(opt==-1)
         break;
@@ -79,14 +81,27 @@ int main(int argc, char **argv) {
       switch(opt) {
 
         case 'e' :
+	    if(VERBOSE) debug_log(opt_index, &optarg, 0);
             ENCRYPT = 1;
-            a = mcrypt_module_open("rijndael-128", NULL, "cbc", NULL);
-            //TODO :: more encryption stuff
-            if((I_FD = open("my.key", O_RDONLY, FILE_MODE)))
-              readd = read(I_FD, &key, 16);
-            mcrypt_generic_init(a, key, 16, IV);
-            if(VERBOSE) debug_log(opt_index, &optarg, 0);
-            break;
+	    CRYPT = mcrypt_module_open(CIPHER, NULL, C_MODE, NULL);
+	    if(CRYPT == MCRYPT_FAILED)
+	      goto ENCRYPT_ERR;
+            K_FD = open(KEY_FILE, O_RDONLY, FILE_MODE);
+	    if(K_FD < 0)
+	      goto ENCRYPT_ERR;
+	    bytes_read = read(K_FD, &KEY, KEY_SIZE);
+	    if(bytes_read != KEY_SIZE)
+	      goto ENCRYPT_ERR;
+	    IV = malloc(mcrypt_enc_get_iv_size(CRYPT));
+	    for(bytes_read = 0; bytes_read < mcrypt_enc_get_iv_size(CRYPT); bytes_read++)
+	      IV[bytes_read]=rand();
+	    if(mcrypt_generic_init(CRYPT, KEY, KEY_SIZE, IV) < 0)
+	      goto ENCRYPT_ERR;
+	    break;
+      ENCRYPT_ERR:
+	    fprintf(stderr, "FATAL: Unable to read 'my.key' file correctly, turning encryption off.\n");
+	    ENCRYPT = 0;
+	    break;
 
         case 'p' :
             /*TODO :: Port < 1024 or NaN*/
@@ -151,81 +166,56 @@ int main(int argc, char **argv) {
   while(read(STDIN_FILENO, &O_BYTE, 1)) {
 
     /* ^D entered :: Restore terminal modes & exit with RC = 0*/
-    if(O_BYTE == mEOF) {
-      close(SOCKET_FD);
-      exit(0);
-    }
-    if(ENCRYPT){
-       BUFFER[0] = O_BYTE;
-       mcrypt_generic(a, BUFFER, 16);
-       byte_written = write(STDOUT_FILENO, &BUFFER, 16);
-       byte_written = write(SOCKET_FD, &BUFFER, 16);
-       if(byte_written && (LOG_FD > -1)) {
-         dprintf(LOG_FD, "SENT %d bytes: ", byte_written);
-         byte_written = write(LOG_FD, &BUFFER, 16);
-         dprintf(LOG_FD, "\n");
-       }
-     }
-    /* DO NOT ENCRYPT */
-    else {
-      if(O_BYTE == '\r' || O_BYTE == '\n')
+    if(O_BYTE == mEOF) 
+      {
+	close(SOCKET_FD);
+	exit(0);
+      }
+      
+    if(O_BYTE == '\r' || O_BYTE == '\n')
       {
         byte_written = write(STDOUT_FILENO, &CR, 1);
         O_BYTE = '\n';
       }
-      byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
-      byte_written = write(SOCKET_FD, &O_BYTE, 1);
-      /* Write to socket. If successful && log_on, then write to log_file */
-      if(byte_written && (LOG_FD > -1)) {
+    
+    byte_written = write(STDOUT_FILENO, &O_BYTE, 1);
+
+    if(ENCRYPT)
+      mcrypt_generic(CRYPT, &O_BYTE, 1);
+
+    byte_written = write(SOCKET_FD, &O_BYTE, 1);
+    
+    /* Write to socket. If successful && log_on, then write to log_file */
+    if(byte_written && (LOG_FD > -1))
+      {
         dprintf(LOG_FD, "SENT 1 bytes: ");
         byte_written = write(LOG_FD, &O_BYTE, 1);
         dprintf(LOG_FD, "\n");
       }
-    }
   }
-
   exit(0);
 }
 
 void * doWork_SOCK_2_STDOUT(void *val) {
   int byte_written, I_BYTE;
-  void *x = val;
-  if(ENCRYPT)
-  {
-    while((byte_written = read(SOCKET_FD, &I_BUFFER, 16)))
-      {
-        /* Log pre-decrypted data to file */
-        if(LOG_FD > -1)
-         {
-           dprintf(LOG_FD, "RECEIVED %d bytes: ", byte_written);
-           byte_written = write(LOG_FD, &I_BUFFER, 16);
-           dprintf(LOG_FD, "\n");
-         }
-        /* decrypt the data */
-        mdecrypt_generic(a, I_BUFFER, 16);
-        I_BUFFER[0] = I_BYTE;
-        /* write single meaningful byte to STDOUT */
-        byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
-      }
-  }
-
-  else /* Not encrypted, write byte-by-byte to STDOUT & LOG file */
+  void * none = val;
+  while(read(SOCKET_FD, &I_BYTE, 1))
     {
-        while(read(SOCKET_FD, &I_BYTE, 1))
+      if(LOG_FD > -1)
         {
-          if(I_BYTE == mEOF)
-            break;
+	  dprintf(LOG_FD, "RECEIVED 1 bytes: ");
+	  byte_written = write(LOG_FD, &I_BYTE, 1);
+	  dprintf(LOG_FD, "\n");
+	}
 
-          byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+      if(ENCRYPT)
+	mdecrypt_generic(CRYPT, &I_BYTE, 1);
+	  
+      if(I_BYTE == mEOF)
+	break;
 
-          if(byte_written && (LOG_FD > -1))
-           {
-             dprintf(LOG_FD, "RECEIVED 1 bytes: ");
-             byte_written = write(LOG_FD, &I_BYTE, 1);
-             dprintf(LOG_FD, "\n");
-           }
-        }
-    }
+      byte_written = write(STDOUT_FILENO, &I_BYTE, 1);
+   }
 
   if(VERBOSE) fprintf(stderr, "EOF from socket, exiting (1)\n");
   close(SOCKET_FD);
@@ -249,8 +239,9 @@ static void setTC_initial() {
 
   if(ENCRYPT)
   {
-    mcrypt_generic_deinit(a);
-    mcrypt_module_close(a);
+    free(IV);
+    mcrypt_generic_deinit(CRYPT);
+    mcrypt_module_close(CRYPT);
   }
   if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
@@ -279,8 +270,9 @@ static void setTC_cooked() {
 
       if(ENCRYPT)
       {
-        mcrypt_generic_deinit(a);
-        mcrypt_module_close(a);
+	free(IV);
+        mcrypt_generic_deinit(CRYPT);
+        mcrypt_module_close(CRYPT);
       }
 
   if(LOG_FD > -1 ) close(LOG_FD);
