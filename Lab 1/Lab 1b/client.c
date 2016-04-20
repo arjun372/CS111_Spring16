@@ -136,6 +136,12 @@ int main(int argc, char **argv) {
   if(tcsetattr(STDIN_FILENO, TCSANOW, &term_raw) != 0)
     fprintf(stderr, "FATAL :: Unable to switch to RAW mode, no guanrantees from this point on!\n");
 
+  if(!PORT)
+    {
+      fprintf(stderr, "FATAL: Port not specified!\n");
+      exit(0);
+    }
+
   /* Step 2/xx :: Open a socket with the server */
   SOCKET_FD = socket(AF_INET, SOCK_STREAM, 0);
   if (SOCKET_FD < 0)
@@ -230,19 +236,13 @@ static void setTC_initial() {
   else
     {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
-  /*if(SHELL)
-  {
-    int child_status = 8888;
-    waitpid(CHILD_PID, &child_status, 0);
-    printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
-  }*/
-
   if(ENCRYPT)
   {
     free(IV);
     mcrypt_generic_deinit(CRYPT);
     mcrypt_module_close(CRYPT);
   }
+
   if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);
   close(STDOUT_FILENO);
@@ -261,19 +261,12 @@ static void setTC_cooked() {
   else
     {if(VERBOSE)fprintf(stderr, "FAILED\n");}
 
-  /*  if(SHELL)
+  if(ENCRYPT)
     {
-      int child_status = 8888;
-      waitpid(CHILD_PID, &child_status, 0);
-      printf("Child exited with status : %d\n", WEXITSTATUS(child_status));
-    }*/
-
-      if(ENCRYPT)
-      {
-	free(IV);
-        mcrypt_generic_deinit(CRYPT);
-        mcrypt_module_close(CRYPT);
-      }
+      free(IV);
+      mcrypt_generic_deinit(CRYPT);
+      mcrypt_module_close(CRYPT);
+    }
 
   if(LOG_FD > -1 ) close(LOG_FD);
   close(STDIN_FILENO);

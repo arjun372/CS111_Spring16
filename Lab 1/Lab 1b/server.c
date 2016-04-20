@@ -114,6 +114,12 @@ int main(int argc, char **argv) {
       }
     }
 
+  if(!PORT)
+    {
+      fprintf(stderr, "FATAL: Port not specified!\n");
+      exit(0);
+    }
+
   struct sockaddr_in SRV_ADDR, CLI_ADDR;
   socklen_t CLI_LEN;
   bzero((char *) &SRV_ADDR, sizeof(SRV_ADDR));
