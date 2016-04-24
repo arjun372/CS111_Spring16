@@ -21,7 +21,7 @@ static long long counter = 0;
 static int YIELD      = 0;
 static int VERBOSE    = 0;
 static unsigned int N_THREADS  = 1;
-static unsigned int ITERATIONS = 1;
+static unsigned long long ITERATIONS = 1;
 
 static struct option long_options[] = {
   {"sync",       required_argument,         0, 'S'},
@@ -118,7 +118,7 @@ void add(long long *pointer, long long value) {
 
 /* Each pthread runs this function NOSYNC */
 static void* count_NOSYNC(void *val) {
-  size_t i;
+  unsigned long long i;
   void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
     {
