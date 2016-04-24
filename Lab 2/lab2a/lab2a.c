@@ -156,6 +156,17 @@ static void add(long long *pointer, long long value) {
 static void* count_SYNC_NONE(void *val) {
   void* noUse = val;
   unsigned long long i;
+  for(i=0;i<ITERATIONS;i++)
+    {
+      add(&counter,  1);
+      add(&counter, -1);
+    }
+  pthread_exit(NULL);
+}
+
+static void* count_SYNC_PTHREAD_MUTEX(void *val) {
+  void* noUse = val;
+  unsigned long long i;
   pthread_mutex_lock(&MUTEX_LOCK);
   for(i=0;i<ITERATIONS;i++)
     {
@@ -163,17 +174,6 @@ static void* count_SYNC_NONE(void *val) {
       add(&counter, -1);
     }
   pthread_mutex_unlock(&MUTEX_LOCK);
-  pthread_exit(NULL);
-}
-
-static void* count_SYNC_PTHREAD_MUTEX(void *val) {
-  void* noUse = val;
-  unsigned long long i;
-  for(i=0;i<ITERATIONS;i++)
-    {
-      add(&counter,  1);
-      add(&counter, -1);
-    }
   pthread_exit(NULL);
 }
 
