@@ -53,7 +53,7 @@ int main (int argc, char **argv)
           break;
 
         case 'I':
-          ITERATIONS = (atoll(optarg) <= 0) ? 1 : atoi(optarg);
+          ITERATIONS = (atoll(optarg) <= 0) ? 1 : atoll(optarg);
           if(VERBOSE) debug_log(opt_index, &optarg, 1);
           break;
       }
