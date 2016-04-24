@@ -12,11 +12,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 
-
-
 static long long counter = 0;
-static unsigned long long count = 0;
-
 
 /* option-specific arguments */
 static int YIELD      = 0;
@@ -106,9 +102,6 @@ int main (int argc, char **argv)
   unsigned long long elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
-
-  if(VERBOSE)
-    fprintf(stderr, "Final count = %llu\n", count);
 
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
