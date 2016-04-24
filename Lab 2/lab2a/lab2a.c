@@ -4,7 +4,7 @@
     Arjun 504078752
 **/
 #define TRUE 1
-#define CLOCK_TYPE CLOCK_MONOTONIC
+#define CLOCK_TYPE CLOCK_MONOTONIC_RAW
 
 #include <time.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
