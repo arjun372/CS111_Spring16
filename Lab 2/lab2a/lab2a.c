@@ -4,12 +4,20 @@
     Arjun 504078752
 **/
 #define TRUE 1
+#define CLOCK_TYPE CLOCK_PROCESS_CPUTIME_ID
 
+#include <time.h>
+#include <stdio.h>  /* for fprintf used in debug_log */
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
-#include <stdio.h> /* for fprintf used in debug_log */
+#include <pthread.h>
 
 
+
+static long long counter = 0;
+
+
+/* option-specific arguments */
 static int YIELD      = 0;
 static int VERBOSE    = 0;
 static int N_THREADS  = 1;
@@ -24,7 +32,8 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static void debug_log(const int opt_index, char **optarg, const int argc);
+static void  debug_log(const int opt_index, char **optarg, const int argc);
+static void* count_NOSYNC(void *val);
 
 int main (int argc, char **argv)
 {
@@ -51,9 +60,72 @@ int main (int argc, char **argv)
     }
 
   /** Finished reading all options, begin performance evaluation **/
-  exit(0);
+
+  /* set long long counter to zero */
+  counter = 0;
+
+  /* note the high-res start-time */
+  struct timespec start_time,stop_time;
+  clock_gettime(CLOCK_TYPE, &start_time);
+
+  /* create and start N_THREADS */
+  void *(*workFunctionPtr)(void *) = count_NOSYNC;
+  unsigned int active_threads[N_THREADS];
+  unsigned int num_active_threads = 0;
+  pthread_t thread_pool[N_THREADS];
+  unsigned int thread_num;
+  for(thread_num=0; thread_num<N_THREADS; thread_num++)
+  {
+    if(pthread_create(&thread_pool[worker_n], NULL, workFunctionPtr, (void *)(NULL)) == 0)
+    {
+      num_active_threads++;
+      active_threads[thread_num] = 1;
+    }
+    else
+      active_threads[thread_num] = 0;
+  }
+
+  /* wait for active_threads to join */
+  for(thread_num=0; thread_num<N_THREADS; thread_num++)
+    if(active_threads[thread_num] == 1)
+      pthread_join(thread_pool[thread_num], NULL);
+
+  /* note the high-res ending-time */
+  clock_gettime(CLOCK_TYPE, &stop_time);
+
+  /* output to STDOUT the num_of_operations_performed */
+  unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
+  fprintf(stdout, "%llu threads x %llu iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
+
+  /* If counter is non-zero, print to STDERR */
+  if(counter != 0)
+    fprintf(stderr, "ERROR: final count = %d\n", counter);
+
+  /* print to STDOUT {elapsed_time, time_per_op} */
+  uint64_t elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
+  fprintf(stdout, "elapsed time: %llu ns\n", (long long unsigned int) elapsed_time);
+  fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
+
+  /* Exit non-zero if counter != 0 */
+  exit((counter != 0));
 }
 
+/* add function as defined by the spec */
+void add(long long *pointer, long long value) {
+  long long sum = *pointer + value;
+  *pointer = sum;
+}
+
+/* Each pthread runs this function NOSYNC */
+static void* count_NOSYNC(void *val) {
+  size_t i;
+  for(i=0;i<ITERATIONS;i++)
+    {
+      add(&counter,  1);
+      add(&counter, -1);
+    }
+  pthread_exit(NULL);
+}
 
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
