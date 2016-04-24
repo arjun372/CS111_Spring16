@@ -20,6 +20,7 @@
 
 /* performance-evaluation specific variables */
 static long long counter = 0;
+static volatile int SPINLOCK = 0;
 static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
 
@@ -82,6 +83,7 @@ int main (int argc, char **argv)
     break;
 
     case SYNC_SPINLOCK:
+    workFunctionPtr = count_SYNC_SPINLOCK;
     break;
 
     case SYNC_PTHREAD_MUTEX:
@@ -177,6 +179,19 @@ static void* count_SYNC_PTHREAD_MUTEX(void *val) {
   pthread_exit(NULL);
 }
 
+static void* count_SYNC_SPINLOCK(void *val) {
+  void* noUse = val;
+  unsigned long long i;
+  while (__sync_lock_test_and_set(&SPINLOCK, 1))
+    continue;
+  for(i=0;i<ITERATIONS;i++)
+    {
+      add(&counter,  1);
+      add(&counter, -1);
+    }
+  __sync_lock_release(&SPINLOCK);
+  pthread_exit(NULL);
+}
 
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
