@@ -95,7 +95,7 @@ int main (int argc, char **argv)
 
   /* output to STDOUT the num_of_operations_performed */
   unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
-  fprintf(stdout, "%d threads x %d iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
+  fprintf(stdout, "%d threads x %llu iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
 
   /* If counter is non-zero, print to STDERR */
   if(VERBOSE || counter != 0)
