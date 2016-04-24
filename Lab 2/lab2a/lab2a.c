@@ -119,6 +119,7 @@ void add(long long *pointer, long long value) {
 /* Each pthread runs this function NOSYNC */
 static void* count_NOSYNC(void *val) {
   unsigned long long i;
+  fprintf(stderr, "in_thread\n");
   void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
     {
