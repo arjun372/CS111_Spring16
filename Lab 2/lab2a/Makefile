@@ -1,4 +1,4 @@
-# UCLA CS111 - Spring '16
+# UCLA CS 111 - Spring '16
 # Arjun 504078752
 # Lab 2a - Atomic Operations
 
@@ -6,7 +6,7 @@ UID = 504078752
 LAB = 2a
 
 CC = gcc
-CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror -lrt -lmcrypt
+CFLAGS = -g -Wall -O2 -Wextra -Wno-unused -Werror 
 LDLIBS = -lm
 LDFLAGS = -pthread
 
@@ -18,7 +18,7 @@ SRC = lab$(LAB).c
 OBJ = $(subst .c,.o,$(SRC))
 
 DIST_SOURCES = Makefile README lab$(LAB).c \
-		graph1.png graph2.png graph3.png
+	graph1.png graph2.png graph3.png
 
 lab$(LAB): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
