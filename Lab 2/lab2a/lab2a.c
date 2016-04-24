@@ -15,6 +15,7 @@
 
 
 static long long counter = 0;
+static unsigned long long count = 0;
 
 
 /* option-specific arguments */
@@ -106,20 +107,25 @@ int main (int argc, char **argv)
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
+  if(VERBOSE)
+    fprintf(stderr, "Final count = %llu\n", count);
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
 }
+
 
 /* add function as defined by the spec */
 void add(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
+  count++;
 }
 
 /* Each pthread runs this function NOSYNC */
 static void* count_NOSYNC(void *val) {
+  if(VERBOSE) fprintf(stderr, "in_thread\n");
+
   unsigned long long i;
-  fprintf(stderr, "in_thread\n");
   void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
     {
