@@ -1,5 +1,5 @@
-/** 
-    UCLA CS 111 - Winter '16
+/**
+    UCLA CS 111 - Spring '16
     Lab 2A - Atomic Operations
     Arjun 504078752
 **/
@@ -17,7 +17,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/resource.h>
-#include "alloc.h"
 #include <time.h>
 #include <stdint.h>
 #include <pthread.h>
