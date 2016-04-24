@@ -4,13 +4,13 @@
     Arjun 504078752
 **/
 #define TRUE 1
+#define _GNU_SOURCE
 #define CLOCK_TYPE CLOCK_MONOTONIC_RAW
 
 #include <time.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
-#define _GNU_SOURCE
 #include <pthread.h>
 
 
