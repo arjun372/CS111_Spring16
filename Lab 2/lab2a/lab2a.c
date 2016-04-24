@@ -111,6 +111,7 @@ int main (int argc, char **argv)
 /* add function as defined by the spec */
 static void add(long long *pointer, long long value) {
   long long sum = *pointer + value;
+  if(YIELD) pthread_yield();
   *pointer = sum;
 }
 
