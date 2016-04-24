@@ -70,10 +70,10 @@ int main (int argc, char **argv)
 
   /* create and start N_THREADS */
   void *(*workFunctionPtr)(void *) = count_NOSYNC;
-  unsigned int active_threads[N_THREADS];
-  unsigned int num_active_threads = 0;
+  int active_threads[N_THREADS];
+  int num_active_threads = 0;
   pthread_t thread_pool[N_THREADS];
-  unsigned int thread_num;
+  int thread_num;
   for(thread_num=0; thread_num<N_THREADS; thread_num++)
   {
     if(pthread_create(&thread_pool[worker_n], NULL, workFunctionPtr, (void *)(NULL)) == 0)
