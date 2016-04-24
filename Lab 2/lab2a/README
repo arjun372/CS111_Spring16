@@ -1,0 +1,35 @@
+UCLA CS111 - Spring '16
+Arjun 504078752
+Lab 2a - Atomic Operations
+
+------
+Files
+------
+
+1. Makefile :: Commands for building the executable, running checks, and creating
+               a tarball for submission. Linker for the pthread library included
+
+2. lab2a.c :: Source code that implements 'client' as per the lab1b spec.
+
+3. graph1.png ::
+
+4. graph2.png ::
+
+5. graph3.png ::
+
+6. README   :: (self)
+
+-----------
+Known Bugs
+-----------
+
+Terminal in NON_CANONICAL mode shows extraneous tabs(?) upon carriage return.
+
+---------------
+Extra features
+---------------
+
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging.
+
+2. Encryption uses 128-bit TwoFish CFB cipher via the mcrypt library.
