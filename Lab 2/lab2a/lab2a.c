@@ -109,22 +109,20 @@ int main (int argc, char **argv)
 
   if(VERBOSE)
     fprintf(stderr, "Final count = %llu\n", count);
+
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
 }
 
 
 /* add function as defined by the spec */
-void add(long long *pointer, long long value) {
+static void add(long long *pointer, long long value) {
   long long sum = *pointer + value;
   *pointer = sum;
-  count++;
 }
 
 /* Each pthread runs this function NOSYNC */
 static void* count_NOSYNC(void *val) {
-  if(VERBOSE) fprintf(stderr, "in_thread\n");
-
   unsigned long long i;
   void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
