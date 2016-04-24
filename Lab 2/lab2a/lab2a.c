@@ -7,7 +7,7 @@
 
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
-#include <string.h> /* for fprintf used in debug_log */
+#include <stdio.h> /* for fprintf used in debug_log */
 
 
 static int YIELD      = 0;
