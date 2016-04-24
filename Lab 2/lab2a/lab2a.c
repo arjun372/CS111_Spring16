@@ -10,7 +10,9 @@
 #include <stdio.h>  /* for fprintf used in debug_log */
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
+#define _GNU_SOURCE
 #include <pthread.h>
+
 
 static long long counter = 0;
 
