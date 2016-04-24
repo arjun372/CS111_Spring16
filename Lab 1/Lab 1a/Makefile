@@ -27,7 +27,7 @@ dist: $(DISTDIR).tar.gz
 
 $(DISTDIR).tar.gz: $(DIST_SOURCES)
 	@rm -rf $(DISTDIR)
-	@tar -czf $@.tmp --transform='s,^,$(DISTDIR)/,' $(DIST_SOURCES)
+	@tar -cvzf $@.tmp --transform='s,^,$(DISTDIR)/,' $(DIST_SOURCES)
 	@mv $@.tmp $@
 	@echo "tarball created :: $@"
 

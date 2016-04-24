@@ -1,0 +1,100 @@
+Name: Arjun
+UCLA ID: 504078752
+
+Collaborators: N/A
+
+-------------------------------------------------------------------------------
+
+Questions 1.1: 
+
+Run your program for a range of threads and iterations values, and note how 
+many threads and iterations it takes to (fairly consistently) result in a 
+failure (non-zero sum) :: 
+
+Threads    :: 100
+Iterations :: 1000
+
+This is by no means the lower bound, but for 100 threads and 1000 iterations,
+the failure rate was over 98%;
+
+1. Why does it take this many threads or iterations ? ::
+
+Since this is a very small operation, the amount of time spent actually
+executing the code is small as opposed the clock frequency of the processor.
+Hence, in order for the fault to occur, two or mode threads have to have a
+race condition while trying to access/modify the given variable.
+
+2. Why does a significantly smaller number of iterations so seldom fail? ::
+
+This is not true when the number of threads is large. Although if the number
+of threads were lower, the failure rate drops for a fixed number of iterations.
+This is because the most of the computations are coalesced by the processor 
+and executed in a single go before it the process is scheduled out by the 
+kernel. 
+
+::::::::::::::
+GRAPH_1 :: 
+::::::::::::::
+
+Graph the average cost per operation (non-yield) as a function of the number 
+of iterations, with a single thread. You should note that the average cost per
+operation goes down as the number of iterations goes up.
+
+Please refer to 
+-------------------------------------------------------------------------------
+
+Questions 1.2:
+
+1. Why does the average cost per operation drop with increasing iterations?
+2. How do we know what the “correct” cost is?
+3. Why are the --yield runs so much slower? Where is the extra time going?
+4. Can we get valid timings if we are using --yield? How, or why not?
+
+
+Use your yield option to confirm that (even for large numbers of threads and 
+iterations) all three of these serialization mechanisms eliminates the race 
+conditions in the add critical section.
+
+Using a large enough number of iterations to overcome the issues raised in 
+the previous section, note the average time per operation for a range of 
+threads= values, and graph the performance of all four versions 
+(unprotected, mutex, spin-lock, compare-and-swap) vs the number of threads.
+
+
+------------------------------------------------------------------------------
+
+QUESTIONS 1.3
+
+1. Why do all of the options perform similarly for low numbers of threads?
+2. Why do the three protected operations slow down as the number of threads rises?
+3. Why are spin-locks so expensive for large numbers of threads?
+
+------------------------------------------------------------------------------
+
+Exercise 2 is a coding exercise)
+
+
+Response to Exercise 3:
+
+Average turnaround time for scheduling_algorithm 0:
+Average turnaround time for scheduling_algorithm 1:
+Average wait time for scheduling_algorithm 0:
+Average wait time for scheduling_algorithm 1:
+
+
+Exercise 4:
+
+Did you complete Exercise 4A, Exercise 4B, or both for extra credit?
+
+
+Exercise 5:
+
+
+(Exercise 6 is a coding exercise)
+
+
+Anything else you'd like us to know:
+
+
+
+Extra credit exercises:
