@@ -5,7 +5,7 @@
 **/
 #define TRUE 1
 #define _GNU_SOURCE
-#define CLOCK_TYPE CLOCK_MONOTONIC_RAW
+#define CLOCK_TYPE CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID
 
 #define SYNC_NONE          0
 #define SYNC_ATOMIC        1
@@ -20,6 +20,7 @@
 
 /* performance-evaluation specific variables */
 static long long counter = 0;
+static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
 
 /* option-specific arguments */
@@ -84,6 +85,11 @@ int main (int argc, char **argv)
     break;
 
     case SYNC_PTHREAD_MUTEX:
+    if(pthread_mutex_init(&MUTEX_LOCK, NULL)) {
+      fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
+      exit(1);
+    }
+    workFunctionPtr = count_SYNC_PTHREAD_MUTEX;
     break;
   }
   /* set long long counter to zero */
@@ -131,6 +137,9 @@ int main (int argc, char **argv)
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
+  /* Close the pthread_mutex if initiated */
+  if(sync_type==SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
+
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
 }
@@ -145,8 +154,21 @@ static void add(long long *pointer, long long value) {
 
 /* Each pthread runs this function NOSYNC */
 static void* count_SYNC_NONE(void *val) {
-  unsigned long long i;
   void* noUse = val;
+  unsigned long long i;
+  pthread_mutex_lock(&MUTEX_LOCK);
+  for(i=0;i<ITERATIONS;i++)
+    {
+      add(&counter,  1);
+      add(&counter, -1);
+    }
+  pthread_mutex_unlock(&MUTEX_LOCK);
+  pthread_exit(NULL);
+}
+
+static void* count_SYNC_PTHREAD_MUTEX(void *val) {
+  void* noUse = val;
+  unsigned long long i;
   for(i=0;i<ITERATIONS;i++)
     {
       add(&counter,  1);
@@ -154,6 +176,7 @@ static void* count_SYNC_NONE(void *val) {
     }
   pthread_exit(NULL);
 }
+
 
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
