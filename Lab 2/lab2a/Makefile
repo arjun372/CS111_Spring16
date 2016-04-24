@@ -8,7 +8,7 @@ LAB = 2a
 CC = gcc
 CFLAGS = -g -Wall -Wextra -Wno-unused -Werror -lrt
 LDLIBS = -lm
-LDFLAGS = -lpthread
+LDFLAGS = -pthread
 
 DISTDIR = lab$(LAB)-$(UID)
 
