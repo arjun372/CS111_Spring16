@@ -7,14 +7,20 @@
 #define _GNU_SOURCE
 #define CLOCK_TYPE CLOCK_MONOTONIC_RAW
 
+#define SYNC_NONE          0
+#define SYNC_ATOMIC        1
+#define SYNC_SPINLOCK      2
+#define SYNC_PTHREAD_MUTEX 3
+
 #include <time.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
 #include <pthread.h>
 
-
+/* performance-evaluation specific variables */
 static long long counter = 0;
+static unsigned int sync_type = SYNC_NONE;
 
 /* option-specific arguments */
 static int YIELD      = 0;
@@ -31,8 +37,11 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
+static void* count_SYNC_NONE(void *val);
+static void* count_SYNC_ATOMIC(void *val);
+static void* count_SYNC_SPINLOCK(void *val);
+static void* count_SYNC_PTHREAD_MUTEX(void *val);
 static void  debug_log(const int opt_index, char **optarg, const int argc);
-static void* count_NOSYNC(void *val);
 
 int main (int argc, char **argv)
 {
@@ -55,11 +64,28 @@ int main (int argc, char **argv)
           ITERATIONS = (atoll(optarg) <= 0) ? 1 : atoll(optarg);
           if(VERBOSE) debug_log(opt_index, &optarg, 1);
           break;
+
+        case 'S':
+        if(optarg[0]=='m') sync_type = SYNC_PTHREAD_MUTEX;
+        if(optarg[0]=='s') sync_type = SYNC_SPINLOCK;
+        if(optarg[0]=='c') sync_type = SYNC_ATOMIC;
+        if(VERBOSE) debug_log(opt_index, &optarg, 1);
+        break;
       }
     }
 
   /** Finished reading all options, begin performance evaluation **/
+  void *(*workFunctionPtr)(void *) = count_SYNC_NONE;
+  switch(sync_type) {
+    case SYNC_ATOMIC:
+    break;
 
+    case SYNC_SPINLOCK:
+    break;
+
+    case SYNC_ATOMIC:
+    break;
+  }
   /* set long long counter to zero */
   counter = 0;
 
@@ -68,7 +94,7 @@ int main (int argc, char **argv)
   clock_gettime(CLOCK_TYPE, &start_time);
 
   /* create and start N_THREADS */
-  void *(*workFunctionPtr)(void *) = count_NOSYNC;
+
   unsigned int active_threads[N_THREADS];
   unsigned int num_active_threads = 0;
   pthread_t thread_pool[N_THREADS];
@@ -118,7 +144,7 @@ static void add(long long *pointer, long long value) {
 }
 
 /* Each pthread runs this function NOSYNC */
-static void* count_NOSYNC(void *val) {
+static void* count_SYNC_NONE(void *val) {
   unsigned long long i;
   void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
