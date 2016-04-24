@@ -83,7 +83,7 @@ int main (int argc, char **argv)
     case SYNC_SPINLOCK:
     break;
 
-    case SYNC_ATOMIC:
+    case SYNC_PTHREAD_MUTEX:
     break;
   }
   /* set long long counter to zero */
