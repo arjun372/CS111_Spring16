@@ -20,8 +20,8 @@ static long long counter = 0;
 /* option-specific arguments */
 static int YIELD      = 0;
 static int VERBOSE    = 0;
-static int N_THREADS  = 1;
-static int ITERATIONS = 1;
+static unsigned int N_THREADS  = 1;
+static unsigned int ITERATIONS = 1;
 
 static struct option long_options[] = {
   {"sync",       required_argument,         0, 'S'},
@@ -48,12 +48,12 @@ int main (int argc, char **argv)
 
       switch(opt) {
         case 'T':
-          N_THREADS = atoi(optarg);
+          N_THREADS = (atoi(optarg) <= 0) ? 1 : atoi(optarg);
           if(VERBOSE) debug_log(opt_index, &optarg, 1);
           break;
 
         case 'I':
-          ITERATIONS = atoi(optarg);
+          ITERATIONS = (atoi(optarg) <= 0) ? 1 : atoi(optarg);
           if(VERBOSE) debug_log(opt_index, &optarg, 1);
           break;
       }
@@ -70,13 +70,13 @@ int main (int argc, char **argv)
 
   /* create and start N_THREADS */
   void *(*workFunctionPtr)(void *) = count_NOSYNC;
-  int active_threads[N_THREADS];
-  int num_active_threads = 0;
+  unsigned int active_threads[N_THREADS];
+  unsigned int num_active_threads = 0;
   pthread_t thread_pool[N_THREADS];
-  int thread_num;
+  unsigned int thread_num;
   for(thread_num=0; thread_num<N_THREADS; thread_num++)
   {
-    if(pthread_create(&thread_pool[worker_n], NULL, workFunctionPtr, (void *)(NULL)) == 0)
+    if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (void *)(NULL)) == 0)
     {
       num_active_threads++;
       active_threads[thread_num] = 1;
@@ -95,16 +95,15 @@ int main (int argc, char **argv)
 
   /* output to STDOUT the num_of_operations_performed */
   unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
-  fprintf(stdout, "%llu threads x %llu iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
-
+  fprintf(stdout, "%d threads x %d iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
   /* If counter is non-zero, print to STDERR */
   if(counter != 0)
-    fprintf(stderr, "ERROR: final count = %d\n", counter);
+    fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
   /* print to STDOUT {elapsed_time, time_per_op} */
-  uint64_t elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
-  fprintf(stdout, "elapsed time: %llu ns\n", (long long unsigned int) elapsed_time);
-  fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
+  unsigned long long elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
+  fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
+  fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
@@ -119,6 +118,7 @@ void add(long long *pointer, long long value) {
 /* Each pthread runs this function NOSYNC */
 static void* count_NOSYNC(void *val) {
   size_t i;
+  void* noUse = val;
   for(i=0;i<ITERATIONS;i++)
     {
       add(&counter,  1);
