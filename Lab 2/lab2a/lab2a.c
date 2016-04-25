@@ -19,7 +19,7 @@
 #include <pthread.h>
 
 /* performance-evaluation specific variables */
-static long long counter = 0;
+static volatile long long counter = 0;
 static volatile int SPINLOCK = 0;
 static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
@@ -120,7 +120,7 @@ int main (int argc, char **argv)
 
   /* wait for active_threads to join */
   for(thread_num=0; thread_num<N_THREADS; thread_num++)
-    if(active_threads[thread_num] == 1)
+    if(active_threads[thread_num])
       pthread_join(thread_pool[thread_num], NULL);
 
   /* note the high-res ending-time */
