@@ -6,7 +6,7 @@ UID = 504078752
 LAB = 2a
 
 CC = gcc
-CFLAGS = -g -O2 -lrt
+CFLAGS = -g -O2 -Wall -Wextra -Wno-unused -Werror -lrt
 LDLIBS = -lm
 LDFLAGS = -pthread
 
