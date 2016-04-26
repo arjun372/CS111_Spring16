@@ -5,7 +5,7 @@
 **/
 #define TRUE 1
 #define _GNU_SOURCE
-#define CLOCK_TYPE CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_TYPE  CLOCK_PROCESS_CPUTIME_ID //CLOCK_MONOTONIC_RAW
 
 #define SYNC_NONE          0
 #define SYNC_ATOMIC        1
@@ -82,6 +82,7 @@ int main (int argc, char **argv)
   void *(*workFunctionPtr)(void *) = count_SYNC_NONE;
   switch(sync_type) {
     case SYNC_ATOMIC:
+    workFunctionPtr = count_SYNC_ATOMIC;
     break;
 
     case SYNC_SPINLOCK:
@@ -127,6 +128,9 @@ int main (int argc, char **argv)
   /* note the high-res ending-time */
   clock_gettime(CLOCK_TYPE, &stop_time);
 
+  /* Close the pthread_mutex if initiated */
+  if(sync_type==SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
+
   /* output to STDOUT the num_of_operations_performed */
   unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
   fprintf(stdout, "%d threads x %llu iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
@@ -138,11 +142,8 @@ int main (int argc, char **argv)
   /* print to STDOUT {elapsed_time, time_per_op} */
   //unsigned long long elapsed_time
   uint64_t elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
-  fprintf(stdout, "elapsed time: %llu ns\n", (unsigned long long) elapsed_time);
-  fprintf(stdout, "per operation: %llu ns\n", (unsigned long long) (elapsed_time/n_OPS));
-
-  /* Close the pthread_mutex if initiated */
-  if(sync_type==SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
+  fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
+  fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
