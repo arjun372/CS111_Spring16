@@ -195,6 +195,7 @@ static void* count_SYNC_SPINLOCK(void *val) {
 static void* count_SYNC_ATOMIC(void *val) {
   void* noUse = val;
   unsigned long long i;
+  long long sum, orig;
   for(i=0;i<ITERATIONS;i++) {
       do {
    orig = counter;
