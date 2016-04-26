@@ -206,6 +206,7 @@ static void* count_SYNC_ATOMIC(void *val) {
    sum = orig - 1;
  } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
   }
+  pthread_exit(NULL);
 }
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
