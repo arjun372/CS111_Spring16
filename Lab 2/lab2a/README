@@ -62,7 +62,7 @@ threads.
 --------------------------------------------------------------------------------
 2A.2B: How do we know what the “correct” cost is?
 
-Measuring the time spent inside the critical section of the code is one way to 
+Measuring the time spent inside the critical section of the code is one way to
 get an accurate measure of the correct cost of the operation for cases when the
 number of iterations are low. This can be done by measuring the elapsed time
 (with high precision i.e.nanoseconds) right before and after the read and
@@ -83,8 +83,8 @@ pause and resume times of the thread since the thread (running in userspace)
 will have no control over when it may be suspended by the kernel, hence
 rendering of it’s attempted timekeeping essentially useless. Furthermore, if the
 timekeeping function is implemented using shift registers or software logic,then
-all calculations of time may as well be null and void.
-This is because CPU clock is prone to drift and drift propagation related errors.
+all calculations of time may as well be null and void. This is because CPU clock
+is prone to drift and drift propagation related errors.
 
 One way to implement this, provided that the system has hardware support and low
 level access for an RTC, is to define a new interrupt using a system call that
