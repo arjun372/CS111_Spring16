@@ -5,7 +5,7 @@
 **/
 #define TRUE 1
 #define _GNU_SOURCE
-#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID 
+#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID
 
 #define SYNC_NONE          0
 #define SYNC_ATOMIC        1
@@ -141,7 +141,7 @@ int main (int argc, char **argv)
 
   /* print to STDOUT {elapsed_time, time_per_op} */
   //unsigned long long elapsed_time
-  uint64_t elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
+  uint64_t elapsed_time = 1000000000L * (stop_time.tv_nsec - start_time.tv_nsec) + stop_time.tv_nsec - start_time.tv_nsec;
   fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
