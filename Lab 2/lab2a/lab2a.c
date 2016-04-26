@@ -14,6 +14,7 @@
 
 #include <time.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
+#include <stdint.h>
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
 #include <pthread.h>
@@ -135,7 +136,8 @@ int main (int argc, char **argv)
     fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
   /* print to STDOUT {elapsed_time, time_per_op} */
-  unsigned long long elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
+  //unsigned long long elapsed_time
+  uint64_t elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
