@@ -18,7 +18,7 @@ SRC = lab$(LAB).c
 OBJ = $(subst .c,.o,$(SRC))
 
 DIST_SOURCES = Makefile README lab$(LAB).c \
-	graph1.png graph2.png graph3.png
+	graph1.png graph2.png
 
 lab$(LAB): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
