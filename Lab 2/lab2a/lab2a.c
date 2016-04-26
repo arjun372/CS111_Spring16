@@ -192,7 +192,20 @@ static void* count_SYNC_SPINLOCK(void *val) {
   __sync_lock_release(&SPINLOCK);
   pthread_exit(NULL);
 }
-
+static void* count_SYNC_ATOMIC(void *val) {
+  void* noUse = val;
+  unsigned long long i;
+  for(i=0;i<ITERATIONS;i++) {
+      do {
+   orig = counter;
+   sum = orig + 1;
+ } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
+      do {
+   orig = counter;
+   sum = orig - 1;
+ } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
+  }
+}
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
   if(!VERBOSE)
