@@ -23,6 +23,7 @@ static volatile long long counter = 0;
 static volatile int SPINLOCK = 0;
 static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
+static struct timespec start_time,stop_time;
 
 /* option-specific arguments */
 static int YIELD      = 0;
@@ -98,7 +99,6 @@ int main (int argc, char **argv)
   counter = 0;
 
   /* note the high-res start-time */
-  struct timespec start_time,stop_time;
   clock_gettime(CLOCK_TYPE, &start_time);
 
   /* create and start N_THREADS */
@@ -135,7 +135,7 @@ int main (int argc, char **argv)
     fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
   /* print to STDOUT {elapsed_time, time_per_op} */
-  unsigned long long elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
+  unsigned long long elapsed_time = 1000000000L * (stop_time.tv_nsec - start_time.tv_nsec) + stop_time.tv_nsec - start_time.tv_nsec;
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
