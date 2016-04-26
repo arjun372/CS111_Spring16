@@ -135,7 +135,7 @@ int main (int argc, char **argv)
     fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
   /* print to STDOUT {elapsed_time, time_per_op} */
-  unsigned long long elapsed_time = 1000000000L * (stop_time.tv_nsec - start_time.tv_nsec) + stop_time.tv_nsec - start_time.tv_nsec;
+  unsigned long long elapsed_time = stop_time.tv_nsec - start_time.tv_nsec;
   fprintf(stdout, "elapsed time: %llu ns\n", elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (elapsed_time/n_OPS));
 
