@@ -18,11 +18,11 @@ Files
 
 5. README   :: [[ self ]]
 
------------
-Known Bugs
------------
+--------------------
+Use of slip days : 1
+--------------------
 
-Compiling with -O2 flags simply stops all counter failures. Thank you GCC! :)
+Correctly implemented opt-yield for every type of sync method
 
 ---------------
 Extra features

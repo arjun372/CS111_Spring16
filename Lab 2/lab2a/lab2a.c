@@ -3,21 +3,28 @@
     Lab 2A - Atomic Operations
     Arjun 504078752
 **/
+
+#define FILE_NAME    "m.txt"
 #define TRUE 1
 #define _GNU_SOURCE
 #define CLOCK_TYPE  CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID
 
+#define FILE_MODE       0664
 #define SYNC_NONE          0
 #define SYNC_ATOMIC        1
 #define SYNC_SPINLOCK      2
 #define SYNC_PTHREAD_MUTEX 3
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <time.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
 #include <stdint.h>
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 
 /* performance-evaluation specific variables */
 static volatile long long counter = 0;
@@ -29,11 +36,13 @@ static struct timespec start_time,stop_time;
 /* option-specific arguments */
 static int YIELD      = 0;
 static int VERBOSE    = 0;
+static int PROFILE    = 0;
 static unsigned int N_THREADS  = 1;
 static unsigned long long ITERATIONS = 1;
 
 static struct option long_options[] = {
   {"sync",       required_argument,         0, 'S'},
+  {"profile",          no_argument,  &PROFILE,   1},
   {"yield",            no_argument,    &YIELD,   1},
   {"threads",    required_argument,         0, 'T'},
   {"verbose",          no_argument,  &VERBOSE,   1},
@@ -145,6 +154,17 @@ int main (int argc, char **argv)
   fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
   fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
+  int FD = -1;
+
+  if(PROFILE) {
+    FD = open(FILE_NAME, O_WRONLY|O_APPEND, FILE_MODE);
+    char s[100];
+    sprintf(s, "%llu", (long long unsigned int) elapsed_time/n_OPS);
+    if(FD>-1)
+      dprintf(FD, s);
+    close(FD);
+}
+
   /* Exit non-zero if counter != 0 */
   exit((counter != 0));
 }
@@ -202,10 +222,12 @@ static void* count_SYNC_ATOMIC(void *val) {
   for(i=0;i<ITERATIONS;i++) {
       do {
    orig = counter;
+   if(YIELD) pthread_yield();
    sum = orig + 1;
  } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
       do {
    orig = counter;
+   if(YIELD) pthread_yield();
    sum = orig - 1;
  } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
   }
