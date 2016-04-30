@@ -59,6 +59,7 @@ static void  debug_log(const int opt_index, char **optarg, const int argc);
 int main (int argc, char **argv)
 {
         int opt=0, opt_index=0;
+        long unsigned i;
         while(TRUE)
         {
                 opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
@@ -87,7 +88,12 @@ int main (int argc, char **argv)
 
                 case 'Y':
 		        opt_yield = 1;
-                        printf("STRING LENGTH %lu", strlen(optarg));
+                        for(i = 1; i <= strlen(optarg); i++) {
+                          if(optarg[0]=='i') opt_yield |= INSERT_YIELD;
+                          if(optarg[0]=='d') opt_yield |= DELETE_YIELD;
+                          if(optarg[0]=='s') opt_yield |= SEARCH_YIELD;
+                        }
+                        printf("STRING LENGTH %d", opt_yield);
                         break;
                 }
         }

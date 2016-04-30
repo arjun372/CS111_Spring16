@@ -1,8 +1,8 @@
-/** 
+/**
     UCLA CS 111 - Winter '16
     Lab 4 - Synchronization
     Design Project - Artifact Correction
-    Arjun 504078752 
+    Arjun 504078752
 **/
 
 #define _GNU_SOURCE
@@ -34,7 +34,7 @@
 #define SYNC_PTHREAD_MUTEX 1
 #define SYNC_SPIN_LOCK     2
 #define SYNC_ATOMIC        3
- 
+
 typedef struct process {
   pid_t     PID;
   int  argv_off;
@@ -96,120 +96,120 @@ static struct timespec before, after;
 void add(long long *pointer, long long value) {
 
   if(correct)
-    { 
+    {
       clock_gettime(CLOCK_MONOTONIC, &start_time); /* monotonic start time, to remove artifact due to pthread start up */
        //   correct = 0;
     }
 
-   long long sum = *pointer + value; 
-   if(opt_yield) 
-     { 
-       //      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time); 
-       pthread_yield(); 
-     } 
-   *pointer = sum; 
- 
-   if(correct)  
-      clock_gettime(CLOCK_MONOTONIC, &stop_time); /* monotonic start time */ 
- } 
+   long long sum = *pointer + value;
+   if(opt_yield)
+     {
+       //      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time);
+       pthread_yield();
+     }
+   *pointer = sum;
 
- /* Each pthread runs this function */ 
- void * doWork_atomic(void *val){ 
-   size_t i; 
-   long long sum, orig; 
-   for(i=0;i<ITERATIONS;i++) 
-     { 
-       do  
- 	{ 
- 	  orig = counter; 
- 	  sum = orig + 1; 
- 	} while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);; 
-       do 
- 	{ 
- 	  orig = counter; 
- 	  sum = orig - 1; 
- 	} while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);; 
-     } 
+   if(correct)
+      clock_gettime(CLOCK_MONOTONIC, &stop_time); /* monotonic start time */
+ }
 
-   pthread_exit(NULL); 
- } 
+ /* Each pthread runs this function */
+ void * doWork_atomic(void *val){
+   size_t i;
+   long long sum, orig;
+   for(i=0;i<ITERATIONS;i++)
+     {
+       do
+ 	{
+ 	  orig = counter;
+ 	  sum = orig + 1;
+ 	} while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
+       do
+ 	{
+ 	  orig = counter;
+ 	  sum = orig - 1;
+ 	} while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
+     }
 
- /* Each pthread runs this function */ 
- void * doWork_mutex(void *val){ 
-   size_t i; 
-   pthread_mutex_lock(&m_sync_lock); 
-   for(i=0;i<ITERATIONS;i++) 
-     { 
-       add(&counter,1); 
-       add(&counter,-1); 
-     } 
-   pthread_mutex_unlock(&m_sync_lock); 
-   pthread_exit(NULL); 
- } 
+   pthread_exit(NULL);
+ }
 
- /* Each pthread runs this function */ 
- void * doWork_spinlock(void *val){ 
-   size_t i; 
+ /* Each pthread runs this function */
+ void * doWork_mutex(void *val){
+   size_t i;
+   pthread_mutex_lock(&m_sync_lock);
+   for(i=0;i<ITERATIONS;i++)
+     {
+       add(&counter,1);
+       add(&counter,-1);
+     }
+   pthread_mutex_unlock(&m_sync_lock);
+   pthread_exit(NULL);
+ }
 
-   while (__sync_lock_test_and_set(&spinlock, 1)) 
-     continue; 
-   for(i=0;i<ITERATIONS;i++) 
-     { 
-       add(&counter,1); 
-       add(&counter,-1); 
-     } 
-   __sync_lock_release(&spinlock); 
-   pthread_exit(NULL); 
- } 
+ /* Each pthread runs this function */
+ void * doWork_spinlock(void *val){
+   size_t i;
 
- /* Each pthread runs this function */ 
- void * doWork(void *val){ 
-   size_t i; 
-   for(i=0;i<ITERATIONS;i++) 
-     { 
-       add(&counter,1); 
-       add(&counter,-1); 
-     } 
-   pthread_exit(NULL); 
- } 
+   while (__sync_lock_test_and_set(&spinlock, 1))
+     continue;
+   for(i=0;i<ITERATIONS;i++)
+     {
+       add(&counter,1);
+       add(&counter,-1);
+     }
+   __sync_lock_release(&spinlock);
+   pthread_exit(NULL);
+ }
+
+ /* Each pthread runs this function */
+ void * doWork(void *val){
+   size_t i;
+   for(i=0;i<ITERATIONS;i++)
+     {
+       add(&counter,1);
+       add(&counter,-1);
+     }
+   pthread_exit(NULL);
+ }
 
 
- #define BILLION 1000000000L 
+ #define BILLION 1000000000L
 
- int localpid(void) { 
-   static int a[9] = { 0 }; 
-   return a[0]; 
- } 
+ int localpid(void) {
+   static int a[9] = { 0 };
+   return a[0];
+ }
 
- int main (int argc, char **argv)  
- { 
-   ARGV = argv; 
-   int i, flag, argcc, opt = 0, opt_index = 0, pipefd[2]; 
-   char **argvc[argc-1]; 
-   char *argi; 
-   int status; 
-   pid_t pid; 
-   size_t IGNORE = 0, N[3],I; 
-   while(1) 
-     { 
-       opt = getopt_long_only(argc, argv, "", long_options, &opt_index); 
-      
-       if(opt == -1) 
- 		break; 
-      
-       switch(opt) 
- 	{ 
- 	case 'c': 
- 	  correct = 1; 
- 	  break; 
+ int main (int argc, char **argv)
+ {
+   ARGV = argv;
+   int i, flag, argcc, opt = 0, opt_index = 0, pipefd[2];
+   char **argvc[argc-1];
+   char *argi;
+   int status;
+   pid_t pid;
+   size_t IGNORE = 0, N[3],I;
+   while(1)
+     {
+       opt = getopt_long_only(argc, argv, "", long_options, &opt_index);
 
- 	case 't': 
- 	case 'i': 
- 	  /* If supplied argument is actually an option, return an error */ 
- 	  if(!isNumber(optarg) || ((I=atoi(optarg)) < 1)) 
- 	    goto fopen_err; 
-	  
-	/*Set N_THREADS = optarg*/  
+       if(opt == -1)
+ 		break;
+
+       switch(opt)
+ 	{
+ 	case 'c':
+ 	  correct = 1;
+ 	  break;
+
+ 	case 't':
+ 	case 'i':
+ 	  /* If supplied argument is actually an option, return an error */
+ 	  if(!isNumber(optarg) || ((I=atoi(optarg)) < 1))
+ 	    goto fopen_err;
+
+	/*Set N_THREADS = optarg*/
 	  verbose_log(opt_index, &optarg, 1);
 	  if(opt == 't')
 	    N_THREADS = I;
@@ -221,7 +221,7 @@ void add(long long *pointer, long long value) {
 	case 'y':
 	  if(!isNumber(optarg) || ((i=atoi(optarg)) < 0 ) || ((i=atoi(optarg)) > 1 ))
 	    goto fopen_err;
-	  
+
 	  verbose_log(opt_index, &optarg, 1);
 	  opt_yield = i;
 	  break;
@@ -241,7 +241,7 @@ void add(long long *pointer, long long value) {
 	fopen_err:
 	  error (0, errno, "--%s %s", long_options[opt_index].name, optarg);
 	  break;
- 	  
+
 	default:
 	  printf("default mark\n");
 	  break;
@@ -249,7 +249,7 @@ void add(long long *pointer, long long value) {
     }
 
   void *(*workFunctionPtr)(void *);
-  
+
   uint64_t artifact_delay, diff, real_diff;
   pthread_t thread_pool[N_THREADS];
   unsigned int validThreads[N_THREADS];
@@ -262,7 +262,7 @@ void add(long long *pointer, long long value) {
     case SYNC_ATOMIC:
       workFunctionPtr = doWork_atomic;
       break;
-      
+
     case SYNC_SPIN_LOCK:
       workFunctionPtr = doWork_spinlock;
       break;
@@ -277,10 +277,10 @@ void add(long long *pointer, long long value) {
       workFunctionPtr = doWork;
       break;
     }
-    
+
   if(!correct)
-    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);  /*monotonic start time*/ 
-   
+    clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &start_time);  /*monotonic start time*/
+
   ///  clock_gettime(CLOCK_MONOTONIC, &start_time);
   // clock_gettime(CLOCK_MONOTONIC, &stop_time);
   //artifact_delay = stop_time.tv_nsec - start_time.tv_nsec;
@@ -300,17 +300,17 @@ void add(long long *pointer, long long value) {
   unsigned long long n_OPS = R_THREADS * ITERATIONS * (2);
   printf("%llu threads x %llu iterations x (add + subtract) = %llu operations\n",R_THREADS,ITERATIONS, n_OPS);
 
-  //Wait for all threads to join   TODO :: CHECK IF R or N THREADS 
+  //Wait for all threads to join   TODO :: CHECK IF R or N THREADS
   for(worker_n=0; worker_n < N_THREADS; worker_n++)
-    if(validThreads[worker_n] == 1)  
+    if(validThreads[worker_n] == 1)
       pthread_join(thread_pool[worker_n], NULL);
 
   if(!correct)
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &stop_time);
-  
-  if(sync_version==SYNC_PTHREAD_MUTEX) 
+
+  if(sync_version==SYNC_PTHREAD_MUTEX)
     pthread_mutex_destroy(&m_sync_lock);
-  
+
   if(counter)
     {
       printf("ERROR: final count = %llu\n", counter);
@@ -318,19 +318,19 @@ void add(long long *pointer, long long value) {
     }
 
   diff = stop_time.tv_nsec - start_time.tv_nsec;
-   
+
   //printf("elapsed process CPU time = %llu nanoseconds\n", (long long unsigned int) diff);
-  //  printf("artifact_delay: %llu ns\n", (long long unsigned int) artifact_delay); 
+  //  printf("artifact_delay: %llu ns\n", (long long unsigned int) artifact_delay);
   printf("elapsed time: %llu ns\n", (long long unsigned int) diff);
   printf("per operation: %llu ns\n",(long long unsigned int) diff/n_OPS);
- 
+
  exit(EXIT_STATUS);
  bad_things_happen_all_the_time:
  printf("pthread_mutex_init FAILED\n");
  exit(1);
 }
 
-// Checks if the given char[] contains numbers only 
+// Checks if the given char[] contains numbers only
 static int isNumber(const char* optarg)
 {
   int i;
@@ -340,7 +340,7 @@ static int isNumber(const char* optarg)
   return 1;
 }
 
-//Add FID to the list of currently usable File Descriptors 
+//Add FID to the list of currently usable File Descriptors
 static int add_fid(const int FID)
 {
   if(FID<0)
@@ -357,7 +357,7 @@ static int add_fid(const int FID)
   return FID;
 }
 
-//Add PROC to the list of PROCs 
+//Add PROC to the list of PROCs
 static size_t init_process(const int sargv_off, const int sargc)
 {
   process_t nPROC = {.PID = -1, .argv_off = sargv_off, .argc = sargc, .status = -1};
@@ -373,7 +373,7 @@ static size_t init_process(const int sargv_off, const int sargc)
 
 
 /* Checks if the givent string is a valid option as defined by the spec.    *
- * Helps in checking whether arguments passed to options are valid or not. */ 
+ * Helps in checking whether arguments passed to options are valid or not. */
 static int isOption(const char *opt)
 {
   int i;
@@ -430,16 +430,16 @@ static pid_t execute_command (const size_t proc_index)
 
   if(DEBUG) printf("Parent PID:: %d\n",getpid());
 
-  //  fork() this process   
+  //  fork() this process
   switch(pid = fork())
     {
-      
-    case -1: // fork() Failed 
+
+    case -1: // fork() Failed
       usage(errno,long_options[COMMAND_INDEX].name, strerror(errno));
       printf("*** ERROR: forking child process failed\n");
       return -1;
 
-     /*FIRST CHILD's process*/   
+     /*FIRST CHILD's process*/
     case 0:
       if(DEBUG) printf("In Child, PID :: %d\n",pid);
       dup2(FIDs[atoi(argv[0])], STDIN_FILENO);
@@ -449,15 +449,15 @@ static pid_t execute_command (const size_t proc_index)
       if(DEBUG) printf("Child %d Done\n",pid);
       exit(0);
 
-     /*Parent's process*/   
+     /*Parent's process*/
     default:
-      //Return FIRST child PID 
+      //Return FIRST child PID
       return pid;
     }
 }
 
- /*print N caught to stderr 
- Kill all children 
+ /*print N caught to stderr
+ Kill all children
  Exit with status N */
 static void handleSignal(int sig, siginfo_t *si, void *context)
 {

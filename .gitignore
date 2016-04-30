@@ -33,3 +33,6 @@
 
 # Emacs editable file
 *~
+
+# MAC files
+*.DS_Store
