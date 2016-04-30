@@ -183,6 +183,7 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
+	free(Nodes);
         /* Exit non-zero if counter != 0 */
         exit((counter != 0));
 }
@@ -190,12 +191,12 @@ int main (int argc, char **argv)
 /* Initializes the elements and fills them with random data */
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
-  SortedListElement_t *elements = (SortedListElement_t *) malloc((SortedListElement_t *) * nBlocks);
-  if(elements) {
+  SortedListElement_t *elements = (SortedListElement_t *) malloc(sizeof(SortedListElement_t) * nBlocks);
+  if(elements == NULL) {
           fprintf(stderr, "FATAL:: Unable to allocate memory\n");
           exit(1);
   }
-
+  return elements;
 }
 /* add function as defined by the spec */
 static void add(volatile long long *pointer, long long value) {
