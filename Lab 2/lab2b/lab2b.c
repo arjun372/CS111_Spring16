@@ -130,8 +130,9 @@ int main (int argc, char **argv)
         SharedList.key  = NULL;
 
         /* create & randomly initialize (iteration * thread) of list elements */
-        SortedListElement_t mNodes[N_THREADS * ITERATIONS];
-        Nodes = mNodes;
+        long long unsigned nBytes = sizeof(SortedList_t)*N_THREADS*ITERATIONS;
+        Nodes = (SortedList_t *) malloc(nBytes);
+        
         //for(i=0;i < N_THREADS * ITERATIONS; i++)
         //  mNodes[i].key = rand()
 
