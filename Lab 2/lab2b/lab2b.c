@@ -87,7 +87,6 @@ int main (int argc, char **argv)
                         break;
 
                 case 'Y':
-		        opt_yield = 1;
                         for(i = 1; i <= strlen(optarg); i++) {
                           if(optarg[0]=='i') opt_yield |= INSERT_YIELD;
                           if(optarg[0]=='d') opt_yield |= DELETE_YIELD;
