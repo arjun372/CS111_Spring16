@@ -27,6 +27,8 @@
 #include <string.h>
 
 #include "SortedList.c"
+static SortedList_t SharedList;
+static SortedListElement_t *Nodes;
 
 /* performance-evaluation specific variables */
 static volatile long long counter = 0;
@@ -121,8 +123,14 @@ int main (int argc, char **argv)
                 workFunctionPtr = count_SYNC_PTHREAD_MUTEX;
                 break;
         }
-        /* set long long counter to zero */
-        counter = 0;
+
+        /* initialize an empty list */
+        SharedList->prev = NULL;
+        SharedList->next = NULL;
+        SharedList->key  = NULL;
+
+        /* create & randomly initialize (iteration * thread) of list elements */
+        SortedListElement_t mNodes[N_THREADS * ITERATIONS];
 
         /* note the high-res start-time */
         clock_gettime(CLOCK_TYPE, &start_time);
