@@ -56,6 +56,7 @@ static void* count_SYNC_NONE(void *val);
 static void* count_SYNC_ATOMIC(void *val);
 static void* count_SYNC_SPINLOCK(void *val);
 static void* count_SYNC_PTHREAD_MUTEX(void *val);
+static SortedListElement_t *init_and_fill(const long long unsigned nBlocks);
 static void  debug_log(const int opt_index, char **optarg, const int argc);
 
 int main (int argc, char **argv)
@@ -130,12 +131,8 @@ int main (int argc, char **argv)
         SharedList.key  = NULL;
 
         /* create & randomly initialize (iteration * thread) of list elements */
-        long long unsigned nBytes = sizeof(SortedList_t)*N_THREADS*ITERATIONS;
-        Nodes = (SortedList_t *) malloc(nBytes);
-        if(Nodes == NULL) {
-                fprintf(stderr, "FATAL:: Unable to allocate memory\n");
-                exit(1);
-        }
+        Nodes = init_and_fill(N_THREADS * ITERATIONS);
+
         //for(i=0;i < N_THREADS * ITERATIONS; i++)
         //  mNodes[i].key = rand()
 
@@ -190,7 +187,16 @@ int main (int argc, char **argv)
         exit((counter != 0));
 }
 
+/* Initializes the elements and fills them with random data */
+static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
+  SortedListElement_t *elements = (SortedListElement_t *) malloc((SortedListElement_t *) * nBlocks);
+  if(elements) {
+          fprintf(stderr, "FATAL:: Unable to allocate memory\n");
+          exit(1);
+  }
+
+}
 /* add function as defined by the spec */
 static void add(volatile long long *pointer, long long value) {
         long long sum = *pointer + value;
