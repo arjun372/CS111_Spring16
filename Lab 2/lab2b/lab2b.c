@@ -90,12 +90,12 @@ int main (int argc, char **argv)
 
                 case 'Y':
                         for(i = 0; i < strlen(optarg); i++) {
-                          if(optarg[i]=='i') opt_yield |= INSERT_YIELD;
-                          if(optarg[i]=='d') opt_yield |= DELETE_YIELD;
-                          if(optarg[i]=='s') opt_yield |= SEARCH_YIELD;
+                                if(optarg[i]=='i') opt_yield |= INSERT_YIELD;
+                                if(optarg[i]=='d') opt_yield |= DELETE_YIELD;
+                                if(optarg[i]=='s') opt_yield |= SEARCH_YIELD;
                         }
                         if(!VERBOSE)
-                          break;
+                                break;
                         printf("OPT_YIELD MASK:: %#08x\n", opt_yield);
                         if(opt_yield & INSERT_YIELD) printf("INSERT YIELD!!\n");
                         if(opt_yield & SEARCH_YIELD) printf("SEARCH YIELD!!\n");
@@ -133,8 +133,8 @@ int main (int argc, char **argv)
         long long unsigned nBytes = sizeof(SortedList_t)*N_THREADS*ITERATIONS;
         Nodes = (SortedList_t *) malloc(nBytes);
         if(Nodes == NULL) {
-          fprintf(stderr, "FATAL:: Unable to allocate memory\n");
-          exit(1);
+                fprintf(stderr, "FATAL:: Unable to allocate memory\n");
+                exit(1);
         }
         //for(i=0;i < N_THREADS * ITERATIONS; i++)
         //  mNodes[i].key = rand()
@@ -174,7 +174,7 @@ int main (int argc, char **argv)
 
         /* output to STDOUT the num_of_operations_performed */
         unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
-        fprintf(stdout, "%d threads x %llu iterations x (add + subtract) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
+        fprintf(stdout, "%d threads x %llu iterations x (insert + lookup/delete) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
 
         /* If counter is non-zero, print to STDERR */
         if(VERBOSE || counter != 0)
