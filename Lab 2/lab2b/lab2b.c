@@ -132,8 +132,10 @@ int main (int argc, char **argv)
         /* create & randomly initialize (iteration * thread) of list elements */
         long long unsigned nBytes = sizeof(SortedList_t)*N_THREADS*ITERATIONS;
         Nodes = (SortedList_t *) malloc(nBytes);
-        if(Nodes == NULL)
+        if(Nodes == NULL) {
           fprintf(stderr, "FATAL:: Unable to allocate memory\n");
+          exit(1);
+        }
         //for(i=0;i < N_THREADS * ITERATIONS; i++)
         //  mNodes[i].key = rand()
 
