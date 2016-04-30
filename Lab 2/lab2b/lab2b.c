@@ -92,8 +92,12 @@ int main (int argc, char **argv)
                           if(optarg[i]=='d') opt_yield |= DELETE_YIELD;
                           if(optarg[i]=='s') opt_yield |= SEARCH_YIELD;
                         }
-                        if(VERBOSE)
-                          printf("OPT_YIELD MASK:: %#08x\n", opt_yield);
+                        if(!VERBOSE)
+                          break;
+                        printf("OPT_YIELD MASK:: %#08x\n", opt_yield);
+                        if(opt_yield & INSERT_YIELD) printf("INSERT YIELD!!\n");
+                        if(opt_yield & SEARCH_YIELD) printf("SEARCH YIELD!!\n");
+                        if(opt_yield & DELETE_YIELD) printf("DELETE YIELD!!\n");
                         break;
                 }
         }
