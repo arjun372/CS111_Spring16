@@ -93,7 +93,8 @@ int main (int argc, char **argv)
                           if(optarg[0]=='d') opt_yield |= DELETE_YIELD;
                           if(optarg[0]=='s') opt_yield |= SEARCH_YIELD;
                         }
-                        printf("STRING LENGTH %d", opt_yield);
+                        if(VERBOSE)
+                          printf("OPT_YIELD MASK:: %#08x\n", opt_yield);
                         break;
                 }
         }
