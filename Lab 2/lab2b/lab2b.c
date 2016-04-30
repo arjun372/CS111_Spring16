@@ -24,6 +24,7 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "SortedList.c"
 
@@ -35,7 +36,7 @@ static unsigned int sync_type = SYNC_NONE;
 static struct timespec start_time,stop_time;
 
 /* option-specific arguments */
-static int opt_yield  = 0;
+int opt_yield  = 0;
 static int VERBOSE    = 0;
 static unsigned int N_THREADS  = 1;
 static unsigned long long ITERATIONS = 1;
@@ -85,7 +86,8 @@ int main (int argc, char **argv)
                         break;
 
                 case 'Y':
-                        printf("STRING LENGTH %d", strlen(optarg));
+		        opt_yield = 1;
+                        printf("STRING LENGTH %lu", strlen(optarg));
                         break;
                 }
         }
@@ -165,7 +167,7 @@ int main (int argc, char **argv)
 /* add function as defined by the spec */
 static void add(volatile long long *pointer, long long value) {
         long long sum = *pointer + value;
-        if(YIELD) pthread_yield();
+        if(opt_yield) pthread_yield();
         *pointer = sum;
 }
 
@@ -214,12 +216,12 @@ static void* count_SYNC_ATOMIC(void *val) {
         for(i=0; i<ITERATIONS; i++) {
                 do {
                         orig = counter;
-                        if(YIELD) pthread_yield();
+                        if(opt_yield) pthread_yield();
                         sum = orig + 1;
                 } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
                 do {
                         orig = counter;
-                        if(YIELD) pthread_yield();
+                        if(opt_yield) pthread_yield();
                         sum = orig - 1;
                 } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
         }

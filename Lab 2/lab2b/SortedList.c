@@ -14,7 +14,7 @@
  *		call pthread_yield in middle of critical section
  */
 
-/** @param SortedList_t *list ... header for the list
+/**   @param SortedList_t *list ... header for the list
   *
   *   @return -1 if the list is corrupted
   *   @return  0 if no-elements in list (except head)
@@ -22,9 +22,10 @@
   *
   *   if (opt_yield & SEARCH_YIELD) ::
   *                             call pthread_yield in middle of critical section
-**/
+  */
 
 int SortedList_length(SortedList_t *list) {
+  SortedList_t *MEE = list;
   int count = -1;
   return count;
 }
@@ -51,5 +52,6 @@ int SortedList_length(SortedList_t *list) {
  *		call pthread_yield in middle of critical section
  */
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
-
+  SortedList_t *MEE = list;
+  SortedListElement_t *YOUU = element;
 }

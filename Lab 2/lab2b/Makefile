@@ -14,7 +14,7 @@ DISTDIR = lab$(LAB)-$(UID)
 
 all: lab$(LAB)
 
-SRC = SortedList.c lab$(LAB).c
+SRC = lab$(LAB).c
 OBJ = $(subst .c,.o,$(SRC))
 
 DIST_SOURCES = Makefile README SortedList.h SortedList.c lab$(LAB).c \
