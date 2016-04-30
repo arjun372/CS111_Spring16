@@ -87,10 +87,10 @@ int main (int argc, char **argv)
                         break;
 
                 case 'Y':
-                        for(i = 1; i <= strlen(optarg); i++) {
-                          if(optarg[0]=='i') opt_yield |= INSERT_YIELD;
-                          if(optarg[0]=='d') opt_yield |= DELETE_YIELD;
-                          if(optarg[0]=='s') opt_yield |= SEARCH_YIELD;
+                        for(i = 0; i < strlen(optarg); i++) {
+                          if(optarg[i]=='i') opt_yield |= INSERT_YIELD;
+                          if(optarg[i]=='d') opt_yield |= DELETE_YIELD;
+                          if(optarg[i]=='s') opt_yield |= SEARCH_YIELD;
                         }
                         if(VERBOSE)
                           printf("OPT_YIELD MASK:: %#08x\n", opt_yield);
