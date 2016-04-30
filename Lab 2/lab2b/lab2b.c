@@ -125,9 +125,9 @@ int main (int argc, char **argv)
         }
 
         /* initialize an empty list */
-        SharedList->prev = NULL;
-        SharedList->next = NULL;
-        SharedList->key  = NULL;
+        SharedList.prev = NULL;
+        SharedList.next = NULL;
+        SharedList.key  = NULL;
 
         /* create & randomly initialize (iteration * thread) of list elements */
         SortedListElement_t mNodes[N_THREADS * ITERATIONS];
