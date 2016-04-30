@@ -131,7 +131,7 @@ int main (int argc, char **argv)
 
         /* create & randomly initialize (iteration * thread) of list elements */
         SortedListElement_t mNodes[N_THREADS * ITERATIONS];
-        Nodes = &mNodes;
+        Nodes = mNodes;
         //for(i=0;i < N_THREADS * ITERATIONS; i++)
         //  mNodes[i].key = rand()
 
