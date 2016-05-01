@@ -214,12 +214,16 @@ static void *listOps_SYNC_NONE(void *offset) {
         unsigned int stop  = ITERATIONS + start - 1;
         //if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
 
+        /* Add my elements Nodes[start:stop] into SharedList */
+        unsigned int j;
+        for(j = start; j <= stop; j++)
+          SortedList_insert(&SharedList, &(Nodes[j]));
+
         /* get SharedList length */
         int len = SortedList_length(&SharedList);
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
-      //  long long unsigned iterator;
-      //  for(iterator = start; iterator <= stop; iterator++)
+
         pthread_exit(NULL);
 }
 
