@@ -207,9 +207,13 @@ int main (int argc, char **argv)
 static void *listOps_SYNC_NONE(void *offset) {
         unsigned int i = *((unsigned int *) offset);
         free(offset);
-        if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, i,(int)(i+ITERATIONS));
+        
+        unsigned int start = i * ITERATIONS;
+        unsigned int stop  = ITERATIONS + start - 1;
+        if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
         pthread_exit(NULL);
 }
+
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
         /* Initializes the elements */
