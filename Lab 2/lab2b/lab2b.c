@@ -216,8 +216,10 @@ static void *listOps_SYNC_NONE(void *offset) {
 
         /* Add my elements Nodes[start:stop] into SharedList */
         unsigned int j;
-        for(j = start; j <= stop; j++)
+        for(j = start; j <= stop; j++) {
+          if(VERBOSE) fprintf(stderr, "Adding Key[%d] :: %s\n", j, Keys[j]);
           SortedList_insert(&SharedList, &(Nodes[j]));
+        }
 
         /* get SharedList length */
         int len = SortedList_length(&SharedList);
