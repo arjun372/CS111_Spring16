@@ -183,14 +183,16 @@ int main (int argc, char **argv)
                 fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
         /* print to STDOUT {elapsed_time, time_per_op} */
-        //unsigned long long elapsed_time
         uint64_t elapsed_time = 1000000000L * (stop_time.tv_sec - start_time.tv_sec) + stop_time.tv_nsec - start_time.tv_nsec;
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
-        /* Exit non-zero if counter != 0 */
-        free(Keys);
+
         free(Nodes);
+        for(i = 0; i < (N_THREADS * ITERATIONS); i++)
+          free(Keys[i]);
+        free(Keys);
+        /* Exit non-zero if counter != 0 */
         exit((counter != 0));
 }
 
