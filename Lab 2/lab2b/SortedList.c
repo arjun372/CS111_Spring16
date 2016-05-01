@@ -29,7 +29,7 @@ int SortedList_length(SortedList_t *list) {
         SortedListElement_t *node = list;
 
         /* list head should not be corrupt */
-        if(list.prev != NULL || list.key != NULL)
+        if(list->prev != NULL || list->key != NULL)
                 return -1;
 
         /* iterate over all nodes, checking for corruption & incrementing len */

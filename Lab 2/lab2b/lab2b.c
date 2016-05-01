@@ -215,7 +215,7 @@ static void *listOps_SYNC_NONE(void *offset) {
         //if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
 
         /* get SharedList length */
-        int len = SortedList_length(SharedList);
+        int len = SortedList_length(&SharedList);
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
       //  long long unsigned iterator;
