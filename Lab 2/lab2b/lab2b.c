@@ -146,28 +146,20 @@ int main (int argc, char **argv)
         unsigned int num_active_threads = 0;
         unsigned int active_threads[N_THREADS];
 
-        /* Allocate memory for each thread's argument list */
-        unsigned int **pthread_args = (unsigned int **) malloc(N_THREADS * sizeof(unsigned int *));
-        if(pthread_args == NULL) {
-                fprintf(stderr, "FATAL:: Unable to allocate memory for pthread args\n");
-                exit(1);
-        }
-
         /* note the high-res start-time */
         clock_gettime(CLOCK_TYPE, &start_time);
 
         /* create and start N_THREADS */
         for(thread_num = 0; thread_num < N_THREADS; thread_num++)
         {
-                // unsigned int *arg = malloc(sizeof(*arg));
-                // if ( arg == NULL ) {
-                //         fprintf(stderr, "Couldn't allocate memory for thread arg.\n");
-                //         exit(EXIT_FAILURE);
-                // }
-
-                *(pthread_args[thread_num]) = thread_num;
-                // *arg = thread_num;
-                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (pthread_args[thread_num])) == 0)
+                /* Allocate memory for each thread's argument list */
+                unsigned int *arg = malloc(sizeof(*arg));
+                if (arg == NULL) {
+                        fprintf(stderr, "Couldn't allocate memory for thread arg.\n");
+                        exit(EXIT_FAILURE);
+                }
+                *arg = thread_num;
+                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, arg) == 0)
                 {
                         num_active_threads++;
                         active_threads[thread_num] = 1;
@@ -175,8 +167,7 @@ int main (int argc, char **argv)
                 else
                 {
                         active_threads[thread_num] = 0;
-                        // free(arg);
-                        free(pthread_args[thread_num]);
+                        free(arg);
                 }
         }
 
