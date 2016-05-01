@@ -187,7 +187,7 @@ int main (int argc, char **argv)
 
         /* If counter is non-zero, print to STDERR */
         int list_length = SortedList_length(&SharedList);
-        if(VERBOSE && list_length != 0) fprintf(stderr, "ERROR: final count = %llu\n", counter);
+        if(VERBOSE && list_length != 0) fprintf(stderr, "ERROR: list_length = %d\n", list_length);
 
         /* print to STDOUT {elapsed_time, time_per_op} */
         uint64_t elapsed_time = 1000000000L * (stop_time.tv_sec - start_time.tv_sec) + stop_time.tv_nsec - start_time.tv_nsec;
