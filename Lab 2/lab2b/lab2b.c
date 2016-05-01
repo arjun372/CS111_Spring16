@@ -148,7 +148,7 @@ int main (int argc, char **argv)
         unsigned int active_threads[N_THREADS];
 
         /* Allocate memory for each thread's argument list */
-        int **pthread_args = (int **) malloc(N_THREADS * sizeof(int *));
+        unsigned int **pthread_args = (unsigned int **) malloc(N_THREADS * sizeof(unsigned int *));
         if(pthread_args == NULL) {
           fprintf(stderr, "FATAL:: Unable to allocate memory for pthread args\n");
           exit(1);
@@ -160,8 +160,15 @@ int main (int argc, char **argv)
         /* create and start N_THREADS */
         for(thread_num = 0; thread_num < N_THREADS; thread_num++)
         {
-                pthread_args[thread_num] = thread_num;
-                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (void *)(pthread_args[thread_num])) == 0)
+	  unsigned int *arg = malloc(sizeof(*arg));
+	  if ( arg == NULL ) {
+            fprintf(stderr, "Couldn't allocate memory for thread arg.\n");
+            exit(EXIT_FAILURE);
+	  }
+
+	  //*(pthread_args[thread_num]) = thread_num;
+	  *arg = thread_num;
+	  if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, arg) == 0)
                 {
                         num_active_threads++;
                         active_threads[thread_num] = 1;
@@ -169,7 +176,7 @@ int main (int argc, char **argv)
                 else
                 {
                         active_threads[thread_num] = 0;
-                        free(pthread_args[thread_num]);
+                        free(arg);
                 }
         }
 
@@ -207,7 +214,7 @@ int main (int argc, char **argv)
 }
 
 static void *listOps_SYNC_NONE(void *offset) {
-  int i = *((int *) offset);
+  unsigned int i = *((unsigned int *) offset);
   free(offset);
   if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, i,(int)(i+ITERATIONS));
   pthread_exit(NULL);

@@ -1,12 +1,12 @@
 # UCLA CS 111 - Spring '16
 # Arjun 504078752
-# Lab 2a - Atomic Operations
+# Lab 2b - Complex Critical Sections
 
 UID = 504078752
 LAB = 2b
 
 CC = gcc
-CFLAGS = -g -O2 -Wall -Wextra -Wno-unused -Werror -lrt
+CFLAGS = -g -Wall -Wextra -Wno-unused -Werror -lrt
 LDLIBS = -lm
 LDFLAGS = -pthread
 
