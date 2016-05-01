@@ -7,7 +7,7 @@
 #define _GNU_SOURCE
 
 #define MAX_KEY_LENGTH    10
-#define MIN_KEY_LENGTH     9
+#define MIN_KEY_LENGTH    10
 
 #define SYNC_NONE          0x00
 #define SYNC_ATOMIC        0x01
