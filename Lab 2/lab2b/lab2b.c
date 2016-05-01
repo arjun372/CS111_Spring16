@@ -235,7 +235,8 @@ static char* alloc_rand_string(const long long unsigned size) {
         return str;
 MemErr:
         fprintf(stderr, "FATAL:: Unable to allocate memory for key\n");
-        free(s);
+        free(str);
+	exit(1);
 }
 
 /* add function as defined by the spec */
