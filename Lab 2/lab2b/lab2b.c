@@ -7,13 +7,13 @@
 #define TRUE 1
 #define _GNU_SOURCE
 
-#define MAX_KEY_LENGTH   128
-#define MIN_KEY_LENGTH     1
+#define MAX_KEY_LENGTH    10
+#define MIN_KEY_LENGTH     9
 
-#define SYNC_NONE          0
-#define SYNC_ATOMIC        1
-#define SYNC_SPINLOCK      2
-#define SYNC_PTHREAD_MUTEX 3
+#define SYNC_NONE          0x00
+#define SYNC_ATOMIC        0x01
+#define SYNC_SPINLOCK      0x02
+#define SYNC_PTHREAD_MUTEX 0x04
 
 #define CLOCK_TYPE  CLOCK_MONOTONIC_RAW               //CLOCK_PROCESS_CPUTIME_ID
 
@@ -42,9 +42,9 @@ static unsigned int sync_type = SYNC_NONE;
 static struct timespec start_time,stop_time;
 
 /* option-specific arguments */
-int opt_yield  = 0;
-static int VERBOSE    = 0;
-static unsigned int N_THREADS  = 1;
+int opt_yield = 0;
+static int VERBOSE = 0;
+static unsigned int N_THREADS = 1;
 static unsigned long long ITERATIONS = 1;
 
 static struct option long_options[] = {
@@ -56,6 +56,8 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
+static void *listOps_SYNC_NONE(void *offset);
+
 static void *count_SYNC_NONE(void *val);
 static void *count_SYNC_ATOMIC(void *val);
 static void *count_SYNC_SPINLOCK(void *val);
@@ -111,7 +113,7 @@ int main (int argc, char **argv)
         }
 
         /** Finished reading all options, begin performance evaluation **/
-        void *(*workFunctionPtr)(void *) = count_SYNC_NONE;
+        void *(*workFunctionPtr)(void *) = listOps_SYNC_NONE;//count_SYNC_NONE;
         switch(sync_type) {
         case SYNC_ATOMIC:
                 workFunctionPtr = count_SYNC_ATOMIC;
@@ -135,32 +137,40 @@ int main (int argc, char **argv)
         SharedList.next = NULL;
         SharedList.key  = NULL;
 
-        /* create & randomly initialize (iteration * thread) of list elements */
+        /* create & initialize (iteration * thread) of list elements */
         Nodes = init_and_fill(N_THREADS * ITERATIONS);
 
-        //for(i=0;i < N_THREADS * ITERATIONS; i++)
-        //  mNodes[i].key = rand()
 
+        /* Allocate memory for N_THREADS and corresponding operations */
+        unsigned int thread_num;
+        pthread_t thread_pool[N_THREADS];
+        unsigned int num_active_threads = 0;
+        unsigned int active_threads[N_THREADS];
 
+        /* Allocate memory for each thread's argument list */
+        int **pthread_args = (int **) malloc(N_THREADS * sizeof(int *));
+        if(pthread_args == NULL) {
+          fprintf(stderr, "FATAL:: Unable to allocate memory for pthread args\n");
+          exit(1);
+        }
 
         /* note the high-res start-time */
         clock_gettime(CLOCK_TYPE, &start_time);
 
         /* create and start N_THREADS */
-
-        unsigned int active_threads[N_THREADS];
-        unsigned int num_active_threads = 0;
-        pthread_t thread_pool[N_THREADS];
-        unsigned int thread_num;
-        for(thread_num=0; thread_num<N_THREADS; thread_num++)
+        for(thread_num = 0; thread_num < N_THREADS; thread_num++)
         {
-                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (void *)(NULL)) == 0)
+                pthread_args[thread_num] = thread_num;
+                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (void *)(pthread_args[thread_num])) == 0)
                 {
                         num_active_threads++;
                         active_threads[thread_num] = 1;
                 }
                 else
+                {
                         active_threads[thread_num] = 0;
+                        free(pthread_args[thread_num]);
+                }
         }
 
         /* wait for active_threads to join */
@@ -196,6 +206,12 @@ int main (int argc, char **argv)
         exit((counter != 0));
 }
 
+static void *listOps_SYNC_NONE(void *offset) {
+  int i = *((int *) offset);
+  free(offset);
+  if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, i,(int)(i+ITERATIONS));
+  pthread_exit(NULL);
+}
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
         /* Initializes the elements */
