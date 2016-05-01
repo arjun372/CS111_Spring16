@@ -140,7 +140,6 @@ int main (int argc, char **argv)
         /* create & initialize (iteration * thread) of list elements */
         Nodes = init_and_fill(N_THREADS * ITERATIONS);
 
-
         /* Allocate memory for N_THREADS and corresponding operations */
         unsigned int thread_num;
         pthread_t thread_pool[N_THREADS];
@@ -150,8 +149,8 @@ int main (int argc, char **argv)
         /* Allocate memory for each thread's argument list */
         unsigned int **pthread_args = (unsigned int **) malloc(N_THREADS * sizeof(unsigned int *));
         if(pthread_args == NULL) {
-          fprintf(stderr, "FATAL:: Unable to allocate memory for pthread args\n");
-          exit(1);
+                fprintf(stderr, "FATAL:: Unable to allocate memory for pthread args\n");
+                exit(1);
         }
 
         /* note the high-res start-time */
@@ -160,15 +159,15 @@ int main (int argc, char **argv)
         /* create and start N_THREADS */
         for(thread_num = 0; thread_num < N_THREADS; thread_num++)
         {
-	  unsigned int *arg = malloc(sizeof(*arg));
-	  if ( arg == NULL ) {
-            fprintf(stderr, "Couldn't allocate memory for thread arg.\n");
-            exit(EXIT_FAILURE);
-	  }
+                // unsigned int *arg = malloc(sizeof(*arg));
+                // if ( arg == NULL ) {
+                //         fprintf(stderr, "Couldn't allocate memory for thread arg.\n");
+                //         exit(EXIT_FAILURE);
+                // }
 
-	  //*(pthread_args[thread_num]) = thread_num;
-	  *arg = thread_num;
-	  if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, arg) == 0)
+                *(pthread_args[thread_num]) = thread_num;
+                // *arg = thread_num;
+                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, (pthread_args[thread_num])) == 0)
                 {
                         num_active_threads++;
                         active_threads[thread_num] = 1;
@@ -176,7 +175,8 @@ int main (int argc, char **argv)
                 else
                 {
                         active_threads[thread_num] = 0;
-                        free(arg);
+                        // free(arg);
+                        free(pthread_args[thread_num]);
                 }
         }
 
@@ -207,17 +207,17 @@ int main (int argc, char **argv)
 
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
-          free(Keys[i]);
+                free(Keys[i]);
         free(Keys);
         /* Exit non-zero if counter != 0 */
         exit((counter != 0));
 }
 
 static void *listOps_SYNC_NONE(void *offset) {
-  unsigned int i = *((unsigned int *) offset);
-  free(offset);
-  if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, i,(int)(i+ITERATIONS));
-  pthread_exit(NULL);
+        unsigned int i = *((unsigned int *) offset);
+        free(offset);
+        if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, i,(int)(i+ITERATIONS));
+        pthread_exit(NULL);
 }
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
@@ -261,7 +261,7 @@ static char* alloc_rand_string(const long long unsigned size) {
 MemErr:
         fprintf(stderr, "FATAL:: Unable to allocate memory for key\n");
         free(str);
-	exit(1);
+        exit(1);
 }
 
 /* add function as defined by the spec */
