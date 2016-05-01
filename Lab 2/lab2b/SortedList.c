@@ -25,13 +25,13 @@
 
 int SortedList_length(SortedList_t *list) {
 
-        int len = 0;
-        SortedListElement_t *cur_node = list;
-        SortedListElement_t *prev_node = list;
-
         /* list head should not be corrupt */
         if(list->prev != NULL || list->key != NULL)
                 return -1;
+
+        int len = 0;
+        SortedListElement_t *cur_node = list;
+        SortedListElement_t *prev_node;
 
         /* iterate over all nodes, checking for corruption & incrementing len */
         while(cur_node->next != NULL)
@@ -50,14 +50,6 @@ int SortedList_length(SortedList_t *list) {
         return len;
 }
 
-
-
-
-
-
-
-
-
 /**
  * SortedList_insert ... insert an element into a sorted list
  *
@@ -72,6 +64,15 @@ int SortedList_length(SortedList_t *list) {
  *		call pthread_yield in middle of critical section
  */
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
-        SortedList_t *MEE = list;
-        SortedListElement_t *YOUU = element;
+
+        SortedListElement_t *cur_node = list;
+
+        /** Dumb insert :: Iterate until end of list */
+        while(cur_node->next != NULL)
+                cur_node = cur_node->next;
+
+        cur_node->next = element;
+        element->prev = cur_node;
+
+
 }
