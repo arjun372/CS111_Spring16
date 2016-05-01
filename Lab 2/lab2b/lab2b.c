@@ -6,8 +6,7 @@
 
 #define _GNU_SOURCE
 
-#define MAX_KEY_LENGTH    10
-#define MIN_KEY_LENGTH    10
+#define KEY_SIZE             10
 
 #define SYNC_NONE          0x00
 #define SYNC_ATOMIC        0x01
@@ -242,7 +241,7 @@ static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
         /* Fill each element with random data */
         long long unsigned iterator;
         for(iterator = 0; iterator < nBlocks; iterator++) {
-                Keys[iterator] = alloc_rand_string(rand() % MAX_KEY_LENGTH + MIN_KEY_LENGTH);
+                Keys[iterator] = alloc_rand_string(KEY_SIZE);
                 elements[iterator].key = Keys[iterator];
         }
 
