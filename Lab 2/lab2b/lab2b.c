@@ -6,13 +6,16 @@
 
 #define TRUE 1
 #define _GNU_SOURCE
-#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW //CLOCK_PROCESS_CPUTIME_ID
 
-#define FILE_MODE       0664
+#define MAX_KEY_LENGTH   128
+#define MIN_KEY_LENGTH     1
+
 #define SYNC_NONE          0
 #define SYNC_ATOMIC        1
 #define SYNC_SPINLOCK      2
 #define SYNC_PTHREAD_MUTEX 3
+
+#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW               //CLOCK_PROCESS_CPUTIME_ID
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -29,6 +32,7 @@
 #include "SortedList.c"
 static SortedList_t SharedList;
 static SortedListElement_t *Nodes;
+static char **Keys;
 
 /* performance-evaluation specific variables */
 static volatile long long counter = 0;
@@ -52,12 +56,13 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static void* count_SYNC_NONE(void *val);
-static void* count_SYNC_ATOMIC(void *val);
-static void* count_SYNC_SPINLOCK(void *val);
-static void* count_SYNC_PTHREAD_MUTEX(void *val);
-static SortedListElement_t *init_and_fill(const long long unsigned nBlocks);
+static void *count_SYNC_NONE(void *val);
+static void *count_SYNC_ATOMIC(void *val);
+static void *count_SYNC_SPINLOCK(void *val);
+static void *count_SYNC_PTHREAD_MUTEX(void *val);
+static char *alloc_rand_string(const long long unsigned size);
 static void  debug_log(const int opt_index, char **optarg, const int argc);
+static SortedListElement_t *init_and_fill(const long long unsigned nBlocks);
 
 int main (int argc, char **argv)
 {
@@ -183,21 +188,56 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
-	free(Nodes);
         /* Exit non-zero if counter != 0 */
+        free(Keys);
+        free(Nodes);
         exit((counter != 0));
 }
 
-/* Initializes the elements and fills them with random data */
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks) {
 
-  SortedListElement_t *elements = (SortedListElement_t *) malloc(sizeof(SortedListElement_t) * nBlocks);
-  if(elements == NULL) {
-          fprintf(stderr, "FATAL:: Unable to allocate memory\n");
-          exit(1);
-  }
-  return elements;
+        /* Initializes the elements */
+        SortedListElement_t *elements = (SortedListElement_t *) malloc(sizeof(SortedListElement_t) * nBlocks);
+        if(elements == NULL) goto MemErr;
+
+        /* Initialize a large list of char pointers to keep track of allocated memory */
+        Keys = (char **) malloc(nBlocks * sizeof(char *));
+        if(Keys == NULL) goto MemErr;
+
+        /* Fill each element with random data */
+        long long unsigned iterator;
+        for(iterator = 0; iterator < nBlocks; iterator++) {
+                Keys[iterator] = alloc_rand_string(rand() % MAX_KEY_LENGTH + MIN_KEY_LENGTH);
+                elements[iterator].key = Keys[iterator];
+        }
+
+        return elements;
+MemErr:
+        fprintf(stderr, "FATAL:: Unable to allocate memory\n");
+        free(elements);
+        free(Keys);
+        exit(1);
 }
+
+/* Allocate a random string of @param size */
+static char* alloc_rand_string(const long long unsigned size) {
+        const char charset[] = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        char *str = malloc(sizeof(char) * (size + 1));
+        if(str == NULL) goto MemErr;
+
+        int offset;
+        str[size] = '\0';
+        unsigned long long i;
+        for (i = 0; i < size; i++) {
+                offset = rand() % (int) (sizeof(charset) - 1);
+                str[i] = charset[offset];
+        }
+        return str;
+MemErr:
+        fprintf(stderr, "FATAL:: Unable to allocate memory for key\n");
+        free(s);
+}
+
 /* add function as defined by the spec */
 static void add(volatile long long *pointer, long long value) {
         long long sum = *pointer + value;
