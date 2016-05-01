@@ -4,7 +4,6 @@
     Arjun 504078752
  **/
 
-#define TRUE 1
 #define _GNU_SOURCE
 
 #define MAX_KEY_LENGTH    10
@@ -172,7 +171,7 @@ int main (int argc, char **argv)
         }
 
         /* wait for active_threads to join */
-        for(thread_num=0; thread_num<N_THREADS; thread_num++)
+        for(thread_num = 0; thread_num < N_THREADS; thread_num++)
                 if(active_threads[thread_num])
                         pthread_join(thread_pool[thread_num], NULL);
 
@@ -180,7 +179,7 @@ int main (int argc, char **argv)
         clock_gettime(CLOCK_TYPE, &stop_time);
 
         /* Close the pthread_mutex if initiated */
-        if(sync_type==SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
+        if(sync_type == SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
 
         /* output to STDOUT the num_of_operations_performed */
         unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
@@ -195,7 +194,6 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
-
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
@@ -204,13 +202,24 @@ int main (int argc, char **argv)
         exit((counter != 0));
 }
 
+/* Run OPs per thread */
 static void *listOps_SYNC_NONE(void *offset) {
+
+        /* Get offset and free the memory */
         unsigned int i = *((unsigned int *) offset);
         free(offset);
-        
+
+        /* Calculate the start & stop offsets in Keys */
         unsigned int start = i * ITERATIONS;
         unsigned int stop  = ITERATIONS + start - 1;
-        if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
+        //if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
+
+        /* get SharedList length */
+        int len = SortedList_length(SharedList);
+        if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
+
+      //  long long unsigned iterator;
+      //  for(iterator = start; iterator <= stop; iterator++)
         pthread_exit(NULL);
 }
 
