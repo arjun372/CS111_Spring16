@@ -186,8 +186,8 @@ int main (int argc, char **argv)
         fprintf(stdout, "%d threads x %llu iterations x (insert + lookup/delete) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
 
         /* If counter is non-zero, print to STDERR */
-        if(VERBOSE || counter != 0)
-                fprintf(stderr, "ERROR: final count = %llu\n", counter);
+        int list_length = SortedList_length(&SharedList);
+        if(VERBOSE && list_length != 0) fprintf(stderr, "ERROR: final count = %llu\n", counter);
 
         /* print to STDOUT {elapsed_time, time_per_op} */
         uint64_t elapsed_time = 1000000000L * (stop_time.tv_sec - start_time.tv_sec) + stop_time.tv_nsec - start_time.tv_nsec;
@@ -198,8 +198,8 @@ int main (int argc, char **argv)
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
         free(Keys);
-        /* Exit non-zero if counter != 0 */
-        exit((counter != 0));
+        /* Exit non-zero if list_length != 0 */
+        exit((list_length != 0));
 }
 
 /* Run OPs per thread */
