@@ -25,17 +25,27 @@
 
 int SortedList_length(SortedList_t *list) {
 
-        int len = -1;
-        SortedListElement_t *node = list;
+        int len = 0;
+        SortedListElement_t *cur_node = list;
+        SortedListElement_t *prev_node = list;
 
         /* list head should not be corrupt */
         if(list->prev != NULL || list->key != NULL)
                 return -1;
 
         /* iterate over all nodes, checking for corruption & incrementing len */
-        // while(TRUE) {
-        //
-        // }
+        while(cur_node->next != NULL)
+        {
+                len++;
+                prev_node = cur_node;
+                cur_node = cur_node->next;
+
+                if(cur_node->prev != prev_node)
+                        return -1;
+
+                if(cur_node->key == NULL)
+                        return -1;
+        }
 
         return len;
 }
