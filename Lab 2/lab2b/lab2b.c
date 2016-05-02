@@ -104,7 +104,6 @@ int main (int argc, char **argv)
         }
 
         /** Finished reading all options, begin performance evaluation **/
-        void *(*workFunctionPtr)(void *) = doWork;
 
         /* initialize mutex */
         if(sync_type==SYNC_PTHREAD_MUTEX && pthread_mutex_init(&MUTEX_LOCK,NULL))
@@ -198,8 +197,17 @@ static void *doWork(void *offset) {
         unsigned int stop  = ITERATIONS + start - 1;
 
         /* Add thread_local elements Nodes[start:stop] into SharedList */
+        if(sync_type == SYNC_PTHREAD_MUTEX)
+                pthread_mutex_lock(&MUTEX_LOCK);
+        else if(sync_type == SYNC_SPINLOCK)
+                while (__sync_lock_test_and_set(&SPINLOCK, 1))
+                        continue;
         for(j = start; j <= stop; j++)
                 SortedList_insert(&SharedList, &(Nodes[j]));
+        if(sync_type == SYNC_PTHREAD_MUTEX)
+                pthread_mutex_lock(&MUTEX_LOCK);
+        else if(sync_type == SYNC_SPINLOCK)
+                __sync_lock_release(&SPINLOCK);
 
         /* get SharedList length */
         int len = SortedList_length(&SharedList);
