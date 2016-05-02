@@ -226,7 +226,7 @@ static void *listOps_SYNC_NONE(void *offset) {
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++) {
           char *found_key = SortedList_lookup(&SharedList, Keys[j])->key;
-          if(VERBOSE) fprintf(stderr, "Found Key[%d] :: %s : %s\n", found_key, Keys[j]);
+          if(VERBOSE) fprintf(stderr, "Found Key[%d] :: %s : %s\n", j, found_key, Keys[j]);
         }
 
         pthread_exit(NULL);
