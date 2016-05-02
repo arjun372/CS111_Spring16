@@ -17,6 +17,7 @@ int SortedList_length(SortedList_t *list) {
         {
                 len++;
                 prev_node = curr_node;
+  // Call yield in the middle of iterating over the nodes to really screw things
                 if(opt_yield & SEARCH_YIELD)
                   pthread_yield();
                 curr_node = curr_node->next;
@@ -50,6 +51,8 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
                 {
                         prev_node->next = element;
                         element->prev = prev_node;
+                        if(opt_yield & INSERT_YIELD)
+                          pthread_yield();
                         element->next = curr_node;
                         curr_node->prev = element;
                         return;
@@ -100,6 +103,9 @@ SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
                 /* If key matches, return the current node */
                 if(strcmp(key, curr_node->key) == 0)
                         return curr_node;
+
+                if(opt_yield & SEARCH_YIELD)
+                          pthread_yield();
 
                 /* Else move to the next node if possible */
                 else if(curr_node->next != NULL)
@@ -159,6 +165,10 @@ int SortedList_delete( SortedListElement_t *element) {
          */
         if(prev_node != NULL)
                 prev_node->next = next_node;
+
+        if(opt_yield & DELETE_YIELD)
+          pthread_yield();
+
         if(next_node != NULL)
                 next_node->prev = prev_node;
         return 0;
