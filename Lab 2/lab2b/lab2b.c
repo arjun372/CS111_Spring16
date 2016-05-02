@@ -140,7 +140,7 @@ int main (int argc, char **argv)
                         exit(EXIT_FAILURE);
                 }
                 *arg = thread_num;
-                if(pthread_create(&thread_pool[thread_num], NULL, workFunctionPtr, arg) == 0)
+                if(pthread_create(&thread_pool[thread_num], NULL, doWork, arg) == 0)
                 {
                         num_active_threads++;
                         active_threads[thread_num] = 1;
