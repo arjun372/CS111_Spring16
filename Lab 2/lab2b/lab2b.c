@@ -9,11 +9,10 @@
 #define KEY_SIZE             10
 
 #define SYNC_NONE          0x00
-#define SYNC_ATOMIC        0x01
-#define SYNC_SPINLOCK      0x02
-#define SYNC_PTHREAD_MUTEX 0x04
+#define SYNC_SPINLOCK      0x01
+#define SYNC_PTHREAD_MUTEX 0x02
 
-#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW               //CLOCK_PROCESS_CPUTIME_ID
+#define CLOCK_TYPE  CLOCK_MONOTONIC_RAW   /* CLOCK_PROCESS_CPUTIME_ID */
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -39,7 +38,7 @@ static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
 static struct timespec start_time,stop_time;
 
-/* option-specific arguments */
+/* option-specific variables */
 int opt_yield = 0;
 static int VERBOSE = 0;
 static unsigned int N_THREADS = 1;
@@ -54,14 +53,9 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static void *listOps_SYNC_NONE(void *offset);
-
-static void *count_SYNC_NONE(void *val);
-static void *count_SYNC_ATOMIC(void *val);
-static void *count_SYNC_SPINLOCK(void *val);
-static void *count_SYNC_PTHREAD_MUTEX(void *val);
+static void *doWork(void *offset);
 static char *alloc_rand_string(const long long unsigned size);
-static void  debug_log(const int opt_index, char **optarg, const int argc);
+static void debug_log(const int opt_index, char **optarg, const int argc);
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks);
 
 int main (int argc, char **argv)
@@ -90,7 +84,6 @@ int main (int argc, char **argv)
                 case 'S':
                         if(optarg[0]=='m') sync_type = SYNC_PTHREAD_MUTEX;
                         if(optarg[0]=='s') sync_type = SYNC_SPINLOCK;
-                        if(optarg[0]=='c') sync_type = SYNC_ATOMIC;
                         if(VERBOSE) debug_log(opt_index, &optarg, 1);
                         break;
 
@@ -111,23 +104,13 @@ int main (int argc, char **argv)
         }
 
         /** Finished reading all options, begin performance evaluation **/
-        void *(*workFunctionPtr)(void *) = listOps_SYNC_NONE;//count_SYNC_NONE;
-        switch(sync_type) {
-        case SYNC_ATOMIC:
-                workFunctionPtr = count_SYNC_ATOMIC;
-                break;
+        void *(*workFunctionPtr)(void *) = doWork;
 
-        case SYNC_SPINLOCK:
-                workFunctionPtr = count_SYNC_SPINLOCK;
-                break;
-
-        case SYNC_PTHREAD_MUTEX:
-                if(pthread_mutex_init(&MUTEX_LOCK, NULL)) {
-                        fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
-                        exit(1);
-                }
-                workFunctionPtr = count_SYNC_PTHREAD_MUTEX;
-                break;
+        /* initialize mutex */
+        if(sync_type==SYNC_PTHREAD_MUTEX && pthread_mutex_init(&MUTEX_LOCK,NULL))
+        {
+                fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
+                exit(1);
         }
 
         /* initialize an empty list */
@@ -186,7 +169,8 @@ int main (int argc, char **argv)
 
         /* If counter is non-zero, print to STDERR */
         int list_length = SortedList_length(&SharedList);
-        if(VERBOSE) fprintf(stderr, "FINAL :: list_length = %d\n", list_length);
+        if(VERBOSE || list_length != 0)
+                fprintf(stderr, "FINAL :: list_length = %d\n", list_length);
 
         /* print to STDOUT {elapsed_time, time_per_op} */
         uint64_t elapsed_time = 1000000000L * (stop_time.tv_sec - start_time.tv_sec) + stop_time.tv_nsec - start_time.tv_nsec;
@@ -202,7 +186,7 @@ int main (int argc, char **argv)
 }
 
 /* Run OPs per thread */
-static void *listOps_SYNC_NONE(void *offset) {
+static void *doWork(void *offset) {
 
         /* Get offset and free the memory */
         unsigned int i = *((unsigned int *) offset);
@@ -273,74 +257,10 @@ MemErr:
         exit(1);
 }
 
-/* add function as defined by the spec */
-static void add(volatile long long *pointer, long long value) {
-        long long sum = *pointer + value;
-        if(opt_yield) pthread_yield();
-        *pointer = sum;
-}
-
-/* Each pthread runs this function NOSYNC */
-static void* count_SYNC_NONE(void *val) {
-        void* noUse = val;
-        unsigned long long i;
-        for(i=0; i<ITERATIONS; i++)
-        {
-                add(&counter,  1);
-                add(&counter, -1);
-        }
-        pthread_exit(NULL);
-}
-
-static void* count_SYNC_PTHREAD_MUTEX(void *val) {
-        void* noUse = val;
-        unsigned long long i;
-        pthread_mutex_lock(&MUTEX_LOCK);
-        for(i=0; i<ITERATIONS; i++)
-        {
-                add(&counter,  1);
-                add(&counter, -1);
-        }
-        pthread_mutex_unlock(&MUTEX_LOCK);
-        pthread_exit(NULL);
-}
-
-static void* count_SYNC_SPINLOCK(void *val) {
-        void* noUse = val;
-        unsigned long long i;
-        while (__sync_lock_test_and_set(&SPINLOCK, 1))
-                continue;
-        for(i=0; i<ITERATIONS; i++)
-        {
-                add(&counter,  1);
-                add(&counter, -1);
-        }
-        __sync_lock_release(&SPINLOCK);
-        pthread_exit(NULL);
-}
-static void* count_SYNC_ATOMIC(void *val) {
-        void* noUse = val;
-        unsigned long long i;
-        long long sum, orig;
-        for(i=0; i<ITERATIONS; i++) {
-                do {
-                        orig = counter;
-                        if(opt_yield) pthread_yield();
-                        sum = orig + 1;
-                } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
-                do {
-                        orig = counter;
-                        if(opt_yield) pthread_yield();
-                        sum = orig - 1;
-                } while (__sync_val_compare_and_swap(&counter, orig, sum) != orig);;
-        }
-        pthread_exit(NULL);
-}
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
         if(!VERBOSE)
                 return;
-
         int i;
         fprintf(stderr,"--%s", long_options[opt_index].name);
         for(i = 0; i < argc; i++)
