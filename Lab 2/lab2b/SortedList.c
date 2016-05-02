@@ -1,27 +1,7 @@
 #define TRUE 1
 #include "SortedList.h"
-/**
- * SortedList_length ... count elements in a sorted list
- *	While enumeratign list, it checks all prev/next pointers
- *
- * @param SortedList_t *list ... header for the list
- *
- * @return int number of elements in list (excluding head)
- *	   -1 if the list is corrupted
- *
- * Note: if (opt_yield & SEARCH_YIELD)
- *		call pthread_yield in middle of critical section
- */
+#include "string.h"
 
-/**   @param SortedList_t *list ... header for the list
- *
- *   @return -1 if the list is corrupted
- *   @return  0 if no-elements in list (except head)
- *   @return  N # elements in list (except head)
- *
- *   if (opt_yield & SEARCH_YIELD) ::
- *                             call pthread_yield in middle of critical section
- */
 
 int SortedList_length(SortedList_t *list) {
 
@@ -65,14 +45,42 @@ int SortedList_length(SortedList_t *list) {
  */
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
 
-        SortedListElement_t *cur_node = list;
+        SortedListElement_t *cur_node  = list;
+        SortedListElement_t *prev_node = list;
 
-        /** Dumb insert :: Iterate until end of list */
-        while(cur_node->next != NULL)
+        if(cur_node->next == NULL)
+                goto EOL;
+        else
                 cur_node = cur_node->next;
 
+        int bias;
+        /** Iterate until EOL **/
+        do {
+                bias = strcmp(element->key, cur_node->key);
+                /* cur_node > element, insert element to left of cur_node */
+                if(bias < 0)
+                {
+                        prev_node->next = element;
+                        element->prev = prev_node;
+                        element->next = cur_node;
+                        cur_node->prev = element;
+                        return;
+                }
+
+                /* cur_node <= element, iterate to next node or break if EOL */
+                else if (cur_node->next != NULL)
+                {
+                        prev_node = cur_node;
+                        cur_node = cur_node->next;
+                }
+                else
+                        goto EOL;
+        } while(TRUE);
+
+        /* Control reaches here if we reach EOL w/o inserting the element */
+        /* Insert element to EOL and set element->next = NULL */
+EOL:
         cur_node->next = element;
         element->prev = cur_node;
-
-
+        element->next = NULL;
 }

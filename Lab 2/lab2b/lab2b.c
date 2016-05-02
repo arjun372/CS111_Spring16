@@ -224,6 +224,7 @@ static void *listOps_SYNC_NONE(void *offset) {
         int len = SortedList_length(&SharedList);
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
+        
 
         pthread_exit(NULL);
 }
