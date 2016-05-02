@@ -30,19 +30,6 @@ int SortedList_length(SortedList_t *list) {
         return len;
 }
 
-/**
- * SortedList_insert ... insert an element into a sorted list
- *
- *	The specified element will be inserted in to
- *	the specified list, which will be kept sorted
- *	in ascending order based on associated keys
- *
- * @param SortedList_t *list ... header for the list
- * @param SortedListElement_t *element ... element to be added to the list
- *
- * Note: if (opt_yield & INSERT_YIELD)
- *		call pthread_yield in middle of critical section
- */
 void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
 
         SortedListElement_t *cur_node  = list;
@@ -83,4 +70,46 @@ EOL:
         cur_node->next = element;
         element->prev = cur_node;
         element->next = NULL;
+}
+
+/**
+ * SortedList_lookup ... search sorted list for a key
+ *
+ *	The specified list will be searched for an
+ *	element with the specified key.
+ *
+ * @param SortedList_t *list ... header for the list
+ * @param const char * key ... the desired key
+ *
+ * @return pointer to matching element, or NULL if none is found
+ *
+ * Note: if (opt_yield & SEARCH_YIELD)
+ *		call pthread_yield in middle of critical section
+ */
+SortedListElement_t *SortedList_lookup(SortedList_t *list, const char *key) {
+
+        SortedListElement_t *cur_node = list;
+
+        /* If list is empty, return NULL. Else move to first node */
+        if(cur_node->next == NULL)
+                goto EOL;
+        else
+                cur_node = cur_node->next;
+        do {
+                /* If key matches, return the current node */
+                if(strcmp(key, cur_node->key) == 0)
+                        return cur_node;
+
+                /* Else move to the next node if possible */
+                else if(cur_node->next != NULL)
+                        cur_node = cur_node->next;
+
+                /* Not possible to go to next node. Reached EOL, return NULL */
+                else
+                        goto EOL;
+        } while(TRUE);
+
+        /* Reached EOL, key not found. Return NULL */
+EOL:
+        return NULL;
 }

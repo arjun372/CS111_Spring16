@@ -211,7 +211,6 @@ static void *listOps_SYNC_NONE(void *offset) {
         /* Calculate the start & stop offsets in Keys */
         unsigned int start = i * ITERATIONS;
         unsigned int stop  = ITERATIONS + start - 1;
-        //if(VERBOSE) fprintf(stderr, "Thread %d : Iterate from %d : %d\n", i, start, stop);
 
         /* Add my elements Nodes[start:stop] into SharedList */
         unsigned int j;
@@ -224,7 +223,11 @@ static void *listOps_SYNC_NONE(void *offset) {
         int len = SortedList_length(&SharedList);
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
-        
+        /* Lookup each element with known key and delete it */
+        for(j = start; j <= stop; j++) {
+          char *found_key = SortedList_lookup(&SharedList, Keys[j])->key;
+          if(VERBOSE) fprintf(stderr, "Found Key[%d] :: %s : %s\n", found_key, Keys[j]);
+        }
 
         pthread_exit(NULL);
 }
