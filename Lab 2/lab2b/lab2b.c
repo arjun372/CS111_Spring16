@@ -186,7 +186,7 @@ int main (int argc, char **argv)
 
         /* If counter is non-zero, print to STDERR */
         int list_length = SortedList_length(&SharedList);
-        if(VERBOSE && list_length != 0) fprintf(stderr, "ERROR: list_length = %d\n", list_length);
+        if(VERBOSE) fprintf(stderr, "FINAL :: list_length = %d\n", list_length);
 
         /* print to STDOUT {elapsed_time, time_per_op} */
         uint64_t elapsed_time = 1000000000L * (stop_time.tv_sec - start_time.tv_sec) + stop_time.tv_nsec - start_time.tv_nsec;
@@ -210,14 +210,12 @@ static void *listOps_SYNC_NONE(void *offset) {
 
         /* Calculate the start & stop offsets in Keys */
         unsigned int start = i * ITERATIONS;
+        unsigned int j     = start;
         unsigned int stop  = ITERATIONS + start - 1;
 
-        /* Add my elements Nodes[start:stop] into SharedList */
-        unsigned int j;
-        for(j = start; j <= stop; j++) {
-          if(VERBOSE) fprintf(stderr, "Adding Key[%d] :: %s\n", j, Keys[j]);
-          SortedList_insert(&SharedList, &(Nodes[j]));
-        }
+        /* Add thread_local elements Nodes[start:stop] into SharedList */
+        for(j = start; j <= stop; j++)
+                SortedList_insert(&SharedList, &(Nodes[j]));
 
         /* get SharedList length */
         int len = SortedList_length(&SharedList);
@@ -225,7 +223,7 @@ static void *listOps_SYNC_NONE(void *offset) {
 
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++)
-          SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
+                SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
 
         pthread_exit(NULL);
 }
