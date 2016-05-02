@@ -2,7 +2,6 @@
 #include "SortedList.h"
 #include "string.h"
 
-
 int SortedList_length(SortedList_t *list) {
 
         /* list head should not be corrupt */
@@ -18,6 +17,8 @@ int SortedList_length(SortedList_t *list) {
         {
                 len++;
                 prev_node = curr_node;
+                if(opt_yield & SEARCH_YIELD)
+                  pthread_yield();
                 curr_node = curr_node->next;
 
                 if(curr_node->prev != prev_node)
