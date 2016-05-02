@@ -106,11 +106,12 @@ int main (int argc, char **argv)
         /** Finished reading all options, begin performance evaluation **/
 
         /* initialize mutex */
-        if(sync_type==SYNC_PTHREAD_MUTEX && pthread_mutex_init(&MUTEX_LOCK,NULL))
-        {
-                fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
-                exit(1);
-        }
+        if(sync_type==SYNC_PTHREAD_MUTEX)
+                if(pthread_mutex_init(&MUTEX_LOCK,NULL))
+                {
+                        fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
+                        exit(1);
+                }
 
         /* initialize an empty list */
         SharedList.prev = NULL;
@@ -204,10 +205,6 @@ static void *doWork(void *offset) {
                         continue;
         for(j = start; j <= stop; j++)
                 SortedList_insert(&SharedList, &(Nodes[j]));
-        if(sync_type == SYNC_PTHREAD_MUTEX)
-                pthread_mutex_lock(&MUTEX_LOCK);
-        else if(sync_type == SYNC_SPINLOCK)
-                __sync_lock_release(&SPINLOCK);
 
         /* get SharedList length */
         int len = SortedList_length(&SharedList);
@@ -216,6 +213,11 @@ static void *doWork(void *offset) {
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++)
                 SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
+
+        if(sync_type == SYNC_PTHREAD_MUTEX)
+                pthread_mutex_lock(&MUTEX_LOCK);
+        else if(sync_type == SYNC_SPINLOCK)
+                __sync_lock_release(&SPINLOCK);
 
         pthread_exit(NULL);
 }
