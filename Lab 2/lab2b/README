@@ -1,28 +1,35 @@
 UCLA CS 111 - Spring '16
 Arjun 504078752
-Lab 2a - Atomic Operations
+Lab 2b - Complex Critical Sections
 
 ------
 Files
 ------
 
-1. Makefile :: Commands for building the executable & creating a tarball for
-               submission. Linker for the pthread library included.
+1. Makefile     - Commands for building the executable & creating a tarball for
+                  submission.
 
-2. lab2a.c :: Source code that implements 'lab2a' as per the Project-2A spec.
+2. SortedList.h - Header file containing interfaces for linked list operations.
 
-3. graph1.png :: Illustrates a Log-Log graph of COST_PER_OP vs. #_ITERATIONS.
+3. SortedList.c - source file that compiles cleanly (with no errors or warnings)
+                  and implements insert, delete, lookup, and length methods for
+                  a sorted doubly linked list (described in the provided header
+                  file, including correct placement of pthread_yield calls).
 
-4. graph2.png :: Depicts a linear graph of AVG_TIME_PER_OP vs. #_THREADS for
-                 pthread_mutex, spinlocks, CAS & unprotected critical sections.
+4. lab2b.c      - source file compiles cleanly (with no errors or warnings), and
+                  implements the specified command line options (--threads,
+                  --iterations, --yield, --sync), drives one or more parallel
+                  threads that do operations on a shared linked list, and
+                  reports on the final list and performance.
 
-5. README   :: [[ self ]]
 
---------------------
-Use of slip days : 1
---------------------
+5. graph1.png   - Illustrates the average time per unprotected operation vs
+                  number of iteration (single thread).
 
-Correctly implemented opt-yield for every type of sync method
+6. graph2.png   - (corrected) average time per operation (for unprotected,
+                  mutex, and spin-lock) vs number of threads.
+
+7. README   :: [[ self ]]
 
 ---------------
 Extra features
@@ -34,93 +41,60 @@ Extra features
 --------------
 Analysis
 --------------------------------------------------------------------------------
-2A.1A: Why does it take this many threads or iterations to result in failure?
+2B.1A: Explain the variation in time per operation vs the number of iterations?
 
-The critical section being very small, the probability of error is quite low
-for a low number of threads/iterations. This probability increases with
-increase in # of threads or increase in # of iterations. If the critical section
-was larger, i.e. if the processor spent more time in the critical section, the
-probability of faults would increase.
+
+
+
+
+
+
 --------------------------------------------------------------------------------
-2A.1B: Why does a significantly smaller number of iterations so seldom fail?
+2B.1B: How would you propose to correct for this effect?
 
-This is not true when the number of threads is large. Although if the number of
-threads were lower in addition to there being a small number of iterations, the
-failure rate drops quite rapidly. This is because most of the computations are
-coalesced by the processor and executed in a single go before it the process is
-scheduled out by the kernel.
+
+
+
+
+
+
 --------------------------------------------------------------------------------
-2A.2A: Why does the average cost per operation drop with increasing iterations?
+2B.2A: Compare the variation in time per protected operation vs the number of
+       threads in Project 2B and in Project 2A.  Explain the difference.
 
-There is a fixed one-time cost of scheduling, starting & stopping any thread.
-The marginal cost of adding an additional iteration to an already scheduled
-thread is quite low. Proportionally, the setup cost/overhead is quite large for
-a single iteration, but multiple iterations batched together are more efficient.
-Factors that may affect this behavior are parameters that control how
-aggressively the processor performs context switches on running processes and
-threads.
+
+
+
+
+
 --------------------------------------------------------------------------------
-2A.2B: How do we know what the “correct” cost is?
+Thresholds
+-------------
 
-Measuring the time spent inside the critical section of the code is one way to
-get an accurate measure of the correct cost of the operation for cases when the
-number of iterations are low. This can be done by measuring the elapsed time
-(with high precision i.e.nanoseconds) right before and after the read and
-assignment operations in the add method.
+How many parallel threads & iterations does it take to fairly consistently
+demonstrate a problem? -
+
 --------------------------------------------------------------------------------
-2A.2C: Why are the --yield runs so much slower?  Where is the extra time going?
+Known bugs - THESE BUGS DO NOT AFFECT THE CORRECTNESS OR ROBUSTNESS OF THE
+             THIS PROGRAM WITHIN THE SCOPE OF THE PROJECT SPEC.
+---------------
 
-Since the calling thread (for pthread_yield) voluntarily relinquishes the CPU
-every-time the yield method is called, the thread is placed lower in the running
-queue. Another thread will take it’s place while this current thread is halted.
-The extra time is being spent by the CPU on other threads, hence the turnaround
-time for the completion of that thread has increased.
---------------------------------------------------------------------------------
-2A.2D: Can we get valid timings if we are using --yield?  How, or why not?
+   1. Unidentified memory leak from pthread_create when --threads are > 1. This
+      does not happen every-time, and the size of leaked memory remains constant
+      irrespective of thread_count.
 
-Yes, but not without OS/kernel support. The OS would need to keep track of the
-pause and resume times of the thread since the thread (running in userspace)
-will have no control over when it may be suspended by the kernel, hence
-rendering of it’s attempted timekeeping essentially useless. Furthermore, if the
-timekeeping function is implemented using shift registers or software logic,then
-all calculations of time may as well be null and void. This is because CPU clock
-is prone to drift and drift propagation related errors.
+      Valgrind reports the following error :
 
-One way to implement this, provided that the system has hardware support and low
-level access for an RTC, is to define a new interrupt using a system call that
-directs/requests the kernel to save timestamps in the thread’s state
-registers/structures. This way, the pause and resume times are updated by the
-kernel only, and system calls (as opposed to userspace calls) are honored every
-time by the kernel in if it is pre-directed to do so (think highest priority
-interrupt).
---------------------------------------------------------------------------------
-2A.3A: Why do all of the options perform similarly for low numbers of threads?
-
-When the number of threads is low, there is no bottleneck in terms of CPU speed
-trying to keep up with the requests made by the threads. Hence, the CPU is able
-to effectively handle the load from the relatively low number of threads and
-spend most of it’s time idling.
---------------------------------------------------------------------------------
-2A.3B: Why do the three protected operations slow down as the number of threads
-       rises?
-
-The three protected operations perform checks against race conditions and
-deadlocks, which involves waiting on other threads to free up resources. As the
-number of threads rises, the wait-times per thread also rises. This causes an
-overall effect that develops into a bottleneck, which throttles the overall
-throughput (in terms of operations per second). The exact factor by which the
-bottleneck grows depends strictly on the implementation of the protected
-operation. Mutex operation, for example uses a blocking mechanism, which allows
-that thread the to be blocked (asleep) and not consume CPU cycles while the
-lock is still held by some other pthread. When the lock is released, the thread
-may get unblocked and signalled to continue execution.
---------------------------------------------------------------------------------
-2A.3C: Why are spin-locks so expensive for large numbers of threads?
-
-Spin locks are implemented using busy-wait, and not a blocking mechanism. Hence,
-they consume CPU clock cycles even while waiting, checking some condition every
-time per spin. When the number of threads become very large, each thread has to
-compete for CPU time to check whether the lock has been removed. This slow-down
-is observed almost immediately if the CPU usage starts closing towards 100% and
-the number of threads equal or exceed the number of available processor cores.
---------------------------------------------------------------------------------
+==43982==    312 bytes in 1 blocks are still reachable in loss record 3 of 4
+==43982==    at 0x4A057BB: calloc (vg_replace_malloc.c:593)
+==43982==    by 0x320780FE53: _dl_check_map_versions (in /lib64/ld-2.12.so)
+==43982==    by 0x3207812F18: dl_open_worker (in /lib64/ld-2.12.so)
+==43982==    by 0x320780E285: _dl_catch_error (in /lib64/ld-2.12.so)
+==43982==    by 0x3207812639: _dl_open (in /lib64/ld-2.12.so)
+==43982==    by 0x3207D26C5F: do_dlopen (in /lib64/libc-2.12.so)
+==43982==    by 0x320780E285: _dl_catch_error (in /lib64/ld-2.12.so)
+==43982==    by 0x3207D26DB6: __libc_dlopen_mode (in /lib64/libc-2.12.so)
+==43982==    by 0x320840FEEB: pthread_cancel_init (in /lib64/libpthread-2.12.so)
+==43982==    by 0x320841004B: _Unwind_ForcedUnwind (in /lib64/libpthread-2.12.so
+==43982==    by 0x320840DF5F: __pthread_unwind (in /lib64/libpthread-2.12.so)
+==43982==    by 0x3208408174: pthread_exit (in /lib64/libpthread-2.12.so)
