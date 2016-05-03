@@ -225,10 +225,14 @@ static void *doWork(void *offset) {
         unsigned int stop  = ITERATIONS + start - 1;
 
         /* Add thread_local elements Nodes[start:stop] into SharedList */
-        acquire_lock();
-        for(j = start; j <= stop; j++)
+
+        for(j = start; j <= stop; j++) {
+                acquire_lock();
                 SortedList_insert(&SharedList, &(Nodes[j]));
-        release_lock();
+                release_lock();
+        }
+
+
 
         /* get SharedList length */
         acquire_lock();
@@ -237,10 +241,12 @@ static void *doWork(void *offset) {
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
         /* Lookup each element with known key and delete it */
-        acquire_lock();
-        for(j = start; j <= stop; j++)
+
+        for(j = start; j <= stop; j++) {
+                acquire_lock();
                 SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
-        release_lock();
+                release_lock();
+        }
 
         pthread_exit(NULL);
 }
