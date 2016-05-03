@@ -185,6 +185,33 @@ int main (int argc, char **argv)
         exit((list_length != 0));
 }
 
+static void acquire_lock() {
+        switch(sync_type)
+        {
+        case SYNC_PTHREAD_MUTEX:
+                pthread_mutex_lock(&MUTEX_LOCK);
+                break;
+
+        case SYNC_SPINLOCK:
+                while (__sync_lock_test_and_set(&SPINLOCK, 1))
+                        continue;
+                break;
+        }
+}
+
+static void release_lock() {
+        switch(sync_type)
+        {
+        case SYNC_PTHREAD_MUTEX:
+                pthread_mutex_unlock(&MUTEX_LOCK);
+                break;
+
+        case SYNC_SPINLOCK:
+                __sync_lock_release(&SPINLOCK);
+                break;
+        }
+}
+
 /* Run OPs per thread */
 static void *doWork(void *offset) {
 
@@ -198,26 +225,22 @@ static void *doWork(void *offset) {
         unsigned int stop  = ITERATIONS + start - 1;
 
         /* Add thread_local elements Nodes[start:stop] into SharedList */
-        if(sync_type == SYNC_PTHREAD_MUTEX)
-                pthread_mutex_lock(&MUTEX_LOCK);
-        else if(sync_type == SYNC_SPINLOCK)
-                while (__sync_lock_test_and_set(&SPINLOCK, 1))
-                        continue;
+        acquire_lock();
         for(j = start; j <= stop; j++)
                 SortedList_insert(&SharedList, &(Nodes[j]));
+        release_lock();
 
         /* get SharedList length */
+        acquire_lock();
         int len = SortedList_length(&SharedList);
+        release_lock();
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
         /* Lookup each element with known key and delete it */
+        acquire_lock();
         for(j = start; j <= stop; j++)
                 SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
-
-        if(sync_type == SYNC_PTHREAD_MUTEX)
-                pthread_mutex_lock(&MUTEX_LOCK);
-        else if(sync_type == SYNC_SPINLOCK)
-                __sync_lock_release(&SPINLOCK);
+        release_lock();
 
         pthread_exit(NULL);
 }

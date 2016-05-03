@@ -51,10 +51,13 @@ void SortedList_insert(SortedList_t *list, SortedListElement_t *element) {
                 {
                         prev_node->next = element;
                         element->prev = prev_node;
+
                         if(opt_yield & INSERT_YIELD)
                                 pthread_yield();
+
                         element->next = curr_node;
                         curr_node->prev = element;
+
                         return;
                 }
 
