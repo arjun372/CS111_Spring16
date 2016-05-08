@@ -155,9 +155,6 @@ int main (int argc, char **argv)
         /* note the high-res ending-time */
         clock_gettime(CLOCK_TYPE, &stop_time);
 
-        /* Close the pthread_mutex if initiated */
-        if(sync_type == SYNC_PTHREAD_MUTEX) pthread_mutex_destroy(&MUTEX_LOCK);
-
         /* output to STDOUT the num_of_operations_performed */
         unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
         fprintf(stdout, "%d threads x %llu iterations x (insert + lookup/delete) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
@@ -172,10 +169,15 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
+        unsigned int j;
         if(sync_type == SYNC_SPINLOCK)
                 free(SPIN_LOCKS);
-        if (sync_type == SYNC_PTHREAD_MUTEX)
+
+        if (sync_type == SYNC_PTHREAD_MUTEX) {
+                for(j = 0; j < N_LISTS; j++)
+                        pthread_mutex_destroy(&(MUTEX_LOCKS[j]));
                 free(MUTEX_LOCKS);
+        }
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
@@ -229,29 +231,29 @@ static SortedList_t *init_sublists(const unsigned int nLists) {
 
         return sublists;
 }
-static void acquire_lock() {
+static void acquire_lock(const unsigned int i) {
         switch(sync_type)
         {
         case SYNC_PTHREAD_MUTEX:
-                pthread_mutex_lock(&MUTEX_LOCK);
+                pthread_mutex_lock(&(MUTEX_LOCKS[i]));
                 break;
 
         case SYNC_SPINLOCK:
-                while (__sync_lock_test_and_set(&SPINLOCK, 1))
+                while (__sync_lock_test_and_set(&(SPIN_LOCKS[i]), 1))
                         continue;
                 break;
         }
 }
 
-static void release_lock() {
+static void release_lock(const unsigned int i) {
         switch(sync_type)
         {
         case SYNC_PTHREAD_MUTEX:
-                pthread_mutex_unlock(&MUTEX_LOCK);
+                pthread_mutex_unlock(&(MUTEX_LOCKS[i]));
                 break;
 
         case SYNC_SPINLOCK:
-                __sync_lock_release(&SPINLOCK);
+                __sync_lock_release(&(SPIN_LOCKS[i]));
                 break;
         }
 }
@@ -270,22 +272,22 @@ static void *doWork(void *offset) {
 
         /* Add thread_local elements Nodes[start:stop] into SharedList */
         for(j = start; j <= stop; j++) {
-                acquire_lock();
+                acquire_lock(0);
                 SortedList_insert(&(SharedLists[0]), &(Nodes[j]));
-                release_lock();
+                release_lock(0);
         }
 
         /* get SharedList length */
-        acquire_lock();
+        acquire_lock(0);
         int len = SortedList_length(&(SharedLists[0]));
-        release_lock();
+        release_lock(0);
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++) {
-                acquire_lock();
+                acquire_lock(0);
                 SortedList_delete(SortedList_lookup(&(SharedLists[0]), Keys[j]));
-                release_lock();
+                release_lock(0);
         }
         pthread_exit(NULL);
 }
