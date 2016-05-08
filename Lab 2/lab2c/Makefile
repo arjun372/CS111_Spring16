@@ -1,12 +1,12 @@
 # UCLA CS 111 - Spring '16
 # Arjun 504078752
-# Lab 2c - Lock Granularity and Performance
+# Lab 2C - Lock Granularity and Performance
 
 UID = 504078752
 LAB = 2c
 
 CC = gcc
-CFLAGS = -Wall -Wextra -Wno-unused -Werror -lrt
+CFLAGS = -Wall -O2 -Wextra -Wno-unused -Werror -lrt
 LDLIBS = -lm
 LDFLAGS = -pthread
 
@@ -18,7 +18,7 @@ SRC = lab$(LAB).c
 OBJ = $(subst .c,.o,$(SRC))
 
 DIST_SOURCES = Makefile README SortedList.h SortedList.c lab$(LAB).c \
-	graph1.png
+	graph.png
 
 lab$(LAB): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)

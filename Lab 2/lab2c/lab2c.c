@@ -172,12 +172,12 @@ int main (int argc, char **argv)
         unsigned int j;
         if(sync_type == SYNC_SPINLOCK)
                 free(SPIN_LOCKS);
-
-        if (sync_type == SYNC_PTHREAD_MUTEX) {
+        else if (sync_type == SYNC_PTHREAD_MUTEX) {
                 for(j = 0; j < N_LISTS; j++)
                         pthread_mutex_destroy(&(MUTEX_LOCKS[j]));
                 free(MUTEX_LOCKS);
         }
+        free(sharedlists);
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
