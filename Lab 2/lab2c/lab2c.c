@@ -177,7 +177,7 @@ int main (int argc, char **argv)
                         pthread_mutex_destroy(&(MUTEX_LOCKS[j]));
                 free(MUTEX_LOCKS);
         }
-        free(sharedlists);
+        free(SharedLists);
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
