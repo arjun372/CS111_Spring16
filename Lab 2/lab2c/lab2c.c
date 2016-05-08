@@ -1,6 +1,6 @@
 /**
     UCLA CS 111 - Spring '16
-    Lab 2B - Complex Critical Sections
+    Lab 2C - Lock Granularity and Performance
     Arjun 504078752
  **/
 
@@ -41,11 +41,13 @@ static struct timespec start_time,stop_time;
 /* option-specific variables */
 int opt_yield = 0;
 static int VERBOSE = 0;
+static unsigned int N_LISTS = 1;
 static unsigned int N_THREADS = 1;
 static unsigned long long ITERATIONS = 1;
 
 static struct option long_options[] = {
         {"sync",       required_argument,         0, 'S'},
+        {"lists",      required_argument,         0, 'L'},
         {"yield",      required_argument,         0, 'Y'},
         {"verbose",          no_argument,  &VERBOSE,   1},
         {"threads",    required_argument,         0, 'T'},
@@ -71,6 +73,10 @@ int main (int argc, char **argv)
                         break;
 
                 switch(opt) {
+                case 'L':
+                        N_LISTS = (atoi(optarg) <= 0) ? 1 : atoi(optarg);
+                        if(VERBOSE) debug_log(opt_index, &optarg, 1);
+                        break;
                 case 'T':
                         N_THREADS = (atoi(optarg) <= 0) ? 1 : atoi(optarg);
                         if(VERBOSE) debug_log(opt_index, &optarg, 1);
