@@ -27,14 +27,13 @@
 #include <string.h>
 
 #include "SortedList.c"
-static SortedList_t SharedList;
-static SortedListElement_t *Nodes;
 static char **Keys;
+static volatile int *SPIN_LOCKS;
+static SortedList_t *SharedLists;
+static SortedListElement_t *Nodes;
+static pthread_mutex_t *MUTEX_LOCKS;
 
 /* performance-evaluation specific variables */
-static volatile long long counter = 0;
-static volatile int SPINLOCK = 0;
-static pthread_mutex_t MUTEX_LOCK;
 static unsigned int sync_type = SYNC_NONE;
 static struct timespec start_time,stop_time;
 
@@ -44,7 +43,6 @@ static int VERBOSE = 0;
 static unsigned int N_LISTS = 1;
 static unsigned int N_THREADS = 1;
 static unsigned long long ITERATIONS = 1;
-
 static struct option long_options[] = {
         {"sync",       required_argument,         0, 'S'},
         {"lists",      required_argument,         0, 'L'},
@@ -57,6 +55,7 @@ static struct option long_options[] = {
 /* Static function declarations */
 static void *doWork(void *offset);
 static char *alloc_rand_string(const long long unsigned size);
+static SortedList_t *init_sublists(const unsigned int nLists);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static SortedListElement_t *init_and_fill(const long long unsigned nBlocks);
 
@@ -111,18 +110,8 @@ int main (int argc, char **argv)
 
         /** Finished reading all options, begin performance evaluation **/
 
-        /* initialize mutex */
-        if(sync_type==SYNC_PTHREAD_MUTEX)
-                if(pthread_mutex_init(&MUTEX_LOCK,NULL))
-                {
-                        fprintf(stderr, "FATAL: Unable to initialize pthread_mutex");
-                        exit(1);
-                }
-
-        /* initialize an empty list */
-        SharedList.prev = NULL;
-        SharedList.next = NULL;
-        SharedList.key  = NULL;
+        /* initialize mutex, spinlocks and allocate sharedlists[N_LISTS] */
+        SharedLists = init_sublists(N_LISTS);
 
         /* create & initialize (iteration * thread) of list elements */
         Nodes = init_and_fill(N_THREADS * ITERATIONS);
@@ -174,7 +163,7 @@ int main (int argc, char **argv)
         fprintf(stdout, "%d threads x %llu iterations x (insert + lookup/delete) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
 
         /* If counter is non-zero, print to STDERR */
-        int list_length = SortedList_length(&SharedList);
+        int list_length = SortedList_length(&(SharedLists[0]));
         if(VERBOSE || list_length != 0)
                 fprintf(stderr, "FINAL :: list_length = %d\n", list_length);
 
@@ -183,6 +172,10 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
+        if(sync_type == SYNC_SPINLOCK)
+                free(SPIN_LOCKS);
+        if (sync_type == SYNC_PTHREAD_MUTEX)
+                free(MUTEX_LOCKS);
         free(Nodes);
         for(i = 0; i < (N_THREADS * ITERATIONS); i++)
                 free(Keys[i]);
@@ -191,6 +184,51 @@ int main (int argc, char **argv)
         exit((list_length != 0));
 }
 
+static SortedList_t *init_sublists(const unsigned int nLists) {
+
+
+        /* Initializes #[nLists] sub-lists*/
+        unsigned int i;
+        SortedList_t *sublists = (SortedList_t *) malloc(sizeof(SortedList_t) * nLists);
+        if(sublists == NULL) {
+                fprintf(stderr, "FATAL:: Unable to allocate memory for sublists\n");
+                exit(1);
+        }
+        /* Initialize each sub-list to NULL */
+        for(i = 0; i < nLists; i++) {
+                sublists[i].prev = NULL;
+                sublists[i].next = NULL;
+                sublists[i].key  = NULL;
+        }
+
+        /* If sync-type is MUTEX, initialize [nLists] Mutex objects */
+        if(sync_type == SYNC_PTHREAD_MUTEX) {
+                MUTEX_LOCKS = (pthread_mutex_t *) malloc(sizeof(pthread_mutex_t) * nLists);
+                if(MUTEX_LOCKS == NULL) {
+                        fprintf(stderr, "FATAL:: Unable to allocate memory for pthread mutexes\n");
+                        exit(1);
+                }
+                for(i = 0; i < nLists; i++) {
+                        if(pthread_mutex_init(&(MUTEX_LOCKS[i]), NULL))
+                        {
+                                fprintf(stderr, "FATAL: Unable to initialize pthread_mutex [%d]\n", i);
+                                exit(1);
+                        }
+                }
+        }
+        /* Else if sync-type is SPINLOCK, initialize [nLists] spinlock objects and set them to 0 */
+        else if(sync_type == SYNC_SPINLOCK) {
+                SPIN_LOCKS = (volatile int *) malloc(sizeof(volatile int) * nLists);
+                if(SPIN_LOCKS == NULL) {
+                        fprintf(stderr, "FATAL:: Unable to allocate memory for spinlocks\n");
+                        exit(1);
+                }
+                for(i = 0; i < nLists; i++)
+                        SPIN_LOCKS[i] = 0;
+        }
+
+        return sublists;
+}
 static void acquire_lock() {
         switch(sync_type)
         {
@@ -231,29 +269,24 @@ static void *doWork(void *offset) {
         unsigned int stop  = ITERATIONS + start - 1;
 
         /* Add thread_local elements Nodes[start:stop] into SharedList */
-
         for(j = start; j <= stop; j++) {
                 acquire_lock();
-                SortedList_insert(&SharedList, &(Nodes[j]));
+                SortedList_insert(&(SharedLists[0]), &(Nodes[j]));
                 release_lock();
         }
 
-
-
         /* get SharedList length */
         acquire_lock();
-        int len = SortedList_length(&SharedList);
+        int len = SortedList_length(&(SharedLists[0]));
         release_lock();
         if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
         /* Lookup each element with known key and delete it */
-
         for(j = start; j <= stop; j++) {
                 acquire_lock();
-                SortedList_delete(SortedList_lookup(&SharedList, Keys[j]));
+                SortedList_delete(SortedList_lookup(&(SharedLists[0]), Keys[j]));
                 release_lock();
         }
-
         pthread_exit(NULL);
 }
 
@@ -304,10 +337,8 @@ MemErr:
 
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
-        if(!VERBOSE)
-                return;
-        int i;
         fprintf(stderr,"--%s", long_options[opt_index].name);
+        int i;
         for(i = 0; i < argc; i++)
                 fprintf(stderr," %s", optarg[i]);
         fprintf(stderr,"\n");
