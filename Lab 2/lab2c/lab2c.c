@@ -28,7 +28,7 @@
 
 #include "SortedList.c"
 static char **Keys;
-static volatile int *SPIN_LOCKS;
+static int *SPIN_LOCKS;
 static SortedList_t *SharedLists;
 static SortedListElement_t *Nodes;
 static pthread_mutex_t *MUTEX_LOCKS;
@@ -220,7 +220,7 @@ static SortedList_t *init_sublists(const unsigned int nLists) {
         }
         /* Else if sync-type is SPINLOCK, initialize [nLists] spinlock objects and set them to 0 */
         else if(sync_type == SYNC_SPINLOCK) {
-                SPIN_LOCKS = (volatile int *) malloc(sizeof(volatile int) * nLists);
+                SPIN_LOCKS = (int *) malloc(sizeof(int) * nLists);
                 if(SPIN_LOCKS == NULL) {
                         fprintf(stderr, "FATAL:: Unable to allocate memory for spinlocks\n");
                         exit(1);
