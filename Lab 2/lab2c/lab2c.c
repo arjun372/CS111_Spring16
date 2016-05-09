@@ -7,7 +7,6 @@
 #define _GNU_SOURCE
 
 #define KEY_SIZE             10
-
 #define SYNC_NONE          0x00
 #define SYNC_SPINLOCK      0x01
 #define SYNC_PTHREAD_MUTEX 0x02
@@ -53,6 +52,7 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
+static void free_memory();
 static void *doWork(void *offset);
 static char *alloc_rand_string(const long long unsigned size);
 static SortedList_t *init_sublists(const unsigned int nLists);
@@ -159,8 +159,14 @@ int main (int argc, char **argv)
         unsigned long long n_OPS = num_active_threads * ITERATIONS * (2);
         fprintf(stdout, "%d threads x %llu iterations x (insert + lookup/delete) = %llu operations\n", num_active_threads, ITERATIONS, n_OPS);
 
-        /* If counter is non-zero, print to STDERR */
-        int list_length = SortedList_length(&(SharedLists[0]));
+        /* If list_length is non-zero, print to STDERR */
+        unsigned int j;
+        int list_length = 0;
+
+        /* Enumerate over all sub-lists to find list_length */
+        for(j = 0; j < N_LISTS; j++)
+                list_length += SortedList_length(&(SharedLists[j]));
+
         if(VERBOSE || list_length != 0)
                 fprintf(stderr, "FINAL :: list_length = %d\n", list_length);
 
@@ -169,19 +175,7 @@ int main (int argc, char **argv)
         fprintf(stdout, "elapsed time: %llu ns\n",  (long long unsigned int) elapsed_time);
         fprintf(stdout, "per operation: %llu ns\n", (long long unsigned int) (elapsed_time/n_OPS));
 
-        unsigned int j;
-        if(sync_type == SYNC_SPINLOCK)
-                free(SPIN_LOCKS);
-        else if (sync_type == SYNC_PTHREAD_MUTEX) {
-                for(j = 0; j < N_LISTS; j++)
-                        pthread_mutex_destroy(&(MUTEX_LOCKS[j]));
-                free(MUTEX_LOCKS);
-        }
-        free(SharedLists);
-        free(Nodes);
-        for(i = 0; i < (N_THREADS * ITERATIONS); i++)
-                free(Keys[i]);
-        free(Keys);
+        free_memory();
         /* Exit non-zero if list_length != 0 */
         exit((list_length != 0));
 }
@@ -345,6 +339,23 @@ MemErr:
         fprintf(stderr, "FATAL:: Unable to allocate memory for key\n");
         free(str);
         exit(1);
+}
+
+static void free_memory() {
+        unsigned int j;
+        if(sync_type == SYNC_SPINLOCK)
+                free(SPIN_LOCKS);
+
+        else if (sync_type == SYNC_PTHREAD_MUTEX) {
+                for(j = 0; j < N_LISTS; j++)
+                        pthread_mutex_destroy(&(MUTEX_LOCKS[j]));
+                free(MUTEX_LOCKS);
+        }
+        free(SharedLists);
+        free(Nodes);
+        for(i = 0; i < (N_THREADS * ITERATIONS); i++)
+                free(Keys[i]);
+        free(Keys);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
