@@ -258,6 +258,13 @@ static void release_lock(const unsigned int i) {
         }
 }
 
+static unsigned int getModulo(const char *string, const unsigned int str_len, unsigned int Mod) {
+        unsigned int sum = 0;
+        unsigned int i;
+        for(i = 0; i < str_len; i++)
+                sum += string[i];
+        return sum % Mod;
+}
 /* Run OPs per thread */
 static void *doWork(void *offset) {
 
@@ -269,25 +276,27 @@ static void *doWork(void *offset) {
         unsigned int start = i * ITERATIONS;
         unsigned int j     = start;
         unsigned int stop  = ITERATIONS + start - 1;
-
+        unsigned int sublist_offset;
         /* Add thread_local elements Nodes[start:stop] into SharedList */
         for(j = start; j <= stop; j++) {
-                acquire_lock(0);
-                SortedList_insert(&(SharedLists[0]), &(Nodes[j]));
-                release_lock(0);
+                sublist_offset = getModulo(Nodes[j].key, KEY_SIZE, N_LISTS);
+                acquire_lock(sublist_offset);
+                SortedList_insert(&(SharedLists[sublist_offset]), &(Nodes[j]));
+                release_lock(sublist_offset);
         }
 
         /* get SharedList length */
-        acquire_lock(0);
-        int len = SortedList_length(&(SharedLists[0]));
-        release_lock(0);
-        if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
+        // acquire_lock(0);
+        // int len = SortedList_length(&(SharedLists[0]));
+        // release_lock(0);
+        // if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
 
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++) {
-                acquire_lock(0);
-                SortedList_delete(SortedList_lookup(&(SharedLists[0]), Keys[j]));
-                release_lock(0);
+                sublist_offset = getModulo(Nodes[j].key, KEY_SIZE, N_LISTS);
+                acquire_lock(sublist_offset);
+                SortedList_delete(SortedList_lookup(&(SharedLists[sublist_offset]), Keys[j]));
+                release_lock(sublist_offset);
         }
         pthread_exit(NULL);
 }
