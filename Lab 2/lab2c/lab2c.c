@@ -280,11 +280,15 @@ static void *doWork(void *offset) {
                 release_lock(sublist_offset);
         }
 
-        /* get SharedList length */
-        // acquire_lock(0);
-        // int len = SortedList_length(&(SharedLists[0]));
-        // release_lock(0);
-        // if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, len);
+        int list_length = 0;
+        /* get SharedLists length */
+        /* Enumerate over all sub-lists to find list_length */
+        for(j = 0; j < N_LISTS; j++) {
+                acquire_lock(j);
+                list_length += SortedList_length(&(SharedLists[j]));
+                release_lock(j);
+        }
+        if(VERBOSE) fprintf(stderr, "Thread %d : list_length : %d\n", i, list_length);
 
         /* Lookup each element with known key and delete it */
         for(j = start; j <= stop; j++) {
