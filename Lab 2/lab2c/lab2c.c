@@ -341,8 +341,11 @@ MemErr:
         exit(1);
 }
 
+/* Free all the mallocd memory */
 static void free_memory() {
         unsigned int j;
+        long unsigned i;
+
         if(sync_type == SYNC_SPINLOCK)
                 free(SPIN_LOCKS);
 
