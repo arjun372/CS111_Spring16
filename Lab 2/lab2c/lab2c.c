@@ -280,6 +280,7 @@ static void *doWork(void *offset) {
         /* Add thread_local elements Nodes[start:stop] into SharedList */
         for(j = start; j <= stop; j++) {
                 sublist_offset = getModulo(Nodes[j].key, KEY_SIZE, N_LISTS);
+                if(VERBOSE) fprintf(stderr, "INSERT[%d]: [%s] MOD :: %d\n", j, Nodes[j].key, sublist_offset);
                 acquire_lock(sublist_offset);
                 SortedList_insert(&(SharedLists[sublist_offset]), &(Nodes[j]));
                 release_lock(sublist_offset);
