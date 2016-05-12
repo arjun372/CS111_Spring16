@@ -1,0 +1,112 @@
+UCLA CS 111 - Spring '16
+Rahul Malavalli
+Arjun		504078752
+Lab 3a - File System Dump
+
+------
+Files
+------
+
+1. Makefile     - Commands for building the executable & creating a tarball for
+                  submission.
+
+2. SortedList.h - Header file containing interfaces for linked list operations.
+
+3. SortedList.c - source file that compiles cleanly (with no errors or warnings)
+                  and implements insert, delete, lookup, and length methods for
+                  a sorted doubly linked list (described in the provided header
+                  file, including correct placement of pthread_yield calls).
+
+4. lab2b.c      - source file compiles cleanly (with no errors or warnings), and
+                  implements the specified command line options (--threads,
+                  --iterations, --yield, --sync), drives one or more parallel
+                  threads that do operations on a shared linked list, and
+                  reports on the final list and performance.
+
+
+5. graph1.png   - Illustrates the average time per unprotected operation vs
+                  number of iteration (single thread).
+
+6. graph2.png   - (corrected) average time per operation (for unprotected,
+                  mutex, and spin-lock) vs number of threads.
+
+7. README   :: [[ self ]]
+
+---------------
+Extra features
+---------------
+
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging.
+
+--------------
+Analysis
+--------------------------------------------------------------------------------
+2B.1A: Explain the variation in time per operation vs the number of iterations?
+
+'graph1.png' illustrates a Log-Log graph that shows an initial decrease in the
+time_per_operation, followed by a minima @ ~1000ns. After the minima, the
+time_per_op continues to rise indefinitely.
+
+The initial decrease in time_per_operation is similar to behavior witnessed
+previously in the Lab2A graph. There is a fixed one-time cost of scheduling,
+starting & stopping any thread. The marginal cost of adding an additional
+iteration to an already scheduled thread is quite low. Proportionally, the setup
+cost/overhead is quite large for a single iteration, but multiple iterations
+batched together are more efficient.
+
+However, after a certain point, these benefits are outweighed by the run-time
+of operation due to an increase in the number of iterations. Since the linked
+list search, insert and delete operations are O(n) operations, the amount of
+time taken per operation increases as the number of iterations increase. This
+increase is visible after the minima, where the time_per_op continues to rise.
+--------------------------------------------------------------------------------
+2B.1B: How would you propose to correct for this effect?
+
+This effect can be corrected by ensuring that search, insert and delete are all
+implemented as O(1) operations instead of the O(n) behavior that they currently
+exhibit. This would require a change in the implementation of the data structure
+from a LinkedList to a hash table or some other data structure.
+
+--------------------------------------------------------------------------------
+2B.2A: Compare the variation in time per protected operation vs the number of
+       threads in Project 2B and in Project 2A.  Explain the difference.
+
+In my testing, the variation in protected time_per_operation followed a linear
+trend. The rate at which spinlocks and mutexes increased was very similar.
+I limited my test to upto 20 threads, since using anymore threads than that
+caused a bottleneck (due to recource contention with other users on lnxsrv09).
+'graph2.png' illustrates this figure.
+
+My locking implementation acquired and released the lock for every call to
+insert, search and delete. I did this in hope to reduce resource contention
+for spinlocks, as I expected the threads to keep polling the spinlocks at a high
+rate, and perhaps getting access to the linked list quicker than mutexes. The
+end result was not as good as expected, however this was still much better than
+the trend that was observed in Lab2A, where spinlocks were much-much slower
+than mutexes.  
+
+--------------------------------------------------------------------------------
+Known bugs - THESE BUGS DO NOT AFFECT THE CORRECTNESS OR ROBUSTNESS OF THE
+             THIS PROGRAM WITHIN THE SCOPE OF THE PROJECT SPEC.
+---------------
+
+   1. Unidentified memory leak from pthread_create when --threads are > 1. This
+      does not happen every-time, and the size of leaked memory remains constant
+      irrespective of thread_count.
+
+      Valgrind reports the following error :
+
+==43982==    312 bytes in 1 blocks are still reachable in loss record 3 of 4
+==43982==    at 0x4A057BB: calloc (vg_replace_malloc.c:593)
+==43982==    by 0x320780FE53: _dl_check_map_versions (in /lib64/ld-2.12.so)
+==43982==    by 0x3207812F18: dl_open_worker (in /lib64/ld-2.12.so)
+==43982==    by 0x320780E285: _dl_catch_error (in /lib64/ld-2.12.so)
+==43982==    by 0x3207812639: _dl_open (in /lib64/ld-2.12.so)
+==43982==    by 0x3207D26C5F: do_dlopen (in /lib64/libc-2.12.so)
+==43982==    by 0x320780E285: _dl_catch_error (in /lib64/ld-2.12.so)
+==43982==    by 0x3207D26DB6: __libc_dlopen_mode (in /lib64/libc-2.12.so)
+==43982==    by 0x320840FEEB: pthread_cancel_init (in /lib64/libpthread-2.12.so)
+==43982==    by 0x320841004B: _Unwind_ForcedUnwind (in /lib64/libpthread-2.12.so
+==43982==    by 0x320840DF5F: __pthread_unwind (in /lib64/libpthread-2.12.so)
+==43982==    by 0x3208408174: pthread_exit (in /lib64/libpthread-2.12.so)
