@@ -50,7 +50,7 @@ int main (int argc, char **argv)
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
                 exit(1);
-        }
+        } else if (VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         exit(0);
 }
