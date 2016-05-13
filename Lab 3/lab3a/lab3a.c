@@ -6,7 +6,7 @@
  **/
 
 #define FILE_MODE 0664
-
+#define BAD         -1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -44,18 +44,18 @@ static pos_info superblock[] = {
 };
 
 static pos_info group_descriptor[] = {
-        {"num contained blocks",    "%d", 1, 1},
-        {"num free blocks",         "%d", 1, 1},
-        {"num free inodes",         "%d", 1, 1},
-        {"num directories",         "%d", 1, 1},
-        {"free inode bitmap block", "%x", 14, 1}, // bg_free_inodes_count
-        {"free block bitmap block", "%x", 12, 2}, // bg_free_blocks_count
-        {"inode table(start)block", "%x", 1, 1}
+        {"number of contained blocks", "%d", BAD, BAD},
+        {"number of free blocks",      "%d", 12, 2}, // bg_free_blocks_count
+        {"number of free inodes",      "%d", 14, 2}, // bg_free_inodes_count
+        {"number of directories",      "%d", 16, 2}, // bg_used_dirs_count
+        {"free inode bitmap block",    "%x",  4, 4}, // bg_inode_bitmap
+        {"free block bitmap block",    "%x",  0, 4}, // bg_block_bitmap
+        {"inode table (start) block",  "%x",  8, 4}  // bg_inode_table
 };
 
 static pos_info free_bitmap_entry[] = {
-        {"map block number", "%x", 1, 1},
-        {"entry number",     "%d", 1, 1}
+        {"block number of the map", "%x", 1, 1},
+        {"entry number",            "%d", 1, 1}
 };
 
 static pos_info inode[] = {
@@ -69,7 +69,7 @@ static pos_info inode[] = {
         {"modification time", "%x", 1, 1},
         {"access time",       "%x", 1, 1},
         {"file size",         "%d", 1, 1},
-        {"num blocks",        "%d", 1, 1},
+        {"number of blocks",  "%d", 1, 1},
         {"block pointer 1",   "%x", 1, 1},
         {"block pointer 2",   "%x", 1, 1},
         {"block pointer 3",   "%x", 1, 1},
