@@ -6,6 +6,7 @@
  **/
 
 #define FILE_MODE 0664
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -28,6 +29,10 @@ static void read_options(int argc, char **argv);
 
 int main (int argc, char **argv)
 {
+        /* Read --verbose option if it was passed */
+        while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
+                continue;
+
         if(!argc) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
