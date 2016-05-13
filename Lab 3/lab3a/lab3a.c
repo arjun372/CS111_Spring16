@@ -22,6 +22,17 @@ static struct option long_options[] = {
         {"verbose",          no_argument,  &VERBOSE,   1}
 };
 
+/* Info Structures */
+typedef struct pos_info{
+  char* name;
+  char* format;
+  int offset;
+  int size;
+} pos_info;
+pos_info superblock[] = {
+  {"magic number", "%h", 1, 1}
+};
+
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static void read_options(int argc, char **argv);
