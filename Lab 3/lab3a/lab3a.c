@@ -31,10 +31,6 @@ typedef struct pos_info {
         int size;
 } pos_info;
 
-pos_info superblock[] = {
-        {"magic number", "%x", 1, 1}
-};
-
 pos_info group_descriptor[] = {
         {"num contained blocks",    "%d", 1, 1},
         {"num free blocks",         "%d", 1, 1},
@@ -43,6 +39,17 @@ pos_info group_descriptor[] = {
         {"free inode bitmap block", "%x", 1, 1},
         {"free block bitmap block", "%x", 1, 1},
         {"inode table(start)block", "%x", 1, 1}
+};
+static pos_info superblock[] = {
+        {"magic number", "%x", 56, 2},          // s_magic
+        {"total number of inodes", "%d", 0, 4}, // s_inodes_count
+        {"total number of blocks", "%d", 4, 4}, // s_blocks_count
+        {"block size", "%d", 24, 4},            // s_log_block_size
+        {"fragment size", "%d", 28, 4},         // s_log_frag_size
+        {"blocks per group", "%d", 32, 4},      // s_blocks_per_group
+        {"inodes per group", "%d", 40, 4},      // s_inodes_per_group
+        {"fragments per group", "%d", 40, 4},   // s_frags_per_group
+        {"first data block", "%d", 20, 4},      // s_first_data_block
 };
 
 pos_info free_bitmap_entry[] = {
