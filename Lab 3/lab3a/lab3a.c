@@ -24,15 +24,75 @@ static struct option long_options[] = {
 };
 
 /* Info Structures */
-typedef struct pos_info{
-  char* name;
-  char* format;
-  int offset;
-  int size;
+typedef struct pos_info {
+        char* name;
+        char* format;
+        int offset;
+        int size;
 } pos_info;
+
 pos_info superblock[] = {
-  {"magic number", "%h", 1, 1}
+        {"magic number", "%x", 1, 1}
 };
+
+pos_info group_descriptor[] = {
+        {"num contained blocks",    "%d", 1, 1},
+        {"num free blocks",         "%d", 1, 1},
+        {"num free inodes",         "%d", 1, 1},
+        {"num directories",         "%d", 1, 1},
+        {"free inode bitmap block", "%x", 1, 1},
+        {"free block bitmap block", "%x", 1, 1},
+        {"inode table(start)block", "%x", 1, 1}
+};
+
+pos_info free_bitmap_entry[] = {
+        {"map block number", "%x", 1, 1},
+        {"entry number",     "%d", 1, 1}
+};
+
+pos_info inode[] = {
+        {"inode number",      "%d", 1, 1},
+        {"file type",         "%s", 1, 1},
+        {"mode",              "%o", 1, 1},
+        {"owner",             "%d", 1, 1},
+        {"group",             "%d", 1, 1},
+        {"link count",        "%d", 1, 1},
+        {"creation time",     "%x", 1, 1},
+        {"modification time", "%x", 1, 1},
+        {"access time",       "%x", 1, 1},
+        {"file size",         "%d", 1, 1},
+        {"num blocks",        "%d", 1, 1},
+        {"block pointer 1",   "%x", 1, 1},
+        {"block pointer 2",   "%x", 1, 1},
+        {"block pointer 3",   "%x", 1, 1},
+        {"block pointer 4",   "%x", 1, 1},
+        {"block pointer 5",   "%x", 1, 1},
+        {"block pointer 6",   "%x", 1, 1},
+        {"block pointer 7",   "%x", 1, 1},
+        {"block pointer 8",   "%x", 1, 1},
+        {"block pointer 9",   "%x", 1, 1},
+        {"block pointer 10",  "%x", 1, 1},
+        {"block pointer 11",  "%x", 1, 1},
+        {"block pointer 12",  "%x", 1, 1},
+        {"block pointer 13",  "%x", 1, 1},
+        {"block pointer 14",  "%x", 1, 1},
+        {"block pointer 15",  "%x", 1, 1}
+};
+
+pos_info directory_entry[] = {
+        {"parent inode number", "%d", 1, 1},
+        {"entry number",        "%d", 1, 1},
+        {"entry length",        "%d", 1, 1},
+        {"name length",         "%d", 1, 1},
+        {"link inode number",   "%d", 1, 1},
+        {"name",                "%s", 1, 1}
+}
+
+pos_info indirect_block_entry[] = {
+        {"block number of containing block", "%x", 1, 1},
+        {"entry number",                     "%d", 1, 1},
+        {"pointer value",                    "%x", 1, 1}
+}
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
@@ -50,7 +110,7 @@ int main (int argc, char **argv)
         }
 
         int FD;
-        char *TargetFile = argv[0];
+        char *TargetFile  = argv[0];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
