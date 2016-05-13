@@ -32,15 +32,15 @@ typedef struct pos_info {
 } pos_info;
 
 static pos_info superblock[] = {
-        {"magic number", "%x", 56, 2},          // s_magic
-        {"total number of inodes", "%d", 0, 4}, // s_inodes_count
-        {"total number of blocks", "%d", 4, 4}, // s_blocks_count
-        {"block size", "%d", 24, 4},            // s_log_block_size
-        {"fragment size", "%d", 28, 4},         // s_log_frag_size
-        {"blocks per group", "%d", 32, 4},      // s_blocks_per_group
-        {"inodes per group", "%d", 40, 4},      // s_inodes_per_group
-        {"fragments per group", "%d", 40, 4},   // s_frags_per_group
-        {"first data block", "%d", 20, 4},      // s_first_data_block
+        {"magic number",           "%x", 56, 2}, // s_magic
+        {"total number of inodes", "%d",  0, 4}, // s_inodes_count
+        {"total number of blocks", "%d",  4, 4}, // s_blocks_count
+        {"block size",             "%d", 24, 4}, // s_log_block_size
+        {"fragment size",          "%d", 28, 4}, // s_log_frag_size
+        {"blocks per group",       "%d", 32, 4}, // s_blocks_per_group
+        {"inodes per group",       "%d", 40, 4}, // s_inodes_per_group
+        {"fragments per group",    "%d", 40, 4}, // s_frags_per_group
+        {"first data block",       "%d", 20, 4}, // s_first_data_block
 };
 
 static pos_info group_descriptor[] = {
