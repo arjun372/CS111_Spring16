@@ -31,15 +31,6 @@ typedef struct pos_info {
         int size;
 } pos_info;
 
-pos_info group_descriptor[] = {
-        {"num contained blocks",    "%d", 1, 1},
-        {"num free blocks",         "%d", 1, 1},
-        {"num free inodes",         "%d", 1, 1},
-        {"num directories",         "%d", 1, 1},
-        {"free inode bitmap block", "%x", 1, 1},
-        {"free block bitmap block", "%x", 1, 1},
-        {"inode table(start)block", "%x", 1, 1}
-};
 static pos_info superblock[] = {
         {"magic number", "%x", 56, 2},          // s_magic
         {"total number of inodes", "%d", 0, 4}, // s_inodes_count
@@ -52,12 +43,22 @@ static pos_info superblock[] = {
         {"first data block", "%d", 20, 4},      // s_first_data_block
 };
 
-pos_info free_bitmap_entry[] = {
+static pos_info group_descriptor[] = {
+        {"num contained blocks",    "%d", 1, 1},
+        {"num free blocks",         "%d", 1, 1},
+        {"num free inodes",         "%d", 1, 1},
+        {"num directories",         "%d", 1, 1},
+        {"free inode bitmap block", "%x", 14, 1}, // bg_free_inodes_count
+        {"free block bitmap block", "%x", 12, 2}, // bg_free_blocks_count
+        {"inode table(start)block", "%x", 1, 1}
+};
+
+static pos_info free_bitmap_entry[] = {
         {"map block number", "%x", 1, 1},
         {"entry number",     "%d", 1, 1}
 };
 
-pos_info inode[] = {
+static pos_info inode[] = {
         {"inode number",      "%d", 1, 1},
         {"file type",         "%s", 1, 1},
         {"mode",              "%o", 1, 1},
@@ -86,7 +87,7 @@ pos_info inode[] = {
         {"block pointer 15",  "%x", 1, 1}
 };
 
-pos_info directory_entry[] = {
+static pos_info directory_entry[] = {
         {"parent inode number", "%d", 1, 1},
         {"entry number",        "%d", 1, 1},
         {"entry length",        "%d", 1, 1},
@@ -95,7 +96,7 @@ pos_info directory_entry[] = {
         {"name",                "%s", 1, 1}
 }
 
-pos_info indirect_block_entry[] = {
+static pos_info indirect_block_entry[] = {
         {"block number of containing block", "%x", 1, 1},
         {"entry number",                     "%d", 1, 1},
         {"pointer value",                    "%x", 1, 1}
