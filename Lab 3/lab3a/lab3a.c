@@ -3,8 +3,9 @@
     Lab 3A - File System Dump
     Rahul Malavalli 204429252
     Arjun           504078752
-**/
+ **/
 
+#define FILE_MODE 0664
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -15,15 +16,10 @@
 #include <unistd.h>
 #include <string.h>
 
-
-/* performance-evaluation specific variables */
-static unsigned int sync_type = SYNC_NONE;
-static struct timespec start_time,stop_time;
-
 /* option-specific variables */
 static int VERBOSE = 0;
 static struct option long_options[] = {
-        {"verbose",          no_argument,  &VERBOSE,   1},
+        {"verbose",          no_argument,  &VERBOSE,   1}
 };
 
 /* Static function declarations */
@@ -32,7 +28,20 @@ static void read_options(int argc, char **argv);
 
 int main (int argc, char **argv)
 {
+        if(!argc) {
+                fprintf(stderr, "FATAL: no file passed as argument!\n");
+                exit(1);
+        }
 
+        int FD;
+        char *TargetFile = argv[0];
+        FD = open(TargetFile, O_RDONLY, FILE_MODE);
+        if(FD < 0) {
+                fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
+                exit(1);
+        }
+
+        exit(0);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
