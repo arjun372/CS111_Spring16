@@ -45,8 +45,8 @@ static SuperBlock_t *init_superblock_info();
 int main (int argc, char **argv)
 {
         /* Read --verbose option if it was passed */
-        while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
-                continue;
+        //  while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
+        //            continue;
 
         if(!argc) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
