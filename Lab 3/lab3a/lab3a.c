@@ -76,7 +76,7 @@ static SuperBlock_t *init_superblock_info() {
                 exit(1);
         }
 
-        mSuperBlock->data[0] = {56, 0, 2, "%x"}; // s_magic
+        mSuperBlock->data[0] = {{56, 0, 2, "%x"}}; // s_magic
         mSuperBlock->data[1] = {0,  0, 4, "%d"}; // s_inodes_count
         mSuperBlock->data[2] = {4,  0, 4, "%d"}; // s_blocks_count
         mSuperBlock->data[3] = {24, 0, 4, "%d"}; // s_log_block_size
