@@ -40,6 +40,7 @@ static struct option long_options[] = {
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
+static int fill_superblock(SuperBlock_t *blockToFill, int fd);
 static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
 
@@ -64,7 +65,7 @@ int main (int argc, char **argv)
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         superblock_data = init_superblock_info();
-        if(fill_block(superblock_data, FD)) {
+        if(fill_superblock(superblock_data, FD)) {
                 if(VERBOSE) fprintf(stderr, "Get SUPERBLOCK information :: SUCCESS\n");
         }
         else fprintf(stderr, "Get SUPERBLOCK information :: FAILURE\n");
@@ -75,17 +76,34 @@ int main (int argc, char **argv)
 }
 
 /* Fills the given data structure based on the values it stores */
-static int fill_block(Block_t *toFill, int fd) {
-        uint32_t i;
-        int bytesRead = 0;
-        for(i = 0; i < (toFill->nDataObjects); i++) {
-                bytesRead += pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
-                if (VERBOSE) {
+static int fill_superblock(SuperBlock_t *toFill, const int fd) {
+
+        /* If filling the block from disk failed, then return 0 */
+        if(!fill_block(toFill, fd))
+                return 0;
+
+        /** Now do SuperBlock_t specific actions */
+        uint32_t correct_BlockSize   = 1024 << toFill->dataObjects[3].value;
+        uint32_t correct_FragSize    = (toFill->dataObjects[4].value > 0) ? (1024 << toFill->dataObjects[4].value) : (1024 >> toFill->dataObjects[4].value);
+        toFill->dataObjects[3].value = correct_BlockSize;
+        toFill->dataObjects[4].value = correct_FragSize;
+
+        /* Print it out if VERBOSE */
+        if(VERBOSE) {
+                for(i = 0; i < (toFill->nDataObjects); i++) {
                         fprintf(stderr, toFill->dataObjects[i].format, toFill->dataObjects[i].value);
                         fprintf(stderr, (i == (toFill->nDataObjects - 1)) ? "\n" : ",");
                 }
         }
-        if (VERBOSE) fprintf(stderr, "TOTAL READS (IDEAL:34) = %d\n", bytesRead);
+        return 1;
+}
+
+/* Fills the given data structure based on the values it stores */
+static int fill_block(Block_t *toFill, const int fd) {
+        uint32_t i;
+        int bytesRead = 0;
+        for(i = 0; i < (toFill->nDataObjects); i++)
+                bytesRead += pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
         return bytesRead;
 }
 
