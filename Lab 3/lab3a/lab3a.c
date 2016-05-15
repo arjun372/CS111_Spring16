@@ -46,6 +46,7 @@ static SuperBlock_t *init_superblock_info();
 int main (int argc, char **argv)
 {
         int FD, opt_index;
+
         /* Read --verbose option if it was passed */
         while(getopt_long_only(argc, argv, "", long_options, &opt_index) != -1)
                 continue;
@@ -76,11 +77,12 @@ int main (int argc, char **argv)
 /* Fills the given data structure based on the values it stores */
 static int fill_block(Block_t *toFill, int fd) {
         uint32_t i;
-        int bytesRead = 1;
+        int bytesRead = 0;
         for(i = 0; i < (toFill->nDataObjects); i++) {
-                bytesRead &= pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
-                fprintf(stderr, "VAL:: %d\n", toFill->dataObjects[i].value);
+                bytesRead += pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
+                if (VERBOSE) fprintf(stderr, "VAL:: %d\n", toFill->dataObjects[i].value);
         }
+        if (VERBOSE) fprintf(stderr, "TOTAL READS (IDEAL:34) = %d\n", bytesRead);
         return bytesRead;
 }
 
