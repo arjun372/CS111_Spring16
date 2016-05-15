@@ -7,8 +7,9 @@ struct metadata {
 };
 
 #define SUPERBLOCK_OFFSET 1024
+
 struct superblock {
-        struct metadata[9];
+        struct metadata data[9];
 };
 
 struct group_descriptor {
