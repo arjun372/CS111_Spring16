@@ -75,16 +75,25 @@ static SuperBlock_t *init_superblock_info() {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
                 exit(1);
         }
-        struct metadata magicNumber = {56, 0, 2, "%x"};
-        mSuperBlock->data[0] = magicNumber; // s_magic
-        mSuperBlock->data[1] = {0,  0, 4, "%d"}; // s_inodes_count
-        mSuperBlock->data[2] = {4,  0, 4, "%d"}; // s_blocks_count
-        mSuperBlock->data[3] = {24, 0, 4, "%d"}; // s_log_block_size
-        mSuperBlock->data[4] = {28, 0, 4, "%d"}; // s_log_frag_size
-        mSuperBlock->data[5] = {32, 0, 4, "%d"}; // s_blocks_per_group
-        mSuperBlock->data[6] = {40, 0, 4, "%d"}; // s_inodes_per_group
-        mSuperBlock->data[7] = {36, 0, 4, "%d"}; // s_frags_per_group
-        mSuperBlock->data[8] = {20, 0, 4, "%d"}; // s_first_data_block
+        struct metadata magicNumber    = {56, 0, 2, "%x"}; // s_magic
+        struct metadata inodeCount     = {0,  0, 4, "%d"}; // s_inodes_count
+        struct metadata blockCount     = {4,  0, 4, "%d"}; // s_blocks_count
+        struct metadata blockSize      = {24, 0, 4, "%d"}; // s_log_block_size
+        struct metadata fragSize       = {28, 0, 4, "%d"}; // s_log_frag_size
+        struct metadata blocksPerGroup = {32, 0, 4, "%d"}; // s_blocks_per_group
+        struct metadata inodesPerGroup = {40, 0, 4, "%d"}; // s_inodes_per_group
+        struct metadata fragsPerGroup  = {36, 0, 4, "%d"}; // s_frags_per_group
+        struct metadata firstDataBlock = {20, 0, 4, "%d"}; // s_first_data_block
+
+        mSuperBlock->data[0] = magicNumber;
+        mSuperBlock->data[1] = inodeCount;
+        mSuperBlock->data[2] = blockCount;
+        mSuperBlock->data[3] = blockSize;
+        mSuperBlock->data[4] = fragSize;
+        mSuperBlock->data[5] = blocksPerGroup;
+        mSuperBlock->data[6] = inodesPerGroup;
+        mSuperBlock->data[7] = fragsPerGroup;
+        mSuperBlock->data[8] = firstDataBlock;
 
         return mSuperBlock;
 }
