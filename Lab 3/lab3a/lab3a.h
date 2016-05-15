@@ -3,7 +3,7 @@ typedef struct metadata_t {
         int value;
         int size;
         char *format;
-}
+} metadata_t;
 
 typedef struct superblock_t {
         metadata_t magicNumber    = {56, 0, 2, "%x"}; // s_magic
@@ -15,4 +15,4 @@ typedef struct superblock_t {
         metadata_t inodesPerGroup = {40, 0, 4, "%d"}; // s_inodes_per_group
         metadata_t fragsPerGroup  = {36, 0, 4, "%d"}; // s_frags_per_group
         metadata_t firstDataBlock = {20, 0, 4, "%d"}; // s_first_data_block
-};
+} superblock_t;
