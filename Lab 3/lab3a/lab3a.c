@@ -55,7 +55,7 @@ int main (int argc, char **argv)
                 exit(1);
         }
 
-        char *TargetFile  = argv[1];
+        char *TargetFile  = argv[VERBOSE ? 2 : 1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
