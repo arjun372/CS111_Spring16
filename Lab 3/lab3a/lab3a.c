@@ -79,6 +79,7 @@ static int fill_block(Block_t *toFill, int fd) {
         int bytesRead = 1;
         for(i = 0; i < (toFill->nDataObjects); i++) {
                 bytesRead &= pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
+                fprintf(stderr, "VAL:: %d\n", toFill->dataObjects[i].value);
         }
         return bytesRead;
 }
