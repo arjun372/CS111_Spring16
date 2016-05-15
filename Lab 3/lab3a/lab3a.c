@@ -49,13 +49,13 @@ int main (int argc, char **argv)
         //  while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
         //            continue;
 
-        if(argc <= 0) {
+        if(argc <= 1) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
         }
 
         int FD;
-        char *TargetFile  = argv[0];
+        char *TargetFile  = argv[1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
