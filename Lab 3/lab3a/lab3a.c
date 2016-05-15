@@ -63,7 +63,7 @@ int main (int argc, char **argv)
         char *TargetFile  = argv[VERBOSE ? 2 : 1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
-                fprintf(stderr, "FATAL(%d): %s\n", errno, strerr(errno));
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
@@ -80,7 +80,7 @@ int main (int argc, char **argv)
 static void writeCSV_superblock() {
         int fd = open(FILE_SUPERBLOCK, CSV_WRITE_FLAGS, FILE_MODE);
         if(fd < 0) {
-                fprintf(stderr, "FATAL(%d): %s\n", errno, strerr(errno));
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_SUPERBLOCK);
 
