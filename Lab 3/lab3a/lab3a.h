@@ -6,10 +6,11 @@ struct metadata {
                         // this saves a lot of malloc and free calls!
 };
 
-#define SUPERBLOCK_OFFSET 1024
-
+#define SUPERBLOCK_OFF     1024
+#define SUPERBLOCK_OBJECTS    9
 struct superblock {
-        struct metadata data[9];
+        struct metadata *dataObjects;
+        uint32_t nDataObjects;
 };
 
 struct group_descriptor {
@@ -30,6 +31,7 @@ struct group_descriptor {
 };
 
 typedef struct metadata MetaData_t;
+typedef struct superblock Block_t;
 typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
 

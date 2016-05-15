@@ -40,6 +40,7 @@ static struct option long_options[] = {
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
+static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
 
 int main (int argc, char **argv)
@@ -62,7 +63,24 @@ int main (int argc, char **argv)
         } else if (VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         superblock_data = init_superblock_info();
+        if(fill_block(superblock_data, FD))
+                fprintf(stderr, "Get SUPERBLOCK information :: SUCCESS\n");
+        else
+                fprintf(stderr, "Get SUPERBLOCK information :: FAILURE\n");
+
+
+        free(superblock_data);
         exit(0);
+}
+
+/* Fills the given data structure based on the values it stores */
+static int fill_block(Block_t *toFill, int fd) {
+        uint32_t i;
+        int bytesRead = 1;
+        for(i = 0; i < (toFill->nDataObjects); i++) {
+                bytesRead &= pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
+        }
+        return bytesRead;
 }
 
 /* Reads the disk superblock, stores it in SuperBlock_t data structure,
@@ -75,25 +93,40 @@ static SuperBlock_t *init_superblock_info() {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
                 exit(1);
         }
-        struct metadata magicNumber    = {56, 0, 2, "%x"}; // s_magic
-        struct metadata inodeCount     = {0,  0, 4, "%d"}; // s_inodes_count
-        struct metadata blockCount     = {4,  0, 4, "%d"}; // s_blocks_count
-        struct metadata blockSize      = {24, 0, 4, "%d"}; // s_log_block_size
-        struct metadata fragSize       = {28, 0, 4, "%d"}; // s_log_frag_size
-        struct metadata blocksPerGroup = {32, 0, 4, "%d"}; // s_blocks_per_group
-        struct metadata inodesPerGroup = {40, 0, 4, "%d"}; // s_inodes_per_group
-        struct metadata fragsPerGroup  = {36, 0, 4, "%d"}; // s_frags_per_group
-        struct metadata firstDataBlock = {20, 0, 4, "%d"}; // s_first_data_block
 
-        mSuperBlock->data[0] = magicNumber;
-        mSuperBlock->data[1] = inodeCount;
-        mSuperBlock->data[2] = blockCount;
-        mSuperBlock->data[3] = blockSize;
-        mSuperBlock->data[4] = fragSize;
-        mSuperBlock->data[5] = blocksPerGroup;
-        mSuperBlock->data[6] = inodesPerGroup;
-        mSuperBlock->data[7] = fragsPerGroup;
-        mSuperBlock->data[8] = firstDataBlock;
+        // allocate memory for N MetaData_t objects that do within SuperBlock_t
+        MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_OBJECTS);
+        if(mDataObjects == NULL) {
+                fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
+                free(mSuperBlock);
+                exit(1);
+        }
+
+        /* assign this new data structure to superblock */
+        mSuperBlock->nDataObjects = SUPERBLOCK_OBJECTS;
+        mSuperBlock->dataObjects  = mDataObjects;
+
+        struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
+        struct metadata inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
+        struct metadata blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
+        struct metadata blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
+        struct metadata fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
+        struct metadata blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
+        struct metadata inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
+        struct metadata fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
+        struct metadata firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
+
+        /* populate the dataObjects */
+        // TODO : Do we know a better way to allocating the @params above?
+        mSuperBlock->dataObjects[0] = magicNumber;
+        mSuperBlock->dataObjects[1] = inodeCount;
+        mSuperBlock->dataObjects[2] = blockCount;
+        mSuperBlock->dataObjects[3] = blockSize;
+        mSuperBlock->dataObjects[4] = fragSize;
+        mSuperBlock->dataObjects[5] = blocksPerGroup;
+        mSuperBlock->dataObjects[6] = inodesPerGroup;
+        mSuperBlock->dataObjects[7] = fragsPerGroup;
+        mSuperBlock->dataObjects[8] = firstDataBlock;
 
         return mSuperBlock;
 }
