@@ -45,31 +45,31 @@ static SuperBlock_t *init_superblock_info();
 
 int main (int argc, char **argv)
 {
+        int FD, opt_index;
         /* Read --verbose option if it was passed */
-        //  while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
-        //            continue;
+        while(getopt_long_only(argc, argv, "", long_options, &opt_index) != -1)
+                continue;
 
         if(argc <= 1) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
         }
 
-        int FD;
         char *TargetFile  = argv[1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
                 exit(1);
-        } else fprintf(stderr, "Selecting file '%s'\n", TargetFile);
+        } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         superblock_data = init_superblock_info();
-        if(fill_block(superblock_data, FD))
-                fprintf(stderr, "Get SUPERBLOCK information :: SUCCESS\n");
-        else
-                fprintf(stderr, "Get SUPERBLOCK information :: FAILURE\n");
-
+        if(fill_block(superblock_data, FD)) {
+                if(VERBOSE) fprintf(stderr, "Get SUPERBLOCK information :: SUCCESS\n");
+        }
+        else fprintf(stderr, "Get SUPERBLOCK information :: FAILURE\n");
 
         free(superblock_data);
+        close(FD);
         exit(0);
 }
 
