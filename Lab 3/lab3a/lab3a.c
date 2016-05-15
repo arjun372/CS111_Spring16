@@ -12,6 +12,7 @@
 #define FILE_SUPERBLOCK              "super.csv"
 #define FILE_INODES                  "inodes.csv"
 
+#define CSV_WRITE_FLAGS  O_WRONLY|O_CREAT|O_TRUNC
 #define FILE_MODE 0664
 #define BAD         -1
 #include <sys/types.h>
@@ -23,6 +24,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <errno.h>
 
 #include "lab3a.h"
 
@@ -43,6 +45,7 @@ static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, int fd);
 static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
+static void writeCSV_superblock();
 
 int main (int argc, char **argv)
 {
@@ -60,21 +63,34 @@ int main (int argc, char **argv)
         char *TargetFile  = argv[VERBOSE ? 2 : 1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
-                fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerr(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
+        /* Process superblock information */
         superblock_data = init_superblock_info();
-        if(fill_superblock(superblock_data, FD)) {
-                if(VERBOSE) fprintf(stderr, "Get SUPERBLOCK information :: SUCCESS\n");
-        }
-        else fprintf(stderr, "Get SUPERBLOCK information :: FAILURE\n");
+        if(fill_superblock(superblock_data, FD))
+                writeCSV_superblock();
 
         free(superblock_data);
         close(FD);
         exit(0);
 }
 
+static void writeCSV_superblock() {
+        int fd = open(FILE_SUPERBLOCK, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerr(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_SUPERBLOCK);
+
+        uint32_t i;
+        for(i = 0; i < (superblock_data->nDataObjects); i++) {
+                dprintf(fd, superblock_data->dataObjects[i].format, superblock_data->dataObjects[i].value);
+                dprintf(fd, (i == (superblock_data->nDataObjects - 1)) ? "\n" : ",");
+        }
+        close(fd);
+}
 /* Fills the given data structure based on the values it stores */
 static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 
