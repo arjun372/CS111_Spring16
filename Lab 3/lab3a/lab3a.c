@@ -40,7 +40,7 @@ static struct option long_options[] = {
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
-static SuperBlock_t *fill_superblock_info(int fd);
+static SuperBlock_t *init_superblock_info(int fd);
 
 int main (int argc, char **argv)
 {
@@ -61,13 +61,13 @@ int main (int argc, char **argv)
                 exit(1);
         } else if (VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
-        superblock_data = fill_superblock_info(FD);
+        superblock_data = init_superblock_info();
         exit(0);
 }
 
 /* Reads the disk superblock, stores it in SuperBlock_t data structure,
  * and returns a pointer to the newly created data structure */
-static SuperBlock_t *fill_superblock_info(int fd) {
+static SuperBlock_t *init_superblock_info() {
 
         /* allocate memory for SuperBlock_t data structure */
         SuperBlock_t *mSuperBlock = (SuperBlock_t *) malloc(sizeof(SuperBlock_t));
@@ -75,7 +75,17 @@ static SuperBlock_t *fill_superblock_info(int fd) {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
                 exit(1);
         }
-        fd = 0;
+
+        mSuperBlock.metadata[0] = {56, 0, 2, "%x"}; // s_magic
+        mSuperBlock.metadata[1] = {0,  0, 4, "%d"}; // s_inodes_count
+        mSuperBlock.metadata[2] = {4,  0, 4, "%d"}; // s_blocks_count
+        mSuperBlock.metadata[3] = {24, 0, 4, "%d"}; // s_log_block_size
+        mSuperBlock.metadata[4] = {28, 0, 4, "%d"}; // s_log_frag_size
+        mSuperBlock.metadata[5] = {32, 0, 4, "%d"}; // s_blocks_per_group
+        mSuperBlock.metadata[6] = {40, 0, 4, "%d"}; // s_inodes_per_group
+        mSuperBlock.metadata[7] = {36, 0, 4, "%d"}; // s_frags_per_group
+        mSuperBlock.metadata[8] = {20, 0, 4, "%d"}; // s_first_data_block
+
         return mSuperBlock;
 }
 
