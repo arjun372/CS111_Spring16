@@ -50,7 +50,7 @@ int main (int argc, char **argv)
         while(getopt_long_only(argc, argv, "", long_options, &opt_index) != -1)
                 continue;
 
-        if(argc <= 1) {
+        if(argc <= (VERBOSE ? 2 : 1)) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
         }
