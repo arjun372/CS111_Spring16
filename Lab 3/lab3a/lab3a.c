@@ -1,9 +1,16 @@
 /**
     UCLA CS 111 - Spring '16
     Lab 3A - File System Dump
-    Rahul Malavalli 204429252
-    Arjun           504078752
+    Rahul Malavalli - 204429252
+    Arjun Arjun     - 504078752
  **/
+
+#define FILE_INDIRECT_BLOCK_ENTRIES  "indirect.csv"
+#define FILE_DIRECTORY_ENTRIES       "directory.csv"
+#define FILE_GROUP_DESCRIPTOR        "group.csv"
+#define FILE_FREE_BITMAPS            "bitmap.csv"
+#define FILE_SUPERBLOCK              "super.csv"
+#define FILE_INODES                  "inodes.csv"
 
 #define FILE_MODE 0664
 #define BAD         -1
@@ -16,6 +23,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+
+#include "lab3a.h"
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -104,7 +113,7 @@ static pos_info indirect_block_entry[] = {
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
-static void read_options(int argc, char **argv);
+static superblock_t get_superblock(int fd);
 
 int main (int argc, char **argv)
 {
@@ -125,7 +134,14 @@ int main (int argc, char **argv)
                 exit(1);
         } else if (VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
+        superblock_t mSuperBlock = get_superblock(FD);
         exit(0);
+}
+
+static superblock_t get_superblock(int fd) {
+        fd = 0;
+        superblock_t mSuperBlock;
+        return mSuperBlock;
 }
 
 /* if --VERBOSE is passed, logs to stdout */

@@ -1,6 +1,6 @@
 UCLA CS 111 - Spring '16
-Rahul Malavalli
-Arjun		504078752
+Rahul Malavalli - 204429252
+Arjun Arjun     - 504078752
 Lab 3a - File System Dump
 
 ------
@@ -84,7 +84,7 @@ for spinlocks, as I expected the threads to keep polling the spinlocks at a high
 rate, and perhaps getting access to the linked list quicker than mutexes. The
 end result was not as good as expected, however this was still much better than
 the trend that was observed in Lab2A, where spinlocks were much-much slower
-than mutexes.  
+than mutexes.
 
 --------------------------------------------------------------------------------
 Known bugs - THESE BUGS DO NOT AFFECT THE CORRECTNESS OR ROBUSTNESS OF THE
