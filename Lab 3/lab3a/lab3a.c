@@ -76,15 +76,15 @@ static SuperBlock_t *init_superblock_info() {
                 exit(1);
         }
 
-        mSuperBlock.metadata[0] = {56, 0, 2, "%x"}; // s_magic
-        mSuperBlock.metadata[1] = {0,  0, 4, "%d"}; // s_inodes_count
-        mSuperBlock.metadata[2] = {4,  0, 4, "%d"}; // s_blocks_count
-        mSuperBlock.metadata[3] = {24, 0, 4, "%d"}; // s_log_block_size
-        mSuperBlock.metadata[4] = {28, 0, 4, "%d"}; // s_log_frag_size
-        mSuperBlock.metadata[5] = {32, 0, 4, "%d"}; // s_blocks_per_group
-        mSuperBlock.metadata[6] = {40, 0, 4, "%d"}; // s_inodes_per_group
-        mSuperBlock.metadata[7] = {36, 0, 4, "%d"}; // s_frags_per_group
-        mSuperBlock.metadata[8] = {20, 0, 4, "%d"}; // s_first_data_block
+        mSuperBlock->metadata[0] = {56, 0, 2, "%x"}; // s_magic
+        mSuperBlock->metadata[1] = {0,  0, 4, "%d"}; // s_inodes_count
+        mSuperBlock->metadata[2] = {4,  0, 4, "%d"}; // s_blocks_count
+        mSuperBlock->metadata[3] = {24, 0, 4, "%d"}; // s_log_block_size
+        mSuperBlock->metadata[4] = {28, 0, 4, "%d"}; // s_log_frag_size
+        mSuperBlock->metadata[5] = {32, 0, 4, "%d"}; // s_blocks_per_group
+        mSuperBlock->metadata[6] = {40, 0, 4, "%d"}; // s_inodes_per_group
+        mSuperBlock->metadata[7] = {36, 0, 4, "%d"}; // s_frags_per_group
+        mSuperBlock->metadata[8] = {20, 0, 4, "%d"}; // s_first_data_block
 
         return mSuperBlock;
 }
