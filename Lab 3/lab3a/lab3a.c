@@ -90,6 +90,7 @@ static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 
         /* Print it out if VERBOSE */
         if(VERBOSE) {
+                uint32_t i;
                 for(i = 0; i < (toFill->nDataObjects); i++) {
                         fprintf(stderr, toFill->dataObjects[i].format, toFill->dataObjects[i].value);
                         fprintf(stderr, (i == (toFill->nDataObjects - 1)) ? "\n" : ",");
