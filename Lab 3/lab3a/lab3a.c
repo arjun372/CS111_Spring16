@@ -40,7 +40,7 @@ static struct option long_options[] = {
 
 /* Static function declarations */
 static void debug_log(const int opt_index, char **optarg, const int argc);
-static SuperBlock_t *init_superblock_info(int fd);
+static SuperBlock_t *init_superblock_info();
 
 int main (int argc, char **argv)
 {
