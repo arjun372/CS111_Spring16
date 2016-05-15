@@ -49,7 +49,7 @@ int main (int argc, char **argv)
         //  while(getopt_long_only(argc, argv, "", long_options, NULL) != 1)
         //            continue;
 
-        if(!argc) {
+        if(argc <= 0) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
         }
@@ -60,7 +60,7 @@ int main (int argc, char **argv)
         if(FD < 0) {
                 fprintf(stderr, "FATAL: unable to open file '%s'\n", TargetFile);
                 exit(1);
-        } else if (VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
+        } else fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         superblock_data = init_superblock_info();
         if(fill_block(superblock_data, FD))
