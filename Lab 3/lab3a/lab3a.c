@@ -80,7 +80,7 @@ static int fill_block(Block_t *toFill, int fd) {
         int bytesRead = 0;
         for(i = 0; i < (toFill->nDataObjects); i++) {
                 bytesRead += pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
-                if (VERBOSE) fprintf(stderr, "VAL:: %d\n", toFill->dataObjects[i].value);
+                if (VERBOSE) fprintf(stderr, "VAL:: %s\n", toFill->dataObjects[i].format, toFill->dataObjects[i].value);
         }
         if (VERBOSE) fprintf(stderr, "TOTAL READS (IDEAL:34) = %d\n", bytesRead);
         return bytesRead;
