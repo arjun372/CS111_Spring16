@@ -28,11 +28,9 @@
 
 #include "lab3a.h"
 
-/* global diskorg_t variables */
-/** Single pointer if there is only ONE data structure (like superblock)**/
-/** Double pointer if there is an array of data structures **/
-static SuperBlock_t *superblock_data;
-static GroupDescriptor_t **group_descriptor_table;
+static SuperBlock_t       *SUPERBLOCK_TABLE;
+static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
+static uint32_t NUM_GROUP_DESCRIPTORS;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -41,15 +39,15 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, const uint32_t nGDs);
-static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable);
-static int fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
-static void debug_log(const int opt_index, char **optarg, const int argc);
-static int fill_superblock(SuperBlock_t *blockToFill, const int fd);
+static int          fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
+static void         debug_log(const int opt_index, char **optarg, const int argc);
+static int          fill_superblock(SuperBlock_t *blockToFill, const int fd);
+static uint32_t     init_GROUP_DESCRIPTOR_TABLE_info();
+static int          fill_GroupDescriptors(const int fd);
+static void         writeCSV_GroupDescriptors();
 static SuperBlock_t *init_superblock_info();
-static void writeCSV_GroupDescriptors();
-static void writeCSV_superblock();
-static void free_memory();
+static void         writeCSV_superblock();
+static void         free_memory();
 
 int main (int argc, char **argv)
 {
@@ -73,19 +71,19 @@ int main (int argc, char **argv)
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
 
         /* Process superblock information */
-        superblock_data = init_superblock_info();
-        fill_superblock(superblock_data, FD);
+        SUPERBLOCK_TABLE = init_superblock_info();
+        fill_superblock(FD);
         writeCSV_superblock();
 
         /* Read into groupDescriptor table for each block group */
-        uint32_t nGroupDescriptors = init_GroupDescriptorTable_info(group_descriptor_table);
-        fill_GroupDescriptors(FD, group_descriptor_table, nGroupDescriptors);
+        NUM_GROUP_DESCRIPTORS = init_GROUP_DESCRIPTOR_TABLE_info();
+        fill_GroupDescriptors(FD);
         writeCSV_GroupDescriptors();
 
-        for(i = 0; i < nGroupDescriptors; i++)
-                free(group_descriptor_table[i]);   // free each GD in gdTable
-        free(group_descriptor_table);              // free gdTable
-        free(superblock_data);                     // free superblock data
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
+                free(GROUP_DESCRIPTOR_TABLE[i]);     // free each GD in gdTable
+        free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
+        free(SUPERBLOCK_TABLE);                     // free superblock data
         close(FD);                                 // close TargetFile
         exit(0);
 }
@@ -98,32 +96,32 @@ static void writeCSV_superblock() {
         } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_SUPERBLOCK);
 
         uint32_t i;
-        for(i = 0; i < (superblock_data->nDataObjects); i++) {
-                dprintf(fd, superblock_data->dataObjects[i].format, superblock_data->dataObjects[i].value);
-                dprintf(fd, (i == (superblock_data->nDataObjects - 1)) ? "\n" : ",");
+        for(i = 0; i < (SUPERBLOCK_TABLE->nDataObjects); i++) {
+                dprintf(fd, SUPERBLOCK_TABLE->dataObjects[i].format, SUPERBLOCK_TABLE->dataObjects[i].value);
+                dprintf(fd, (i == (SUPERBLOCK_TABLE->nDataObjects - 1)) ? "\n" : ",");
         }
         close(fd);
 }
 
 /* Fills the given data structure based on the values it stores */
-static int fill_superblock(SuperBlock_t *toFill, const int fd) {
+static int fill_superblock(const int fd) {
 
         /* If filling the block from disk failed, then return 0 */
-        if(!fill_block(fd, toFill->dataObjects, toFill->nDataObjects))
+        if(!fill_block(fd, SUPERBLOCK_TABLE->dataObjects, SUPERBLOCK_TABLE->nDataObjects))
                 return 0;
 
         /** Now do SuperBlock_t specific actions */
-        uint32_t correct_BlockSize   = 1024 << toFill->dataObjects[3].value;
-        uint32_t correct_FragSize    = (toFill->dataObjects[4].value > 0) ? (1024 << toFill->dataObjects[4].value) : (1024 >> -(toFill->dataObjects[4].value));
-        toFill->dataObjects[3].value = correct_BlockSize;
-        toFill->dataObjects[4].value = correct_FragSize;
+        uint32_t correct_BlockSize   = 1024 << SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t correct_FragSize    = (SUPERBLOCK_TABLE->dataObjects[4].value > 0) ? (1024 << SUPERBLOCK_TABLE->dataObjects[4].value) : (1024 >> -(SUPERBLOCK_TABLE->dataObjects[4].value));
+        SUPERBLOCK_TABLE->dataObjects[3].value = correct_BlockSize;
+        SUPERBLOCK_TABLE->dataObjects[4].value = correct_FragSize;
 
         /* Print it out if VERBOSE */
         if(VERBOSE) {
                 uint32_t i;
-                for(i = 0; i < (toFill->nDataObjects); i++) {
-                        fprintf(stderr, toFill->dataObjects[i].format, toFill->dataObjects[i].value);
-                        fprintf(stderr, (i == (toFill->nDataObjects - 1)) ? "\n" : ",");
+                for(i = 0; i < (SUPERBLOCK_TABLE->nDataObjects); i++) {
+                        fprintf(stderr, SUPERBLOCK_TABLE->dataObjects[i].format, SUPERBLOCK_TABLE->dataObjects[i].value);
+                        fprintf(stderr, (i == (SUPERBLOCK_TABLE->nDataObjects - 1)) ? "\n" : ",");
                 }
         }
         return 1;
@@ -156,24 +154,24 @@ static SuperBlock_t *init_superblock_info() {
         return mSuperBlock;
 }
 
-static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
+static uint32_t init_GROUP_DESCRIPTOR_TABLE_info() {
 
-        /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
+        /* Calculate how many GROUP_DESCRIPTOR_TABLE members we will need based on number of block groups */
         uint32_t i;
-        uint32_t blockCount     = superblock_data->dataObjects[2].value;
-        uint32_t blocksPerGroup = superblock_data->dataObjects[5].value;
+        uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
+        uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
         /* allocate memory for GroupDescriptor_Table members */
-        groupDescriptorTable = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
-        if(groupDescriptorTable == NULL) goto MEM_ERR;
+        GROUP_DESCRIPTOR_TABLE = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
+        if(GROUP_DESCRIPTOR_TABLE == NULL) goto MEM_ERR;
 
         /* The block group descriptor table starts on the first block following the superblock.
          * This would be the third block on a 1KiB block file system, or the second block for
          * 2KiB and larger block file systems. Shadow copies of the block	group descriptor table
          * are also stored with every copy of the superblock. */
 
-        uint32_t blockSize           = superblock_data->dataObjects[3].value;
+        uint32_t blockSize           = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t gdTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
         uint32_t startOffset         = blockSize * gdTable_blockOffset;
 
@@ -185,15 +183,15 @@ static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescript
 
         /* allocate memory for each group_descriptor */
         for(i = 0; i < nBlockGroups; i++) {
-                groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
-                if(groupDescriptorTable[i] == NULL) goto MEM_ERR;
+                GROUP_DESCRIPTOR_TABLE[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
+                if(GROUP_DESCRIPTOR_TABLE[i] == NULL) goto MEM_ERR;
 
                 /* initialize metadata for each group_descriptor */
                 MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * GROUPDESCRIPTOR_FIELDS);
                 if(mDataObjects == NULL) goto MEM_ERR;
 
-                groupDescriptorTable[i]->nDataObjects = GROUPDESCRIPTOR_FIELDS;
-                groupDescriptorTable[i]->dataObjects  = mDataObjects;
+                GROUP_DESCRIPTOR_TABLE[i]->nDataObjects = GROUPDESCRIPTOR_FIELDS;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects  = mDataObjects;
 
                 uint32_t OFFSET = startOffset + (i * bgd_size);
 
@@ -205,20 +203,14 @@ static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescript
                 MetaData_t freeBlockBMP         = {OFFSET +    0, 0, 4, "%x"};
                 MetaData_t inodeTableStartBlock = {OFFSET +    8, 0, 4, "%x"};
 
-                groupDescriptorTable[i]->dataObjects[0] = numContainedBlocks;
-                groupDescriptorTable[i]->dataObjects[1] = numFreeBlocks;
-                groupDescriptorTable[i]->dataObjects[2] = numFreeInodes;
-                groupDescriptorTable[i]->dataObjects[3] = numUsedDirs;
-                groupDescriptorTable[i]->dataObjects[4] = freeInodeBMP;
-                groupDescriptorTable[i]->dataObjects[5] = freeBlockBMP;
-                groupDescriptorTable[i]->dataObjects[6] = inodeTableStartBlock;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[0] = numContainedBlocks;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[1] = numFreeBlocks;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[2] = numFreeInodes;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[3] = numUsedDirs;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4] = freeInodeBMP;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5] = freeBlockBMP;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[6] = inodeTableStartBlock;
 
-                if(VERBOSE) {
-                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[0].offset, numContainedBlocks.offset);
-                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[1].offset, numFreeBlocks.offset);
-                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[2].offset, numFreeInodes.offset);
-                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[3].offset, numUsedDirs.offset);
-                }
         }
 
         if(VERBOSE) {
@@ -235,42 +227,35 @@ MEM_ERR:
 }
 
 /* Fills the given data structure based on the values it stores */
-static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, const uint32_t nGDs) {
+static int fill_GroupDescriptors(const int fd) {
 
         uint32_t i, j;
-        uint32_t blockCount         = superblock_data->dataObjects[2].value;
-        uint32_t blocksPerGroup     = superblock_data->dataObjects[5].value;
+        uint32_t blockCount         = SUPERBLOCK_TABLE->dataObjects[2].value;
+        uint32_t blocksPerGroup     = SUPERBLOCK_TABLE->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
         for(i = 0; i < nGDs; i++) {
-                //uint32_t numObjects = gdTable[i].nDataObjects;
-                //fprintf(stderr, "numObjects[%d] :: %d\n", i, numObjects);
-        }
-        /* read from disk */
-        //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
-        //for(j = 0; j < (); j++) {
-        //        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
-        //  fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-        //fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
-        //}
-        /* get number of blocks contained within THIS group descriptor */
-        // TODO :: Check if this logic is correct.
-        // We are trying to see how many blocks are there in this group.
-        // Check if this works when nGDs = 1;
-        // if(i == (nGDs - 1))
-        //         numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
-        // else
-        //         numContainedBlocks = blocksPerGroup;
-        //
-        // gdTable[i]->dataObjects[0].value = numContainedBlocks;
 
-        /* Print it out if VERBOSE */
-        // if(VERBOSE)
-        //         for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
-        //                 fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-        //                 fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
-        //         }
-        if(VERBOSE)
-                fprintf(stderr, "Inside fill_GD\n");
+                /* read from disk */
+                fill_block(fd, GROUP_DESCRIPTOR_TABLE[i]->dataObjects, GROUP_DESCRIPTOR_TABLE[i]->nDataObjects);
+
+                /* get number of blocks contained within THIS group descriptor */
+                // TODO :: Check if this logic is correct.
+                // We are trying to see how many blocks are there in this group.
+                // Check if this works when nGDs = 1;
+                if(i == (NUM_GROUP_DESCRIPTORS - 1))
+                        numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
+                else
+                        numContainedBlocks = blocksPerGroup;
+
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[0].value = numContainedBlocks;
+
+                /* Print it out if VERBOSE */
+                if(VERBOSE)
+                        for(j = 0; j < (GROUP_DESCRIPTOR_TABLE[i]->nDataObjects); j++) {
+                                fprintf(stderr, GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].format, GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].value);
+                                fprintf(stderr, (j == (GROUP_DESCRIPTOR_TABLE[i]->nDataObjects - 1)) ? "\n" : ",");
+                        }
+        }
         return 1;
 }
 
