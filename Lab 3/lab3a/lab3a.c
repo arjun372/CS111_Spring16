@@ -150,14 +150,13 @@ static SuperBlock_t *init_superblock_info() {
         memcpy(mSuperBlock, &DEFAULT_SUPERBLOCK_T,
           sizeof(SuperBlock_t)
           + (sizeof(MetaData_t) * DEFAULT_SUPERBLOCK_T.nDataObjects));
-        
+
         return mSuperBlock;
 }
 
 static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
-
         /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
-        uint32_t i;
+        uint32_t i, j;
         uint32_t blockCount     = superblock_data->dataObjects[2].value;
         uint32_t blocksPerGroup = superblock_data->dataObjects[5].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
@@ -170,7 +169,6 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
          * This would be the third block on a 1KiB block file system, or the second block for
          * 2KiB and larger block file systems. Shadow copies of the block	group descriptor table
          * are also stored with every copy of the superblock. */
-
         uint32_t blockSize           = superblock_data->dataObjects[3].value;
         uint32_t gdTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
         uint32_t startOffset         = blockSize * gdTable_blockOffset;
@@ -181,35 +179,35 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
         /* Depending on how many block groups are defined, this table can require multiple blocks
          * of storage. Always refer to the superblock in case of doubt. */
 
-        /* allocate memory for each group_descriptor */
+        /* instantiate each group_descriptor */
         for(i = 0; i < nBlockGroups; i++) {
-                groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
-                if(groupDescriptorTable[i] == NULL) goto MEM_ERR;
+          /* allocate memory for SuperBlock_t data structure */
+          groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t)
+          + sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects);
+          if(groupDescriptorTable[i] == NULL) {
+                  fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor\n");
+                  exit(1);
+          }
 
-                /* initialize metadata for each group_descriptor */
-                MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * GROUPDESCRIPTOR_FIELDS);
-                if(mDataObjects == NULL) goto MEM_ERR;
+          // Copy data from DEFAULT_GROUP_DESCR_T
+          groupDescriptorTable[i]->nDataObjects = DEFAULT_GROUP_DESCR_T.nDataObjects;
+          memcpy(groupDescriptorTable[i], &DEFAULT_GROUP_DESCR_T,
+            sizeof(GroupDescriptor_t)
+            + (sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects));
 
-                groupDescriptorTable[i]->nDataObjects = GROUPDESCRIPTOR_FIELDS;
-                groupDescriptorTable[i]->dataObjects  = mDataObjects;
+          uint32_t offset;
+          for (j = 0; j < groupDescriptorTable[i]->nDataObjects; j++){
+            offset = startOffset + (i * bgd_size);
+            groupDescriptorTable[i]->dataObjects[j].offset =
+              offset + groupDescriptorTable[i]->dataObjects[j].offset;
 
-                uint32_t OFFSET = startOffset + (i * bgd_size);
-
-                MetaData_t numContainedBlocks   = {OFFSET +    0, 0, 4, "%d"};  // will not be read by pread!
-                MetaData_t numFreeBlocks        = {OFFSET +   12, 0, 2, "%d"};
-                MetaData_t numFreeInodes        = {OFFSET +   14, 0, 2, "%d"};
-                MetaData_t numUsedDirs          = {OFFSET +   16, 0, 2, "%d"};
-                MetaData_t freeInodeBMP         = {OFFSET +    4, 0, 4, "%x"};
-                MetaData_t freeBlockBMP         = {OFFSET +    0, 0, 4, "%x"};
-                MetaData_t inodeTableStartBlock = {OFFSET +    8, 0, 4, "%x"};
-
-                groupDescriptorTable[i]->dataObjects[0] = numContainedBlocks;
-                groupDescriptorTable[i]->dataObjects[1] = numFreeBlocks;
-                groupDescriptorTable[i]->dataObjects[2] = numFreeInodes;
-                groupDescriptorTable[i]->dataObjects[3] = numUsedDirs;
-                groupDescriptorTable[i]->dataObjects[4] = freeInodeBMP;
-                groupDescriptorTable[i]->dataObjects[5] = freeBlockBMP;
-                groupDescriptorTable[i]->dataObjects[6] = inodeTableStartBlock;
+            if (VERBOSE) {
+              printf("offset: %d\nsize: %d\nformat: %s\n\n",
+                      groupDescriptorTable[i]->dataObjects[j].offset,
+                      groupDescriptorTable[i]->dataObjects[j].size,
+                      groupDescriptorTable[i]->dataObjects[j].format);
+            }
+          }
         }
 
         if(VERBOSE) {
