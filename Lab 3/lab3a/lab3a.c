@@ -244,7 +244,7 @@ static int fill_GroupDescriptors(const int fd) {
                 // Check if this works when nGDs = 1;
 
                 if(i == (NUM_GROUP_DESCRIPTORS - 1))
-                        numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
+                        numContainedBlocks = blockCount - (blocksPerGroup * i);
                 else
                         numContainedBlocks = blocksPerGroup;
 
