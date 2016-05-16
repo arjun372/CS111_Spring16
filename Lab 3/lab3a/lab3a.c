@@ -45,7 +45,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
 static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, const int fd);
-static int fill_block(void *blockToFill, int fd);
+static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
 static void writeCSV_superblock();
 static void free_memory();
@@ -129,7 +129,7 @@ static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 }
 
 /* Fills the given data structure based on the values it stores */
-static int fill_block(void *toFill, const int fd) {
+static int fill_block(Block_t *toFill, const int fd) {
         uint32_t i;
         int bytesRead = 0;
         for(i = 0; i < (toFill->nDataObjects); i++)
@@ -236,8 +236,12 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
 
         for(i = 0; i < nGDs; i++) {
 
+                Block_t dataBlock;
+                dataBlock->nDataObjects = gdTable[i]->nDataObjects;
+                dataBlock->dataObjects  = gdTable[i]->dataObjects;
+
                 /* read from disk */
-                fill_block(gdTable[i], fd);
+                fill_block(dataBlock, fd);
 
                 /* get number of blocks contained within THIS group descriptor */
                 // TODO :: Check if this logic is correct.
