@@ -242,8 +242,8 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         uint32_t blocksPerGroup     = superblock_data->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
         for(i = 0; i < nGDs; i++) {
-                uint32_t numObjects = gdTable[i].nDataObjects;
-                fprintf(stderr, "numObjects[%d] :: %d\n", i, numObjects);
+                //uint32_t numObjects = gdTable[i].nDataObjects;
+                //fprintf(stderr, "numObjects[%d] :: %d\n", i, numObjects);
         }
         /* read from disk */
         //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
