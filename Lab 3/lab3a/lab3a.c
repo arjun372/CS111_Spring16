@@ -298,7 +298,7 @@ static void writeCSV_inode(const int FD) {
 
                         uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
 
-                        dprintf(fd, "INODE_#,");
+                        dprintf(fd, "%d,", j);
                         //TODO :: Read inode number!! :   pread(FD, &data, sizeof(data), )
 
                         /* read file-mode */
