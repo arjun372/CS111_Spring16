@@ -187,7 +187,7 @@ static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescript
         for(i = 0; i < nBlockGroups; i++) {
                 groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
                 if(groupDescriptorTable[i] == NULL) goto MEM_ERR;
-                if(VERBOSE) fprintf(stderr, "gdTable[%d]:: %x\n",i, (void *) groupDescriptorTable[i]);
+                if(VERBOSE) fprintf(stderr, "gdTable[%d]:: %x\n",i, &(groupDescriptorTable[i]));
                 /* initialize metadata for each group_descriptor */
                 MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * GROUPDESCRIPTOR_FIELDS);
                 if(mDataObjects == NULL) goto MEM_ERR;
