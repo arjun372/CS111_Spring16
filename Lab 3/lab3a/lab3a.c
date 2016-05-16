@@ -47,6 +47,7 @@ static int fill_superblock(SuperBlock_t *blockToFill, int fd);
 static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
 static void writeCSV_superblock();
+static void free_memory();
 
 int main (int argc, char **argv)
 {
