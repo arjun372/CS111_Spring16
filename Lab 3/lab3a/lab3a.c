@@ -43,9 +43,9 @@ static struct option long_options[] = {
 /* Static function declarations */
 static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, const uint32_t nGDs);
 static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable);
+static int fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, const int fd);
-static int fill_block(Block_t *blockToFill, int fd);
 static SuperBlock_t *init_superblock_info();
 static void writeCSV_superblock();
 static void free_memory();
@@ -108,7 +108,7 @@ static void writeCSV_superblock() {
 static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 
         /* If filling the block from disk failed, then return 0 */
-        if(!fill_block(toFill, fd))
+        if(!fill_block(fd, toFill->dataObjects, toFill->nDataObjects))
                 return 0;
 
         /** Now do SuperBlock_t specific actions */
@@ -129,11 +129,11 @@ static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 }
 
 /* Fills the given data structure based on the values it stores */
-static int fill_block(Block_t *toFill, const int fd) {
+static int fill_block(const int fd, MetaData_t *toFill, const uint32_t count) {
         uint32_t i;
         int bytesRead = 0;
-        for(i = 0; i < (toFill->nDataObjects); i++)
-                bytesRead += pread(fd, &(toFill->dataObjects[i].value), toFill->dataObjects[i].size, toFill->dataObjects[i].offset);
+        for(i = 0; i < count; i++)
+                bytesRead += pread(fd, &(toFill[i].value), toFill[i].size, toFill[i].offset);
         return bytesRead;
 }
 
@@ -236,12 +236,8 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
 
         for(i = 0; i < nGDs; i++) {
 
-                Block_t dataBlock;
-                dataBlock->nDataObjects = gdTable[i]->nDataObjects;
-                dataBlock->dataObjects  = gdTable[i]->dataObjects;
-
                 /* read from disk */
-                fill_block(dataBlock, fd);
+                fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
 
                 /* get number of blocks contained within THIS group descriptor */
                 // TODO :: Check if this logic is correct.
