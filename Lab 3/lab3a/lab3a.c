@@ -302,10 +302,10 @@ static void writeCSV_inode(const int FD) {
 
                         /* read file-mode */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
-                        char fileType = '?';
-                        if(data0 & 0xA000) fileType = 's';
-                        if(data0 & 0x4000) fileType = 'd';
-                        if(data0 & 0x8000) fileType = 'f';
+                        char fileType = "?";
+                        if(data0 & 0xA000) fileType = "s";
+                        if(data0 & 0x4000) fileType = "d";
+                        if(data0 & 0x8000) fileType = "f";
                         dprintf(fd, "%s,", fileType);
 
                         // TODO : FILE_MODE
@@ -330,11 +330,11 @@ static void writeCSV_inode(const int FD) {
                         dprintf(fd, "%x,", data);
 
                         /* read ACCESS_TIME */
-                        pread(FD, &data, sizeof(data), iNODE_OFF + 08);
+                        pread(FD, &data, sizeof(data), iNODE_OFF +  8);
                         dprintf(fd, "%x,", data);
 
                         /* read FILE_SIZE */
-                        pread(FD, &data, sizeof(data), iNODE_OFF + 04);
+                        pread(FD, &data, sizeof(data), iNODE_OFF +  4);
                         dprintf(fd, "%d,", data);
 
                         /* read NUMBER_OF_BLOCKS */
