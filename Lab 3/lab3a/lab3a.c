@@ -293,6 +293,7 @@ static void writeCSV_inode(const int FD) {
         {
                 uint32_t TBL_BLK_OFF = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[6].value;
                 uint32_t numInodes = (i == (NUM_GROUP_DESCRIPTORS - 1)) ? numInodesLastGroup : numInodesPerGroup;
+                if(VERBOSE) fprintf(stderr, "Processing descriptor (%d)..with inodes : %d\n", i, numInodes);
                 for(j = 0; j < numInodes; j++) {
 
                         uint32_t iNODE_OFF = (inodeSize * 128) + (TBL_BLK_OFF * blockSize);
@@ -348,11 +349,8 @@ static void writeCSV_inode(const int FD) {
                                 dprintf(fd, (k==14) ? "\n" : ",");
                         }
                 }
-
         }
-        // TODO : fill_inodeTables
-        // TODO : writeCSV_inode
-
+        close(fd);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
