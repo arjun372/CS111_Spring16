@@ -10,8 +10,8 @@ struct metadata {
 #define SUPERBLOCK_OFF     1024
 #define SUPERBLOCK_FIELDS     9
 struct superblock {
-        struct metadata *dataObjects;
         uint32_t nDataObjects;
+        struct metadata dataObjects[];
 };
 
 #define GROUPDESCRIPTOR_FIELDS    7
@@ -30,6 +30,21 @@ typedef struct metadata MetaData_t;
 typedef struct superblock Block_t;
 typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
+
+static const SuperBlock_t DEFAULT_SUPERBLOCK_T = {
+  SUPERBLOCK_FIELDS,  // nDataObjects
+  {
+    {SUPERBLOCK_OFF + 56, 0, 2, "%x"}, // s_magic
+    {SUPERBLOCK_OFF + 0,  0, 4, "%d"}, // s_inodes_count
+    {SUPERBLOCK_OFF + 4,  0, 4, "%d"}, // s_blocks_count
+    {SUPERBLOCK_OFF + 24, 0, 4, "%d"}, // s_log_block_size
+    {SUPERBLOCK_OFF + 28, 0, 4, "%d"}, // s_log_frag_size
+    {SUPERBLOCK_OFF + 32, 0, 4, "%d"}, // s_blocks_per_group
+    {SUPERBLOCK_OFF + 40, 0, 4, "%d"}, // s_inodes_per_group
+    {SUPERBLOCK_OFF + 36, 0, 4, "%d"}, // s_frags_per_group
+    {SUPERBLOCK_OFF + 20, 0, 4, "%d"}, // s_first_data_block
+  }  // dataObjects
+};
 
 // //inode_t inodePtr; TODO :: I still don't understand this
 //
