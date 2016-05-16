@@ -185,7 +185,7 @@ static SuperBlock_t *init_superblock_info() {
 static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorPtr) {
 
         /* Calculate how many GroupDescriptorTables we will need based on number of block groups */
-        int nBlockGroups = mSuperBlock->dataObjects[2].value / mSuperBlock->dataObjects[5].value;
+        int nBlockGroups = superblock_data->dataObjects[2].value / superblock_data->dataObjects[5].value;
 
         /* allocate memory for array GroupDescriptor_t * */
         groupDescriptorPtr = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
