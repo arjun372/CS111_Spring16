@@ -47,6 +47,7 @@ static int fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, const int fd);
 static SuperBlock_t *init_superblock_info();
+static void writeCSV_GroupDescriptors();
 static void writeCSV_superblock();
 static void free_memory();
 
