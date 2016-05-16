@@ -220,13 +220,14 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
                 groupDescriptorTable[i]->nDataObjects = GROUPDESCRIPTOR_FIELDS;
                 groupDescriptorTable[i]->dataObjects  = mDataObjects;
 
-                // {"number of contained blocks", "%d", BAD, BAD},
-                // {"number of free blocks",      "%d", 12, 2}, // bg_free_blocks_count
-                // {"number of free inodes",      "%d", 14, 2}, // bg_free_inodes_count
-                // {"number of directories",      "%d", 16, 2}, // bg_used_dirs_count
-                // {"free inode bitmap block",    "%x",  4, 4}, // bg_inode_bitmap
-                // {"free block bitmap block",    "%x",  0, 4}, // bg_block_bitmap
-                // {"inode table (start) block",  "%x",  8, 4}  // bg_inode_table
+                uint32_t OFFSET = startOffset + (i * bgd_size);
+                groupDescriptorTable[i]->dataObjects[0] = {OFFSET + NULL, 0, 4, "%d"}; /* numContainedBlocks */
+                groupDescriptorTable[i]->dataObjects[1] = {OFFSET + 12, 0, 2, "%d"};   /* numFreeBlocks */
+                groupDescriptorTable[i]->dataObjects[2] = {OFFSET + 14, 0, 2, "%d"};   /* numFreeInodes */
+                groupDescriptorTable[i]->dataObjects[3] = {OFFSET + 16, 0, 2, "%d"};   /* numUsedDirs */
+                groupDescriptorTable[i]->dataObjects[4] = {OFFSET +  4, 0, 4, "%x"};   /* freeInodeBMP */
+                groupDescriptorTable[i]->dataObjects[5] = {OFFSET +  0, 0, 4, "%x"};   /* freeBlockBMP */
+                groupDescriptorTable[i]->dataObjects[6] = {OFFSET +  8, 0, 4, "%x"};   /* inodeTableStartBlock */
         }
 
         if(VERBOSE) {
@@ -235,29 +236,6 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
                 fprintf(stderr, "gdTable_blockOffset:: %d\n",gdTable_blockOffset);
                 fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
         }
-
-
-// MetaData_t magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
-// MetaData_t inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
-// MetaData_t blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
-// MetaData_t blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
-// MetaData_t fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
-// MetaData_t blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
-// MetaData_t inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
-// MetaData_t fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
-// MetaData_t firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
-//
-// /* populate the dataObjects */
-// // TODO : Do we know a better way to allocating the @params above?
-// mSuperBlock->dataObjects[0] = magicNumber;
-// mSuperBlock->dataObjects[1] = inodeCount;
-// mSuperBlock->dataObjects[2] = blockCount;
-// mSuperBlock->dataObjects[3] = blockSize;
-// mSuperBlock->dataObjects[4] = fragSize;
-// mSuperBlock->dataObjects[5] = blocksPerGroup;
-// mSuperBlock->dataObjects[6] = inodesPerGroup;
-// mSuperBlock->dataObjects[7] = fragsPerGroup;
-// mSuperBlock->dataObjects[8] = firstDataBlock;
 
         return nBlockGroups;
 MEM_ERR:
