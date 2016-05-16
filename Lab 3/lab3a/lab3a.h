@@ -16,14 +16,13 @@ struct superblock {
 
 #define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
-        struct metadata dataObjects[];
         uint32_t nDataObjects;
-
-        /* ------- These are not part of EXT2 structs -------- */
-        int nInodes;
-        int inodeStart;      // first inode for this block group
-        int allocated_space; // for inodePtr
-        int nAllocated;
+        struct metadata dataObjects[];
+        // /* ------- These are not part of EXT2 structs -------- */
+        // int nInodes;
+        // int inodeStart;      // first inode for this block group
+        // int allocated_space; // for inodePtr
+        // int nAllocated;
 };
 
 typedef struct metadata MetaData_t;
