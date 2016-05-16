@@ -239,7 +239,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
                 /* read from disk */
                 //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
                 for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
-                        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
+                        //        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
                         fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
                         fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
                 }
