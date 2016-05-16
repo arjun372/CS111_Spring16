@@ -235,35 +235,37 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         uint32_t blocksPerGroup     = superblock_data->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
         for(i = 0; i < nGDs; i++) {
-
-                /* read from disk */
-                //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
-                for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
-                        //        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
-                        fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-                        //fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
-                }
-                /* get number of blocks contained within THIS group descriptor */
-                // TODO :: Check if this logic is correct.
-                // We are trying to see how many blocks are there in this group.
-                // Check if this works when nGDs = 1;
-                // if(i == (nGDs - 1))
-                //         numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
-                // else
-                //         numContainedBlocks = blocksPerGroup;
-                //
-                // gdTable[i]->dataObjects[0].value = numContainedBlocks;
-
-                /* Print it out if VERBOSE */
-                // if(VERBOSE)
-                //         for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
-                //                 fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-                //                 fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
-                //         }
-                if(VERBOSE)
-                        fprintf(stderr, "Inside fill_GD\n");
+                uint32_t numObjects = gdTable[i]->nDataObjects;
+                fprintf(stderr, "numObjects[%d] :: %d\n", i, numObjects);
         }
-        return 1;
+        /* read from disk */
+        //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
+        //for(j = 0; j < (); j++) {
+        //        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
+        //  fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
+        //fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
+        //}
+        /* get number of blocks contained within THIS group descriptor */
+        // TODO :: Check if this logic is correct.
+        // We are trying to see how many blocks are there in this group.
+        // Check if this works when nGDs = 1;
+        // if(i == (nGDs - 1))
+        //         numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
+        // else
+        //         numContainedBlocks = blocksPerGroup;
+        //
+        // gdTable[i]->dataObjects[0].value = numContainedBlocks;
+
+        /* Print it out if VERBOSE */
+        // if(VERBOSE)
+        //         for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
+        //                 fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
+        //                 fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
+        //         }
+        if(VERBOSE)
+                fprintf(stderr, "Inside fill_GD\n");
+}
+return 1;
 }
 
 static void writeCSV_GroupDescriptors() {
