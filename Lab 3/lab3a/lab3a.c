@@ -202,7 +202,11 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
         uint32_t blockSize = superblock_data->dataObjects[3].value;
         uint32_t groupDescriptorTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
         uint32_t startOffset = blockSize * groupDescriptorTable_blockOffset;
-
+        if(VERBOSE) {
+                fprintf(stderr, "BlockSize:: %d\n", blockSize);
+                fprintf(stderr, "gdTable_blockOffset:: %d\n",groupDescriptorTable_blockOffset);
+                fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
+        }
 
         /* Depending on how many block groups are defined, this table can require multiple blocks
          * of storage. Always refer to the superblock in case of doubt. */
