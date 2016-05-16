@@ -81,16 +81,14 @@ int main (int argc, char **argv)
         writeCSV_GroupDescriptors();
 
         /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
-        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++) {
-                //for(j = 0; j < GROUP_DESCRIPTOR_TABLE[i]->nDataObjects; j++)
-                //free(GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j]);
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
+        {
                 free(GROUP_DESCRIPTOR_TABLE[i]->dataObjects);
                 free(GROUP_DESCRIPTOR_TABLE[i]);
         }
         free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
 
         /* Free memory associated with SUPERBLOCK_TABLE */
-        //free(SUPERBLOCK_TABLE->dataObjects);
         free(SUPERBLOCK_TABLE);
 
         close(FD);                                 // close TargetFile
