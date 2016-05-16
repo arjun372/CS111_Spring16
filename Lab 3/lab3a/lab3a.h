@@ -16,7 +16,6 @@ struct superblock {
 
 #define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
-<<<<<<< HEAD
         /* ------- These are not part of EXT2 structs -------- */
         int nInodes;
         int inodeStart;      // first inode for this block group
@@ -27,15 +26,6 @@ struct group_descriptor {
         // Default members
         uint32_t nDataObjects;
         struct metadata dataObjects[];
-=======
-        uint32_t nDataObjects;
-        struct metadata *dataObjects;
-        // /* ------- These are not part of EXT2 structs -------- */
-        // int nInodes;
-        // int inodeStart;      // first inode for this block group
-        // int allocated_space; // for inodePtr
-        // int nAllocated;
->>>>>>> a6a724e2291a6aa46fcd7b34b74c863f2a376caf
 };
 
 typedef struct metadata MetaData_t;
@@ -59,17 +49,17 @@ static const SuperBlock_t DEFAULT_SUPERBLOCK_T = {
 };
 
 static const GroupDescriptor_t DEFAULT_GROUP_DESCR_T = {
-  0, 0, 0, 0,   /*-- UNKNOWN. TODO: determine use, if any -*/
-  GROUPDESCRIPTOR_FIELDS, // nDataObjects
-  {
-    {0, 0, 4, "%d"},  // will not be read by pread!
-    {12, 0, 2, "%d"},
-    {14, 0, 2, "%d"},
-    {16, 0, 2, "%d"},
-    {4, 0, 4, "%x"},
-    {0, 0, 4, "%x"},
-    {8, 0, 4, "%x"}
-  }   // dataObjects
+        0, 0, 0, 0, /*-- UNKNOWN. TODO: determine use, if any -*/
+        GROUPDESCRIPTOR_FIELDS, // nDataObjects
+        {
+                {0, 0, 4, "%d"}, // will not be read by pread!
+                {12, 0, 2, "%d"},
+                {14, 0, 2, "%d"},
+                {16, 0, 2, "%d"},
+                {4, 0, 4, "%x"},
+                {0, 0, 4, "%x"},
+                {8, 0, 4, "%x"}
+        } // dataObjects
 };
 
 // //inode_t inodePtr; TODO :: I still don't understand this
