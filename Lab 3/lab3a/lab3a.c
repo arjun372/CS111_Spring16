@@ -222,7 +222,7 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
 
                 uint32_t OFFSET = startOffset + (i * bgd_size);
 
-                MetaData_t numContainedBlocks   = {OFFSET + NULL, 0, 4, "%d"};  // will not be read by pread!
+                MetaData_t numContainedBlocks   = {OFFSET +    0, 0, 4, "%d"};  // will not be read by pread!
                 MetaData_t numFreeBlocks        = {OFFSET +   12, 0, 2, "%d"};
                 MetaData_t numFreeInodes        = {OFFSET +   14, 0, 2, "%d"};
                 MetaData_t numUsedDirs          = {OFFSET +   16, 0, 2, "%d"};
