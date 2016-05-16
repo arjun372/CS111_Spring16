@@ -82,10 +82,8 @@ int main (int argc, char **argv)
 
         /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
-        {
-                free(GROUP_DESCRIPTOR_TABLE[i]->dataObjects);
                 free(GROUP_DESCRIPTOR_TABLE[i]);
-        }
+
         free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
 
         /* Free memory associated with SUPERBLOCK_TABLE */
