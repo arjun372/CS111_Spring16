@@ -181,7 +181,7 @@ static SuperBlock_t *init_superblock_info() {
         return mSuperBlock;
 }
 
-static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorTable) {
+static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
 
         /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
         int nBlockGroups = superblock_data->dataObjects[2].value / superblock_data->dataObjects[5].value;
