@@ -239,16 +239,7 @@ static int fill_GroupDescriptors(const int fd) {
                 fill_block(fd, GROUP_DESCRIPTOR_TABLE[i]->dataObjects, GROUP_DESCRIPTOR_TABLE[i]->nDataObjects);
 
                 /* get number of blocks contained within THIS group descriptor */
-                // TODO :: Check if this logic is correct.
-                // We are trying to see how many blocks are there in this group.
-                // Check if this works when nGDs = 1;
-
-                if(i == (NUM_GROUP_DESCRIPTORS - 1))
-                        numContainedBlocks = blockCount - (blocksPerGroup * i);
-                else
-                        numContainedBlocks = blocksPerGroup;
-
-                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[0].value = numContainedBlocks;
+                GROUP_DESCRIPTOR_TABLE[i]->dataObjects[0].value = (i == (NUM_GROUP_DESCRIPTORS - 1)) ? (blockCount % blocksPerGroup) : blocksPerGroup;
 
                 /* Print it out if VERBOSE */
                 if(VERBOSE)
