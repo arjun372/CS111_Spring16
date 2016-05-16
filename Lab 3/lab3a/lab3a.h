@@ -17,7 +17,7 @@ struct superblock {
 #define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
         uint32_t nDataObjects;
-        struct metadata dataObjects[];
+        struct metadata *dataObjects;
         // /* ------- These are not part of EXT2 structs -------- */
         // int nInodes;
         // int inodeStart;      // first inode for this block group
