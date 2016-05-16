@@ -84,12 +84,13 @@ int main (int argc, char **argv)
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++) {
                 //for(j = 0; j < GROUP_DESCRIPTOR_TABLE[i]->nDataObjects; j++)
                 //free(GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j]);
+                free(GROUP_DESCRIPTOR_TABLE[i]->dataObjects);
                 free(GROUP_DESCRIPTOR_TABLE[i]);
         }
         free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
 
         /* Free memory associated with SUPERBLOCK_TABLE */
-        free(SUPERBLOCK_TABLE->dataObjects);
+        //free(SUPERBLOCK_TABLE->dataObjects);
         free(SUPERBLOCK_TABLE);
 
         close(FD);                                 // close TargetFile
