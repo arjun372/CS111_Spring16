@@ -156,7 +156,7 @@ static SuperBlock_t *init_superblock_info() {
         mSuperBlock->nDataObjects = SUPERBLOCK_FIELDS;
         mSuperBlock->dataObjects  = mDataObjects;
 
-        struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
+        MetaData_t magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
         struct metadata inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
         struct metadata blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
         struct metadata blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
@@ -184,74 +184,85 @@ static SuperBlock_t *init_superblock_info() {
 static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
 
         /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
+        uint32_t i;
         uint32_t blockCount     = superblock_data->dataObjects[2].value;
         uint32_t blocksPerGroup = superblock_data->dataObjects[5].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
-        /* allocate memory for array GroupDescriptor_t * */
+        /* allocate memory for GroupDescriptor_Table members */
         groupDescriptorTable = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
-        if(groupDescriptorTable == NULL) {
-                fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptors \n");
-                exit(1);
-        }
+        if(groupDescriptorTable == NULL) goto MEM_ERR;
 
         /* The block group descriptor table starts on the first block following the superblock.
          * This would be the third block on a 1KiB block file system, or the second block for
          * 2KiB and larger block file systems. Shadow copies of the block	group descriptor table
          * are also stored with every copy of the superblock. */
 
-        uint32_t blockSize = superblock_data->dataObjects[3].value;
-        uint32_t groupDescriptorTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
-        uint32_t startOffset = blockSize * groupDescriptorTable_blockOffset;
+        uint32_t blockSize           = superblock_data->dataObjects[3].value;
+        uint32_t gdTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
+        uint32_t startOffset         = blockSize * gdTable_blockOffset;
 
-        if(VERBOSE) {
-                fprintf(stderr, "nBlockGroups: %d\n", nBlockGroups);
-                fprintf(stderr, "BlockSize:: %d\n", blockSize);
-                fprintf(stderr, "gdTable_blockOffset:: %d\n",groupDescriptorTable_blockOffset);
-                fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
-        }
+        uint32_t bgd_size            = 32;
+        uint32_t bgdTable_size       = bgd_size * nBlockGroups;
 
         /* Depending on how many block groups are defined, this table can require multiple blocks
          * of storage. Always refer to the superblock in case of doubt. */
 
+        /* allocate memory for each group_descriptor */
+        for(i = 0; i < nBlockGroups; i++) {
+                groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
+                if(groupDescriptorTable[i] == NULL) goto MEM_ERR;
+
+                /* initialize metadata for each group_descriptor */
+                MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * GROUPDESCRIPTOR_FIELDS);
+                if(mDataObjects == NULL) goto MEM_ERR;
+
+                groupDescriptorTable[i]->nDataObjects = GROUPDESCRIPTOR_FIELDS;
+                groupDescriptorTable[i]->dataObjects  = mDataObjects;
+
+                // {"number of contained blocks", "%d", BAD, BAD},
+                // {"number of free blocks",      "%d", 12, 2}, // bg_free_blocks_count
+                // {"number of free inodes",      "%d", 14, 2}, // bg_free_inodes_count
+                // {"number of directories",      "%d", 16, 2}, // bg_used_dirs_count
+                // {"free inode bitmap block",    "%x",  4, 4}, // bg_inode_bitmap
+                // {"free block bitmap block",    "%x",  0, 4}, // bg_block_bitmap
+                // {"inode table (start) block",  "%x",  8, 4}  // bg_inode_table
+        }
+
+        if(VERBOSE) {
+                fprintf(stderr, "nBlockGroups: %d\n", nBlockGroups);
+                fprintf(stderr, "BlockSize:: %d\n", blockSize);
+                fprintf(stderr, "gdTable_blockOffset:: %d\n",gdTable_blockOffset);
+                fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
+        }
 
 
-        //
-        // // allocate memory for N MetaData_t objects that do within SuperBlock_t
-        // MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_FIELDS);
-        // if(mDataObjects == NULL) {
-        //         fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
-        //         free(mSuperBlock);
-        //         exit(1);
-        // }
-        //
-        // /* assign this new data structure to superblock */
-        // mSuperBlock->nDataObjects = SUPERBLOCK_FIELDS;
-        // mSuperBlock->dataObjects  = mDataObjects;
-        //
-        // struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
-        // struct metadata inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
-        // struct metadata blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
-        // struct metadata blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
-        // struct metadata fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
-        // struct metadata blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
-        // struct metadata inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
-        // struct metadata fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
-        // struct metadata firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
-        //
-        // /* populate the dataObjects */
-        // // TODO : Do we know a better way to allocating the @params above?
-        // mSuperBlock->dataObjects[0] = magicNumber;
-        // mSuperBlock->dataObjects[1] = inodeCount;
-        // mSuperBlock->dataObjects[2] = blockCount;
-        // mSuperBlock->dataObjects[3] = blockSize;
-        // mSuperBlock->dataObjects[4] = fragSize;
-        // mSuperBlock->dataObjects[5] = blocksPerGroup;
-        // mSuperBlock->dataObjects[6] = inodesPerGroup;
-        // mSuperBlock->dataObjects[7] = fragsPerGroup;
-        // mSuperBlock->dataObjects[8] = firstDataBlock;
+// struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
+// struct metadata inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
+// struct metadata blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
+// struct metadata blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
+// struct metadata fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
+// struct metadata blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
+// struct metadata inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
+// struct metadata fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
+// struct metadata firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
+//
+// /* populate the dataObjects */
+// // TODO : Do we know a better way to allocating the @params above?
+// mSuperBlock->dataObjects[0] = magicNumber;
+// mSuperBlock->dataObjects[1] = inodeCount;
+// mSuperBlock->dataObjects[2] = blockCount;
+// mSuperBlock->dataObjects[3] = blockSize;
+// mSuperBlock->dataObjects[4] = fragSize;
+// mSuperBlock->dataObjects[5] = blocksPerGroup;
+// mSuperBlock->dataObjects[6] = inodesPerGroup;
+// mSuperBlock->dataObjects[7] = fragsPerGroup;
+// mSuperBlock->dataObjects[8] = firstDataBlock;
 
         return nBlockGroups;
+MEM_ERR:
+        fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptors \n");
+        exit(1);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
