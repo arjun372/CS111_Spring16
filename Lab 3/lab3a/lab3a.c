@@ -187,33 +187,33 @@ static uint32_t init_GROUP_DESCRIPTOR_TABLE_info() {
 
         /* instantiate each group_descriptor */
         for(i = 0; i < nBlockGroups; i++) {
-          /* allocate memory for SuperBlock_t data structure */
-          groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t)
-          + sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects);
-          if(groupDescriptorTable[i] == NULL) {
-                  fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor\n");
-                  exit(1);
-          }
+                /* allocate memory for SuperBlock_t data structure */
+                GROUP_DESCRIPTOR_TABLE[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t)
+                                                                         + sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects);
+                if(GROUP_DESCRIPTOR_TABLE[i] == NULL) {
+                        fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor\n");
+                        exit(1);
+                }
 
-          // Copy data from DEFAULT_GROUP_DESCR_T
-          groupDescriptorTable[i]->nDataObjects = DEFAULT_GROUP_DESCR_T.nDataObjects;
-          memcpy(groupDescriptorTable[i], &DEFAULT_GROUP_DESCR_T,
-            sizeof(GroupDescriptor_t)
-            + (sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects));
+                // Copy data from DEFAULT_GROUP_DESCR_T
+                GROUP_DESCRIPTOR_TABLE[i]->nDataObjects = DEFAULT_GROUP_DESCR_T.nDataObjects;
+                memcpy(GROUP_DESCRIPTOR_TABLE[i], &DEFAULT_GROUP_DESCR_T,
+                       sizeof(GroupDescriptor_t)
+                       + (sizeof(MetaData_t) * DEFAULT_GROUP_DESCR_T.nDataObjects));
 
-          uint32_t offset;
-          for (j = 0; j < groupDescriptorTable[i]->nDataObjects; j++){
-            offset = startOffset + (i * bgd_size);
-            groupDescriptorTable[i]->dataObjects[j].offset =
-              offset + groupDescriptorTable[i]->dataObjects[j].offset;
+                uint32_t offset;
+                for (j = 0; j < GROUP_DESCRIPTOR_TABLE[i]->nDataObjects; j++) {
+                        offset = startOffset + (i * bgd_size);
+                        GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].offset =
+                                offset + GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].offset;
 
-            if (VERBOSE) {
-              printf("offset: %d\nsize: %d\nformat: %s\n\n",
-                      groupDescriptorTable[i]->dataObjects[j].offset,
-                      groupDescriptorTable[i]->dataObjects[j].size,
-                      groupDescriptorTable[i]->dataObjects[j].format);
-            }
-          }
+                        if (VERBOSE) {
+                                printf("offset: %d\nsize: %d\nformat: %s\n\n",
+                                       GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].offset,
+                                       GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].size,
+                                       GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].format);
+                        }
+                }
         }
 
         if(VERBOSE) {
