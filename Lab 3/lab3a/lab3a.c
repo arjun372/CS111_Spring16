@@ -237,7 +237,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         for(i = 0; i < nGDs; i++) {
 
                 /* read from disk */
-                fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
+                //fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
 
                 /* get number of blocks contained within THIS group descriptor */
                 // TODO :: Check if this logic is correct.
