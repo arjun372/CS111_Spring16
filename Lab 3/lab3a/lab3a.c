@@ -187,7 +187,7 @@ static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescript
         for(i = 0; i < nBlockGroups; i++) {
                 groupDescriptorTable[i] = (GroupDescriptor_t *) malloc(sizeof(GroupDescriptor_t));
                 if(groupDescriptorTable[i] == NULL) goto MEM_ERR;
-                if(VERBOSE) fprintf(stderr, "gdTable[%d]:: %x\n",i, &(groupDescriptorTable[i]));
+
                 /* initialize metadata for each group_descriptor */
                 MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * GROUPDESCRIPTOR_FIELDS);
                 if(mDataObjects == NULL) goto MEM_ERR;
@@ -212,6 +212,13 @@ static uint32_t init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescript
                 groupDescriptorTable[i]->dataObjects[4] = freeInodeBMP;
                 groupDescriptorTable[i]->dataObjects[5] = freeBlockBMP;
                 groupDescriptorTable[i]->dataObjects[6] = inodeTableStartBlock;
+
+                if(VERBOSE) {
+                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[0].offset, numContainedBlocks.offset);
+                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[1].offset, numFreeBlocks.offset);
+                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[2].offset, numFreeInodes.offset);
+                        fprintf(stderr, "Sanity check :: %d : %d\n", groupDescriptorTable[i]->dataObjects[3].offset, numUsedDirs.offset);
+                }
         }
 
         if(VERBOSE) {
