@@ -264,8 +264,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         //         }
         if(VERBOSE)
                 fprintf(stderr, "Inside fill_GD\n");
-}
-return 1;
+        return 1;
 }
 
 static void writeCSV_GroupDescriptors() {
