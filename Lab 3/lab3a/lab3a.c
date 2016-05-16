@@ -241,7 +241,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
                 for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
                         //        pread(fd, &(gdTable[i]->dataObjects[j].value), gdTable[i]->dataObjects[j].size, gdTable[i]->dataObjects[j].offset);
                         //fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-                        fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
+                        //fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
                 }
                 /* get number of blocks contained within THIS group descriptor */
                 // TODO :: Check if this logic is correct.
