@@ -235,8 +235,7 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         uint32_t blocksPerGroup     = superblock_data->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
         for(i = 0; i < nGDs; i++) {
-                if(VERBOSE)
-                        fprintf(stderr, "Inside fill_GD\n");
+
                 /* read from disk */
                 fill_block(fd, gdTable[i]->dataObjects, gdTable[i]->nDataObjects);
 
@@ -252,11 +251,13 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
                 gdTable[i]->dataObjects[0].value = numContainedBlocks;
 
                 /* Print it out if VERBOSE */
+                // if(VERBOSE)
+                //         for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
+                //                 fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
+                //                 fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
+                //         }
                 if(VERBOSE)
-                        for(j = 0; j < (gdTable[i]->nDataObjects); j++) {
-                                fprintf(stderr, gdTable[i]->dataObjects[j].format, gdTable[i]->dataObjects[j].value);
-                                fprintf(stderr, (j == (gdTable[i]->nDataObjects - 1)) ? "\n" : ",");
-                        }
+                        fprintf(stderr, "Inside fill_GD\n");
         }
         return 1;
 }
