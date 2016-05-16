@@ -296,7 +296,7 @@ static void writeCSV_inode(const int FD) {
                 if(VERBOSE) fprintf(stderr, "Processing descriptor (%d)..with inodes : %d\n", i, numInodes);
                 for(j = 0; j < numInodes; j++) {
 
-                        uint32_t iNODE_OFF = (inodeSize * 128) + (TBL_BLK_OFF * blockSize);
+                        uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
 
                         dprintf(fd, "INODE_#,");
                         //TODO :: Read inode number!! :   pread(FD, &data, sizeof(data), )
