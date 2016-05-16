@@ -32,7 +32,7 @@
 /** Single pointer if there is only ONE data structure (like superblock)**/
 /** Double pointer if there is an array of data structures **/
 static SuperBlock_t *superblock_data;
-static GroupDescriptor_t **group_descriptors;
+static GroupDescriptor_t **group_descriptor_table;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -41,7 +41,7 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorPtr);
+static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, int fd);
 static int fill_block(Block_t *blockToFill, int fd);
@@ -75,14 +75,13 @@ int main (int argc, char **argv)
                 writeCSV_superblock();
 
         /* Read groupDescriptor tables for each block group */
-        uint32_t nGroupDescriptorTables = init_GroupDescriptorTables_info(group_descriptors);
+        uint32_t nGroupDescriptor = init_GroupDescriptorTable_info(group_descriptor_table);
 
-
-        for(i = 0; i < nGroupDescriptorTables; i++)
-                free(group_descriptors[i]);   // free each GD table
-        free(group_descriptors);              // free pointer to all GD tables
-        free(superblock_data);                // free superblock data
-        close(FD);                            // close TargetFile
+        for(i = 0; i < nGroupDescriptor; i++)
+                free(group_descriptor_table[i]);   // free each GD table
+        free(group_descriptor_table);              // free pointer to all GDs
+        free(superblock_data);                     // free superblock data
+        close(FD);                                 // close TargetFile
         exit(0);
 }
 
@@ -182,17 +181,36 @@ static SuperBlock_t *init_superblock_info() {
         return mSuperBlock;
 }
 
-static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorPtr) {
+static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
 
-        /* Calculate how many GroupDescriptorTables we will need based on number of block groups */
+        /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
         int nBlockGroups = superblock_data->dataObjects[2].value / superblock_data->dataObjects[5].value;
         if(VERBOSE) fprintf(stderr, "nBlockGroups: %d\n", nBlockGroups);
+
         /* allocate memory for array GroupDescriptor_t * */
-        groupDescriptorPtr = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
-        if(groupDescriptorPtr == NULL) {
+        groupDescriptorTable = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
+        if(groupDescriptorTable == NULL) {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor tables\n");
                 exit(1);
         }
+
+        /* The block group descriptor table starts on the first block following the superblock.
+         * This would be the third block on a 1KiB block file system, or the second block for
+         * 2KiB and larger block file systems. Shadow copies of the block	group descriptor table
+         * are also stored with every copy of the superblock. */
+
+        uint32_t blockSize = superblock_data->dataObjects[3].value;
+        uint32_t groupDescriptorTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
+        uint32_t startOffset = blockSize * groupDescriptorTable_blockOffset;
+        if(VERBOSE) {
+                fprintf(stderr, "BlockSize:: %d\n", blockSize);
+                fprintf(stderr, "gdTable_blockOffset:: %d\n",groupDescriptorTable_blockOffset);
+                fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
+        }
+
+        /* Depending on how many block groups are defined, this table can require multiple blocks
+         * of storage. Always refer to the superblock in case of doubt. */
+
         //
         // // allocate memory for N MetaData_t objects that do within SuperBlock_t
         // MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_FIELDS);
