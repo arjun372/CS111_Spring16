@@ -243,12 +243,12 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
                 // TODO :: Check if this logic is correct.
                 // We are trying to see how many blocks are there in this group.
                 // Check if this works when nGDs = 1;
-                if(i == (nGDs - 1))
-                        numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
-                else
-                        numContainedBlocks = blocksPerGroup;
-
-                gdTable[i]->dataObjects[0].value = numContainedBlocks;
+                // if(i == (nGDs - 1))
+                //         numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
+                // else
+                //         numContainedBlocks = blocksPerGroup;
+                //
+                // gdTable[i]->dataObjects[0].value = numContainedBlocks;
 
                 /* Print it out if VERBOSE */
                 // if(VERBOSE)
