@@ -11,13 +11,13 @@ struct metadata {
 #define SUPERBLOCK_FIELDS     9
 struct superblock {
         uint32_t nDataObjects;
-        struct metadata *dataObjects;
+        struct metadata dataObjects[];
 };
 
 #define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
-        uint32_t nDataObjects;
         struct metadata *dataObjects;
+        uint32_t nDataObjects;
 
         /* ------- These are not part of EXT2 structs -------- */
         int nInodes;
