@@ -41,7 +41,7 @@ static struct option long_options[] = {
 /* Static function declarations */
 static int          fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
 static void         debug_log(const int opt_index, char **optarg, const int argc);
-static int          fill_superblock(SuperBlock_t *blockToFill, const int fd);
+static int          fill_superblock(const int fd);
 static uint32_t     init_GROUP_DESCRIPTOR_TABLE_info();
 static int          fill_GroupDescriptors(const int fd);
 static void         writeCSV_GroupDescriptors();
@@ -233,7 +233,7 @@ static int fill_GroupDescriptors(const int fd) {
         uint32_t blockCount         = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blocksPerGroup     = SUPERBLOCK_TABLE->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
-        for(i = 0; i < nGDs; i++) {
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++) {
 
                 /* read from disk */
                 fill_block(fd, GROUP_DESCRIPTOR_TABLE[i]->dataObjects, GROUP_DESCRIPTOR_TABLE[i]->nDataObjects);
