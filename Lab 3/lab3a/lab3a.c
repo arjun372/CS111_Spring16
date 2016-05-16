@@ -74,12 +74,12 @@ int main (int argc, char **argv)
         if(fill_superblock(superblock_data, FD))
                 writeCSV_superblock();
 
-        /* Read groupDescriptor tables for each block group */
+        /* Read into groupDescriptor table for each block group */
         uint32_t nGroupDescriptor = init_GroupDescriptorTable_info(group_descriptor_table);
 
         for(i = 0; i < nGroupDescriptor; i++)
-                free(group_descriptor_table[i]);   // free each GD table
-        free(group_descriptor_table);              // free pointer to all GDs
+                free(group_descriptor_table[i]);   // free each GD in gdTable
+        free(group_descriptor_table);              // free gdTable
         free(superblock_data);                     // free superblock data
         close(FD);                                 // close TargetFile
         exit(0);
@@ -184,13 +184,14 @@ static SuperBlock_t *init_superblock_info() {
 static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTable) {
 
         /* Calculate how many GroupDescriptorTable members we will need based on number of block groups */
-        int nBlockGroups = superblock_data->dataObjects[2].value / superblock_data->dataObjects[5].value;
-        if(VERBOSE) fprintf(stderr, "nBlockGroups: %d\n", nBlockGroups);
+        uint32_t blockCount     = superblock_data->dataObjects[2].value;
+        uint32_t blocksPerGroup = superblock_data->dataObjects[5].value;
+        uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
         /* allocate memory for array GroupDescriptor_t * */
         groupDescriptorTable = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
         if(groupDescriptorTable == NULL) {
-                fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor tables\n");
+                fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptors \n");
                 exit(1);
         }
 
@@ -202,7 +203,9 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
         uint32_t blockSize = superblock_data->dataObjects[3].value;
         uint32_t groupDescriptorTable_blockOffset = (blockSize <= 1024) ? 2 : 1;
         uint32_t startOffset = blockSize * groupDescriptorTable_blockOffset;
+
         if(VERBOSE) {
+                fprintf(stderr, "nBlockGroups: %d\n", nBlockGroups);
                 fprintf(stderr, "BlockSize:: %d\n", blockSize);
                 fprintf(stderr, "gdTable_blockOffset:: %d\n",groupDescriptorTable_blockOffset);
                 fprintf(stderr, "gdTable_byteStartOffset:: %d\n", startOffset);
@@ -210,6 +213,8 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
 
         /* Depending on how many block groups are defined, this table can require multiple blocks
          * of storage. Always refer to the superblock in case of doubt. */
+
+
 
         //
         // // allocate memory for N MetaData_t objects that do within SuperBlock_t
