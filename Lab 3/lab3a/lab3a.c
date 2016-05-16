@@ -89,8 +89,7 @@ int main (int argc, char **argv)
         free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
 
         /* Free memory associated with SUPERBLOCK_TABLE */
-        //for(i = 0; i < SUPERBLOCK_TABLE->nDataObjects; i++)
-        //          free(SUPERBLOCK_TABLE->dataObjects[i]);
+        free(SUPERBLOCK_TABLE->dataObjects);
         free(SUPERBLOCK_TABLE);
 
         close(FD);                                 // close TargetFile
