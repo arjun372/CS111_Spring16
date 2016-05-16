@@ -261,6 +261,9 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         return 1;
 }
 
+static void writeCSV_GroupDescriptors() {
+        return;
+}
 
 /* if --VERBOSE is passed, logs to stdout */
 static void debug_log(const int opt_index, char **optarg, const int argc) {
