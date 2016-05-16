@@ -221,13 +221,22 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
                 groupDescriptorTable[i]->dataObjects  = mDataObjects;
 
                 uint32_t OFFSET = startOffset + (i * bgd_size);
-                groupDescriptorTable[i]->dataObjects[0] = (MetaData_t) {OFFSET + NULL, 0, 4, "%d"}; /* numContainedBlocks */
-                groupDescriptorTable[i]->dataObjects[1] = {OFFSET + 12, 0, 2, "%d"};   /* numFreeBlocks */
-                groupDescriptorTable[i]->dataObjects[2] = {OFFSET + 14, 0, 2, "%d"};   /* numFreeInodes */
-                groupDescriptorTable[i]->dataObjects[3] = {OFFSET + 16, 0, 2, "%d"};   /* numUsedDirs */
-                groupDescriptorTable[i]->dataObjects[4] = {OFFSET +  4, 0, 4, "%x"};   /* freeInodeBMP */
-                groupDescriptorTable[i]->dataObjects[5] = {OFFSET +  0, 0, 4, "%x"};   /* freeBlockBMP */
-                groupDescriptorTable[i]->dataObjects[6] = {OFFSET +  8, 0, 4, "%x"};   /* inodeTableStartBlock */
+
+                MetaData_t numContainedBlocks   = {OFFSET + NULL, 0, 4, "%d"};  // will not be read by pread!
+                MetaData_t numFreeBlocks        = {OFFSET +   12, 0, 2, "%d"};
+                MetaData_t numFreeInodes        = {OFFSET +   14, 0, 2, "%d"};
+                MetaData_t numUsedDirs          = {OFFSET +   16, 0, 2, "%d"};
+                MetaData_t freeInodeBMP         = {OFFSET +    4, 0, 4, "%x"};
+                MetaData_t freeBlockBMP         = {OFFSET +    0, 0, 4, "%x"};
+                MetaData_t inodeTableStartBlock = {OFFSET +    8, 0, 4, "%x"};
+
+                groupDescriptorTable[i]->dataObjects[0] = numContainedBlocks;
+                groupDescriptorTable[i]->dataObjects[1] = numFreeBlocks;
+                groupDescriptorTable[i]->dataObjects[2] = numFreeInodes;
+                groupDescriptorTable[i]->dataObjects[3] = numUsedDirs;
+                groupDescriptorTable[i]->dataObjects[4] = freeInodeBMP;
+                groupDescriptorTable[i]->dataObjects[5] = freeBlockBMP;
+                groupDescriptorTable[i]->dataObjects[6] = inodeTableStartBlock;
         }
 
         if(VERBOSE) {
