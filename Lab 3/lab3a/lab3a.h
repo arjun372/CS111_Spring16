@@ -11,7 +11,7 @@ struct metadata {
 #define SUPERBLOCK_FIELDS     9
 struct superblock {
         uint32_t nDataObjects;
-        struct metadata dataObjects[];
+        struct metadata *dataObjects;
 };
 
 #define GROUPDESCRIPTOR_FIELDS    7
