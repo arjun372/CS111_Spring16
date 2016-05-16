@@ -221,7 +221,7 @@ static int init_GroupDescriptorTable_info(GroupDescriptor_t **groupDescriptorTab
                 groupDescriptorTable[i]->dataObjects  = mDataObjects;
 
                 uint32_t OFFSET = startOffset + (i * bgd_size);
-                groupDescriptorTable[i]->dataObjects[0] = {OFFSET + NULL, 0, 4, "%d"}; /* numContainedBlocks */
+                groupDescriptorTable[i]->dataObjects[0] = (MetaData_t) {OFFSET + NULL, 0, 4, "%d"}; /* numContainedBlocks */
                 groupDescriptorTable[i]->dataObjects[1] = {OFFSET + 12, 0, 2, "%d"};   /* numFreeBlocks */
                 groupDescriptorTable[i]->dataObjects[2] = {OFFSET + 14, 0, 2, "%d"};   /* numFreeInodes */
                 groupDescriptorTable[i]->dataObjects[3] = {OFFSET + 16, 0, 2, "%d"};   /* numUsedDirs */
