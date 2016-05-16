@@ -6,34 +6,40 @@ struct metadata {
                         // this saves a lot of malloc and free calls!
 };
 
+#define SUPERBLOCK_SIZE    1024
 #define SUPERBLOCK_OFF     1024
-#define SUPERBLOCK_OBJECTS    9
+#define SUPERBLOCK_FIELDS     9
 struct superblock {
         struct metadata *dataObjects;
         uint32_t nDataObjects;
 };
 
+#define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
-        struct metadata nBlocks;         // ??
-        struct metadata nFreeBlocks;     // bg_free_blocks_count
-        struct metadata nFreeInodes;     //  bg_free_inodes_count
-        struct metadata nUserDirs;       // bg_used_dirs_count
-        struct metadata inodeMapBlock;   // bg_inode_bitmap
-        struct metadata blockMapBlock;   // bg_block_bitmap
-        struct metadata inodeTableBlock; // bg_inode_table
+        struct metadata *dataObjects;
+        uint32_t nDataObjects;
 
         /* ------- These are not part of EXT2 structs -------- */
         int nInodes;
         int inodeStart;      // first inode for this block group
         int allocated_space; // for inodePtr
         int nAllocated;
-        //inode_t inodePtr; TODO :: I still don't understand this
 };
 
 typedef struct metadata MetaData_t;
 typedef struct superblock Block_t;
 typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
+
+// //inode_t inodePtr; TODO :: I still don't understand this
+//
+// struct metadata nBlocks;         // ??
+// struct metadata nFreeBlocks;     // bg_free_blocks_count
+// struct metadata nFreeInodes;     //  bg_free_inodes_count
+// struct metadata nUserDirs;       // bg_used_dirs_count
+// struct metadata inodeMapBlock;   // bg_inode_bitmap
+// struct metadata blockMapBlock;   // bg_block_bitmap
+// struct metadata inodeTableBlock; // bg_inode_table
 
 // struct superblock_t {
 //         metadata_t magicNumber    = {56, 0, 2, "%x"};// s_magic

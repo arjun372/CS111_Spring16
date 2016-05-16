@@ -41,6 +41,7 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
+static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorPtr);
 static void debug_log(const int opt_index, char **optarg, const int argc);
 static int fill_superblock(SuperBlock_t *blockToFill, int fd);
 static int fill_block(Block_t *blockToFill, int fd);
@@ -49,8 +50,9 @@ static void writeCSV_superblock();
 
 int main (int argc, char **argv)
 {
-        int FD, opt_index;
 
+        uint32_t i;
+        int FD, opt_index;
         /* Read --verbose option if it was passed */
         while(getopt_long_only(argc, argv, "", long_options, &opt_index) != -1)
                 continue;
@@ -72,8 +74,15 @@ int main (int argc, char **argv)
         if(fill_superblock(superblock_data, FD))
                 writeCSV_superblock();
 
-        free(superblock_data);
-        close(FD);
+        /* Read groupDescriptor tables for each block group */
+        uint32_t nGroupDescriptorTables = init_GroupDescriptorTables_info(group_descriptors);
+
+
+        for(i = 0; i < nGroupDescriptorTables; i++)
+                free(group_descriptors[i]);   // free each GD table
+        free(group_descriptors);              // free pointer to all GD tables
+        free(superblock_data);                // free superblock data
+        close(FD);                            // close TargetFile
         exit(0);
 }
 
@@ -91,6 +100,7 @@ static void writeCSV_superblock() {
         }
         close(fd);
 }
+
 /* Fills the given data structure based on the values it stores */
 static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 
@@ -100,7 +110,7 @@ static int fill_superblock(SuperBlock_t *toFill, const int fd) {
 
         /** Now do SuperBlock_t specific actions */
         uint32_t correct_BlockSize   = 1024 << toFill->dataObjects[3].value;
-        uint32_t correct_FragSize    = (toFill->dataObjects[4].value > 0) ? (1024 << toFill->dataObjects[4].value) : (1024 >> toFill->dataObjects[4].value);
+        uint32_t correct_FragSize    = (toFill->dataObjects[4].value > 0) ? (1024 << toFill->dataObjects[4].value) : (1024 >> -(toFill->dataObjects[4].value));
         toFill->dataObjects[3].value = correct_BlockSize;
         toFill->dataObjects[4].value = correct_FragSize;
 
@@ -136,7 +146,7 @@ static SuperBlock_t *init_superblock_info() {
         }
 
         // allocate memory for N MetaData_t objects that do within SuperBlock_t
-        MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_OBJECTS);
+        MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_FIELDS);
         if(mDataObjects == NULL) {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
                 free(mSuperBlock);
@@ -144,7 +154,7 @@ static SuperBlock_t *init_superblock_info() {
         }
 
         /* assign this new data structure to superblock */
-        mSuperBlock->nDataObjects = SUPERBLOCK_OBJECTS;
+        mSuperBlock->nDataObjects = SUPERBLOCK_FIELDS;
         mSuperBlock->dataObjects  = mDataObjects;
 
         struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
@@ -170,6 +180,55 @@ static SuperBlock_t *init_superblock_info() {
         mSuperBlock->dataObjects[8] = firstDataBlock;
 
         return mSuperBlock;
+}
+
+static int init_GroupDescriptorTables_info(GroupDescriptor_t **groupDescriptorPtr) {
+
+        /* Calculate how many GroupDescriptorTables we will need based on number of block groups */
+        int nBlockGroups = mSuperBlock->dataObjects[2].value / mSuperBlock->dataObjects[5].value;
+
+        /* allocate memory for array GroupDescriptor_t * */
+        groupDescriptorPtr = (GroupDescriptor_t **) malloc(sizeof(GroupDescriptor_t *) * nBlockGroups);
+        if(groupDescriptorPtr == NULL) {
+                fprintf(stderr, "FATAL:: Unable to allocate memory for reading group descriptor tables\n");
+                exit(1);
+        }
+        //
+        // // allocate memory for N MetaData_t objects that do within SuperBlock_t
+        // MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_FIELDS);
+        // if(mDataObjects == NULL) {
+        //         fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
+        //         free(mSuperBlock);
+        //         exit(1);
+        // }
+        //
+        // /* assign this new data structure to superblock */
+        // mSuperBlock->nDataObjects = SUPERBLOCK_FIELDS;
+        // mSuperBlock->dataObjects  = mDataObjects;
+        //
+        // struct metadata magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
+        // struct metadata inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
+        // struct metadata blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
+        // struct metadata blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
+        // struct metadata fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
+        // struct metadata blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
+        // struct metadata inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
+        // struct metadata fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
+        // struct metadata firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
+        //
+        // /* populate the dataObjects */
+        // // TODO : Do we know a better way to allocating the @params above?
+        // mSuperBlock->dataObjects[0] = magicNumber;
+        // mSuperBlock->dataObjects[1] = inodeCount;
+        // mSuperBlock->dataObjects[2] = blockCount;
+        // mSuperBlock->dataObjects[3] = blockSize;
+        // mSuperBlock->dataObjects[4] = fragSize;
+        // mSuperBlock->dataObjects[5] = blocksPerGroup;
+        // mSuperBlock->dataObjects[6] = inodesPerGroup;
+        // mSuperBlock->dataObjects[7] = fragsPerGroup;
+        // mSuperBlock->dataObjects[8] = firstDataBlock;
+
+        return nBlockGroups;
 }
 
 /* if --VERBOSE is passed, logs to stdout */
