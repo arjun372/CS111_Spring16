@@ -242,6 +242,7 @@ static int fill_GroupDescriptors(const int fd) {
                 // TODO :: Check if this logic is correct.
                 // We are trying to see how many blocks are there in this group.
                 // Check if this works when nGDs = 1;
+
                 if(i == (NUM_GROUP_DESCRIPTORS - 1))
                         numContainedBlocks = blockCount - (blocksPerGroup * (i-1));
                 else
@@ -260,6 +261,20 @@ static int fill_GroupDescriptors(const int fd) {
 }
 
 static void writeCSV_GroupDescriptors() {
+        int fd = open(FILE_GROUP_DESCRIPTOR, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_GROUP_DESCRIPTOR);
+
+        uint32_t i,j;
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++) {
+                for(j = 0; j < (GROUP_DESCRIPTOR_TABLE[i]->nDataObjects); j++) {
+                        dprintf(fd, GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].format, GROUP_DESCRIPTOR_TABLE[i]->dataObjects[j].value);
+                        dprintf(fd, (j == (GROUP_DESCRIPTOR_TABLE[i]->nDataObjects - 1)) ? "\n" : ",");
+                }
+        }
+        close(fd);
         return;
 }
 
