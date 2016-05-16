@@ -303,11 +303,10 @@ static void writeCSV_inode(const int FD) {
 
                         /* read file-mode */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
-                        char fileType = '?';
-                        if(data0 & 0xA000) fileType = 's';
-                        if(data0 & 0x4000) fileType = 'd';
-                        if(data0 & 0x8000) fileType = 'f';
-                        dprintf(fd, "%d,", fileType);
+                        if(data0 & 0xA000) dprintf(fd, "s");
+                        else if(data0 & 0x4000) dprintf(fd, "d,");
+                        else if(data0 & 0x8000) dprintf(fd, "f,");
+                        else                    dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
                         dprintf(fd, "mode,");
