@@ -234,7 +234,8 @@ static int fill_GroupDescriptors(const int fd, GroupDescriptor_t **gdTable, cons
         uint32_t blockCount         = superblock_data->dataObjects[2].value;
         uint32_t blocksPerGroup     = superblock_data->dataObjects[5].value;
         uint32_t numContainedBlocks = blocksPerGroup;
-
+        if(VERBOSE)
+                fprintf(stderr, "Inside fill_GD\n");
         for(i = 0; i < nGDs; i++) {
 
                 /* read from disk */
