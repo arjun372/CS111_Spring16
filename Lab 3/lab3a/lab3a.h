@@ -16,6 +16,7 @@ struct superblock {
 
 #define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
+<<<<<<< HEAD
         /* ------- These are not part of EXT2 structs -------- */
         int nInodes;
         int inodeStart;      // first inode for this block group
@@ -26,6 +27,15 @@ struct group_descriptor {
         // Default members
         uint32_t nDataObjects;
         struct metadata dataObjects[];
+=======
+        uint32_t nDataObjects;
+        struct metadata *dataObjects;
+        // /* ------- These are not part of EXT2 structs -------- */
+        // int nInodes;
+        // int inodeStart;      // first inode for this block group
+        // int allocated_space; // for inodePtr
+        // int nAllocated;
+>>>>>>> a6a724e2291a6aa46fcd7b34b74c863f2a376caf
 };
 
 typedef struct metadata MetaData_t;
@@ -34,18 +44,18 @@ typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
 
 static const SuperBlock_t DEFAULT_SUPERBLOCK_T = {
-  SUPERBLOCK_FIELDS,  // nDataObjects
-  {
-    {SUPERBLOCK_OFF + 56, 0, 2, "%x"}, // s_magic
-    {SUPERBLOCK_OFF + 0,  0, 4, "%d"}, // s_inodes_count
-    {SUPERBLOCK_OFF + 4,  0, 4, "%d"}, // s_blocks_count
-    {SUPERBLOCK_OFF + 24, 0, 4, "%d"}, // s_log_block_size
-    {SUPERBLOCK_OFF + 28, 0, 4, "%d"}, // s_log_frag_size
-    {SUPERBLOCK_OFF + 32, 0, 4, "%d"}, // s_blocks_per_group
-    {SUPERBLOCK_OFF + 40, 0, 4, "%d"}, // s_inodes_per_group
-    {SUPERBLOCK_OFF + 36, 0, 4, "%d"}, // s_frags_per_group
-    {SUPERBLOCK_OFF + 20, 0, 4, "%d"}, // s_first_data_block
-  }  // dataObjects
+        SUPERBLOCK_FIELDS, // nDataObjects
+        {
+                {SUPERBLOCK_OFF + 56, 0, 2, "%x"}, // s_magic
+                {SUPERBLOCK_OFF + 0,  0, 4, "%d"},// s_inodes_count
+                {SUPERBLOCK_OFF + 4,  0, 4, "%d"},// s_blocks_count
+                {SUPERBLOCK_OFF + 24, 0, 4, "%d"}, // s_log_block_size
+                {SUPERBLOCK_OFF + 28, 0, 4, "%d"}, // s_log_frag_size
+                {SUPERBLOCK_OFF + 32, 0, 4, "%d"}, // s_blocks_per_group
+                {SUPERBLOCK_OFF + 40, 0, 4, "%d"}, // s_inodes_per_group
+                {SUPERBLOCK_OFF + 36, 0, 4, "%d"}, // s_frags_per_group
+                {SUPERBLOCK_OFF + 20, 0, 4, "%d"}, // s_first_data_block
+        } // dataObjects
 };
 
 static const GroupDescriptor_t DEFAULT_GROUP_DESCR_T = {
