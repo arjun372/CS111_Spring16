@@ -139,46 +139,19 @@ static int fill_block(Block_t *toFill, const int fd) {
 static SuperBlock_t *init_superblock_info() {
 
         /* allocate memory for SuperBlock_t data structure */
-        SuperBlock_t *mSuperBlock = (SuperBlock_t *) malloc(sizeof(SuperBlock_t));
+        SuperBlock_t *mSuperBlock = (SuperBlock_t *) malloc(sizeof(SuperBlock_t)
+        + sizeof(MetaData_t) * DEFAULT_SUPERBLOCK_T.nDataObjects);
         if(mSuperBlock == NULL) {
                 fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
                 exit(1);
         }
 
-        // allocate memory for N MetaData_t objects that do within SuperBlock_t
-        MetaData_t *mDataObjects = (MetaData_t *) malloc(sizeof(MetaData_t) * SUPERBLOCK_FIELDS);
-        if(mDataObjects == NULL) {
-                fprintf(stderr, "FATAL:: Unable to allocate memory for reading superblock\n");
-                free(mSuperBlock);
-                exit(1);
-        }
-
-        /* assign this new data structure to superblock */
-        mSuperBlock->nDataObjects = SUPERBLOCK_FIELDS;
-        mSuperBlock->dataObjects  = mDataObjects;
-
-        MetaData_t magicNumber    = {SUPERBLOCK_OFF + 56, 0, 2, "%x"}; // s_magic
-        MetaData_t inodeCount     = {SUPERBLOCK_OFF + 0,  0, 4, "%d"}; // s_inodes_count
-        MetaData_t blockCount     = {SUPERBLOCK_OFF + 4,  0, 4, "%d"}; // s_blocks_count
-        MetaData_t blockSize      = {SUPERBLOCK_OFF + 24, 0, 4, "%d"}; // s_log_block_size
-        MetaData_t fragSize       = {SUPERBLOCK_OFF + 28, 0, 4, "%d"}; // s_log_frag_size
-        MetaData_t blocksPerGroup = {SUPERBLOCK_OFF + 32, 0, 4, "%d"}; // s_blocks_per_group
-        MetaData_t inodesPerGroup = {SUPERBLOCK_OFF + 40, 0, 4, "%d"}; // s_inodes_per_group
-        MetaData_t fragsPerGroup  = {SUPERBLOCK_OFF + 36, 0, 4, "%d"}; // s_frags_per_group
-        MetaData_t firstDataBlock = {SUPERBLOCK_OFF + 20, 0, 4, "%d"}; // s_first_data_block
-
-        /* populate the dataObjects */
-        // TODO : Do we know a better way to allocating the @params above?
-        mSuperBlock->dataObjects[0] = magicNumber;
-        mSuperBlock->dataObjects[1] = inodeCount;
-        mSuperBlock->dataObjects[2] = blockCount;
-        mSuperBlock->dataObjects[3] = blockSize;
-        mSuperBlock->dataObjects[4] = fragSize;
-        mSuperBlock->dataObjects[5] = blocksPerGroup;
-        mSuperBlock->dataObjects[6] = inodesPerGroup;
-        mSuperBlock->dataObjects[7] = fragsPerGroup;
-        mSuperBlock->dataObjects[8] = firstDataBlock;
-
+        // Copy data from DEFAULT_SUPERBLOCK_T
+        mSuperBlock->nDataObjects = DEFAULT_SUPERBLOCK_T.nDataObjects;
+        memcpy(mSuperBlock, &DEFAULT_SUPERBLOCK_T,
+          sizeof(SuperBlock_t)
+          + (sizeof(MetaData_t) * DEFAULT_SUPERBLOCK_T.nDataObjects));
+        
         return mSuperBlock;
 }
 
