@@ -47,6 +47,7 @@ static int          fill_GroupDescriptors(const int fd);
 static void         writeCSV_GroupDescriptors();
 static SuperBlock_t *init_superblock_info();
 static void         writeCSV_superblock();
+static void         writeCSV_inode(const int fd);
 static void         free_memory();
 
 int main (int argc, char **argv)
@@ -79,6 +80,8 @@ int main (int argc, char **argv)
         NUM_GROUP_DESCRIPTORS = init_GROUP_DESCRIPTOR_TABLE_info();
         fill_GroupDescriptors(FD);
         writeCSV_GroupDescriptors();
+
+        writeCSV_inode(FD);
 
         /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -268,6 +271,88 @@ static void writeCSV_GroupDescriptors() {
         }
         close(fd);
         return;
+}
+static void writeCSV_inode(const int FD) {
+
+        int fd = open(FILE_INODES, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_INODES);
+
+        uint16_t data0;
+        uint32_t i, j, k, data;
+        uint32_t blockSize          = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t inodeCount         = SUPERBLOCK_TABLE->dataObjects[1].value;
+        uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
+        uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
+        uint32_t inodeSize          = 128;
+
+        /* run this for each group descriptor */
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
+        {
+                uint32_t TBL_BLK_OFF = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[6].value;
+                uint32_t numInodes = (i == (NUM_GROUP_DESCRIPTORS - 1)) ? numInodesLastGroup : numInodesPerGroup;
+                for(j = 0; j < numInodes; j++) {
+
+                        uint32_t iNODE_OFF = (inodeSize * 128) + (TBL_BLK_OFF * blockSize);
+
+                        dprintf(fd, "INODE_#,");
+                        //TODO :: Read inode number!! :   pread(FD, &data, sizeof(data), )
+
+                        /* read file-mode */
+                        pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
+                        char fileType = '?';
+                        if(data0 & 0xA000) fileType = 's';
+                        if(data0 & 0x4000) fileType = 'd';
+                        if(data0 & 0x8000) fileType = 'f';
+                        dprintf(fd, "%s,", fileType);
+
+                        // TODO : FILE_MODE
+                        dprintf(fd, "mode,");
+
+                        // TODO : FILE_OWNER
+                        dprintf(fd, "owner,");
+
+                        // TODO : FILE_GROUP
+                        dprintf(fd, "group,");
+
+                        /* read LINK_COUNT */
+                        pread(FD, &data0, sizeof(data0), iNODE_OFF + 26);
+                        dprintf(fd, "%d,", data0);
+
+                        /* read CREATION_TIME */
+                        pread(FD, &data, sizeof(data), iNODE_OFF + 12);
+                        dprintf(fd, "%x,", data);
+
+                        /* read MODIFIED_TIME */
+                        pread(FD, &data, sizeof(data), iNODE_OFF + 16);
+                        dprintf(fd, "%x,", data);
+
+                        /* read ACCESS_TIME */
+                        pread(FD, &data, sizeof(data), iNODE_OFF + 08);
+                        dprintf(fd, "%x,", data);
+
+                        /* read FILE_SIZE */
+                        pread(FD, &data, sizeof(data), iNODE_OFF + 04);
+                        dprintf(fd, "%d,", data);
+
+                        /* read NUMBER_OF_BLOCKS */
+                        pread(FD, &data, sizeof(data), iNODE_OFF + 28);
+                        dprintf(fd, "%d,", data);
+
+                        /* read BLOCKS+POINTERS */
+                        for(k = 0; k < 15; k++) {
+                                pread(FD, &data, sizeof(data), iNODE_OFF + 40 + (4*k));
+                                dprintf(fd, "%d", data);
+                                dprintf(fd, (k==14) ? "\n" : ",");
+                        }
+                }
+
+        }
+        // TODO : fill_inodeTables
+        // TODO : writeCSV_inode
+
 }
 
 /* if --VERBOSE is passed, logs to stdout */
