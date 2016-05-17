@@ -131,30 +131,30 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
                 for (j = 0; j < blockSize * 8; ++j) {
-                        // uint32_t ibit =
-                        //         ((currimap[j / 32] & mask)
-                        //          >> (31 - (j % 32)));
-                        //
-                        // uint32_t bbit =
-                        //         ((currbmap[j / 32] & mask)
-                        //          >> (31 - (j % 32)));
+                        uint32_t ibit =
+                                ((currimap[j / 32] & mask)
+                                 >> (31 - (j % 32)));
 
-                        uint32_t ibit = !((mask & (currimap[j / 32]))  >> (31 - (j % 32)) );
-                        uint32_t bbit = !((mask & (currbmap[j / 32]))  >> (31 - (j % 32)) );
+                        uint32_t bbit =
+                                ((currbmap[j / 32] & mask)
+                                 >> (31 - (j % 32)));
 
-                        if (!ibit) dprintf(fd,"%d,%d\n",inodeBitmapStart,j);
-                        if (!bbit) dprintf(fd,"%d,%d\n",blockBitmapStart,j);
+                        //  uint32_t ibit = !((mask & (currimap[j / 32]))  >> (31 - (j % 32)) );
+                        //  uint32_t bbit = !((mask & (currbmap[j / 32]))  >> (31 - (j % 32)) );
 
-                        // dprintf(fd,
-                        //         "%d,%d",
-                        //         inodeBitmapStart,
-                        //         ibit);
+                        // if (!ibit) dprintf(fd,"%d,%d\n",inodeBitmapStart,j);
+                        // if (!bbit) dprintf(fd,"%d,%d\n",blockBitmapStart,j);
 
-                        // if (!bbit)
-                        //         dprintf(fd,
-                        //                 "%d,%d",
-                        //                 blockBitmapStart,
-                        //                 bbit);
+                        dprintf(fd,
+                                "%x,%d",
+                                inodeBitmapStart,
+                                j);
+
+                        if (!bbit)
+                                dprintf(fd,
+                                        "%x,%d",
+                                        blockBitmapStart,
+                                        j);
 
                         /* throws errors when nodes are not being read correctly */
                         if (VERBOSE && ((bbit != 0 && bbit != 1) || (ibit != 0 && ibit != 1)))
