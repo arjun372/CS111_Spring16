@@ -1,3 +1,19 @@
+#define FILE_INDIRECT_BLOCK_ENTRIES  "indirect.csv"
+#define FILE_DIRECTORY_ENTRIES       "directory.csv"
+#define FILE_GROUP_DESCRIPTOR        "group.csv"
+#define FILE_FREE_BITMAPS            "bitmap.csv"
+#define FILE_SUPERBLOCK              "super.csv"
+#define FILE_INODES                  "inodes.csv"
+
+#define GROUPDESCRIPTOR_FIELDS    7
+#define SUPERBLOCK_SIZE        1024
+#define SUPERBLOCK_OFF         1024
+#define SUPERBLOCK_FIELDS         9
+#define FREE_BITMAP_FIELD         2
+#define CSV_WRITE_FLAGS           O_WRONLY|O_CREAT|O_TRUNC
+#define FILE_MODE              0664
+#define BAD                      -1
+
 struct metadata {
         uint32_t offset;
         uint32_t value;
@@ -6,15 +22,11 @@ struct metadata {
                         // this saves a lot of malloc and free calls!
 };
 
-#define SUPERBLOCK_SIZE    1024
-#define SUPERBLOCK_OFF     1024
-#define SUPERBLOCK_FIELDS     9
 struct superblock {
         uint32_t nDataObjects;
         struct metadata dataObjects[];
 };
 
-#define GROUPDESCRIPTOR_FIELDS    7
 struct group_descriptor {
         /* ------- These are not part of EXT2 structs -------- */
         int nInodes;
@@ -28,8 +40,6 @@ struct group_descriptor {
         struct metadata dataObjects[];
 };
 
-
-#define FREE_BITMAP_FIELD       2
 struct free_bitmap_entry {
         uint32_t nDataObjects;
         struct metadata dataObjects[];

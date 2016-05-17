@@ -5,16 +5,6 @@
     Arjun Arjun     - 504078752
  **/
 
-#define FILE_INDIRECT_BLOCK_ENTRIES  "indirect.csv"
-#define FILE_DIRECTORY_ENTRIES       "directory.csv"
-#define FILE_GROUP_DESCRIPTOR        "group.csv"
-#define FILE_FREE_BITMAPS            "bitmap.csv"
-#define FILE_SUPERBLOCK              "super.csv"
-#define FILE_INODES                  "inodes.csv"
-
-#define CSV_WRITE_FLAGS  O_WRONLY|O_CREAT|O_TRUNC
-#define FILE_MODE 0664
-#define BAD         -1
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -56,10 +46,8 @@ static void         writeCSV_inode(const int fd);
 static void         free_memory();
 /* End static function declarations */
 
-
 int main (int argc, char **argv)
 {
-
         /* Getting options */
         uint32_t i, j;
         int FD, opt_index;
@@ -77,7 +65,6 @@ int main (int argc, char **argv)
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
         /* END Getting options */
-
 
 
         /* Process superblock information */
