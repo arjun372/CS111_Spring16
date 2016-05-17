@@ -89,7 +89,7 @@ int main (int argc, char **argv)
         // writeCSV_inode(FD);
 
         free_memory();
-        close(FD);                                 // close TargetFile
+        close(FD);     // close TargetFile
         exit(0);
 }
 
@@ -349,13 +349,11 @@ static void writeCSV_inode(const int FD) {
 }
 
 static void free_memory() {
-        /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
+        uint32_t i;
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
                 free(GROUP_DESCRIPTOR_TABLE[i]);
 
-        free(GROUP_DESCRIPTOR_TABLE);          // free gdTable
-
-        /* Free memory associated with SUPERBLOCK_TABLE */
+        free(GROUP_DESCRIPTOR_TABLE);
         free(SUPERBLOCK_TABLE);
 }
 
