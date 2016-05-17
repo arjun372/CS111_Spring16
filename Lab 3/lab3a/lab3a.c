@@ -97,9 +97,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t *inodeBitmap[nBlockGroups];
         uint32_t *blockBitmap[nBlockGroups];
 
-        unsigned int blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
-
-        unsigned int blockBitmapStart, inodeBitmapStart;
+        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t blockBitmapStart, inodeBitmapStart;
 
         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
         if(fd < 0) {
@@ -128,31 +127,30 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         blockSize,
                         blockBitmapStart * blockSize);
 
-
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
-                for (j = 0; j < blockSize * 4; ++j) {
+                for (j = 0; j < blockSize * 8; ++j) {
                         uint32_t ibit =
                                 ((currimap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-                                 
+
                         uint32_t bbit =
                                 ((currbmap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-                        
+
                         if (ibit == 0)
                                 dprintf(fd,
                                         "%d,%d",
                                         inodeBitmapStart,
                                         ibit);
-                                        
+
                         if (bbit == 0)
                                 dprintf(fd,
                                         "%d,%d",
                                         blockBitmapStart,
-                                        bbit);        
-                                
+                                        bbit);
+
                         if (VERBOSE)
                                 fprintf(stdout,
                                         "Location: %d\nInode block: %d         ibit: %dBlock block: %d         bbit: %d\n\n",
