@@ -31,7 +31,6 @@ static struct option long_options[] = {
 /* Static function declarations */
 static void         debug_log(const int opt_index, char **optarg, const int argc);
 
-
 static uint32_t     init_GROUP_DESCRIPTOR_TABLE_info();
 static SuperBlock_t *init_superblock_info();
 
@@ -89,15 +88,7 @@ int main (int argc, char **argv)
 
         // writeCSV_inode(FD);
 
-        /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
-        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
-                free(GROUP_DESCRIPTOR_TABLE[i]);
-
-        free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
-
-        /* Free memory associated with SUPERBLOCK_TABLE */
-        free(SUPERBLOCK_TABLE);
-
+        free_memory();
         close(FD);                                 // close TargetFile
         exit(0);
 }
@@ -355,6 +346,17 @@ static void writeCSV_inode(const int FD) {
                 }
         }
         close(fd);
+}
+
+static void free_memory() {
+        /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
+                free(GROUP_DESCRIPTOR_TABLE[i]);
+
+        free(GROUP_DESCRIPTOR_TABLE);          // free gdTable
+
+        /* Free memory associated with SUPERBLOCK_TABLE */
+        free(SUPERBLOCK_TABLE);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
