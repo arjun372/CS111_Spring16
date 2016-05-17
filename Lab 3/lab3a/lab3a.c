@@ -132,24 +132,35 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
-
-                for (j = 0; j < blockSize; ++j) {
+                for (j = 0; j < blockSize * 4; ++j) {
                         uint32_t ibit =
                                 ((currimap[j / 32] & mask)
                                  >> (31 - (j % 32)));
+                                 
                         uint32_t bbit =
                                 ((currbmap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-
-                        // Just testing
-                        // TODO: simply add these things to the csv file in the appropriate order
-                        dprintf(fd,
-                                "Location: %d\nInode block: %d         ibit: %d\nBlock block: %d         bbit: %d\n\n",
-                                j,
-                                inodeBitmapStart,
-                                ibit,
-                                blockBitmapStart,
-                                bbit);
+                        
+                        if (ibit == 0)
+                                dprintf(fd,
+                                        "%d,%d",
+                                        inodeBitmapStart,
+                                        ibit);
+                                        
+                        if (bbit == 0)
+                                dprintf(fd,
+                                        "%d,%d",
+                                        blockBitmapStart,
+                                        bbit);        
+                                
+                        if (VERBOSE)
+                                fprintf(stdout,
+                                        "Location: %d\nInode block: %d         ibit: %dBlock block: %d         bbit: %d\n\n",
+                                        j,
+                                        inodeBitmapStart,
+                                        ibit,
+                                        blockBitmapStart,
+                                        bbit);
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
                         if (mask == 1) mask = 1 << 31;
                         else mask = (mask >> 1);
