@@ -92,50 +92,56 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
-        
+
         /* Stores a bitmap for each of the group descriptors */
         uint32_t *inodeBitmap[nBlockGroups];
         uint32_t *blockBitmap[nBlockGroups];
-        
+
         unsigned int blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
-        
+
         unsigned int blockBitmapStart, inodeBitmapStart;
-        
+
         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
         if(fd < 0) {
                 fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
-        } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_SUPERBLOCK);
-        
+        } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
+
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
-                inodeBitmap[i] = malloc(SUPERBLOCK_TABLE->dataObjects[3].value);
-                blockBitmap[i] = malloc(SUPERBLOCK_TABLE->dataObjects[3].value);
+                inodeBitmap[i] = malloc(blockSize); // 1024 bytes
+                blockBitmap[i] = malloc(blockSize); // 1024 bytes
+                if(inodeBitmap[i] == NULL || blockBitmap[i] == NULL) {
+                        fprintf(stderr, "FATAL:: Memory error. bye bi**h!\n");
+                        exit(1);
+                }
                 inodeBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
                 blockBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
-                
-                pread(  fd, 
-                        inodeBitmap[i], 
+
+                pread(  diskFD,
+                        inodeBitmap[i],
                         blockSize,
                         inodeBitmapStart * blockSize);
-                        
-                pread(  fd, 
-                        blockBitmap[i], 
-                        blockSize, 
-                        inodeBitmapStart * blockSize);
-                        
-                        
+
+                pread(  diskFD,
+                        blockBitmap[i],
+                        blockSize,
+                        blockBitmapStart * blockSize);
+
+
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
+                if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
+
                 for (j = 0; j < blockSize; ++j) {
-                        uint32_t ibit = 
-                                ((currimap[j / 32] & mask) 
-                                >> (31 - (j % 32)));
-                        uint32_t bbit = 
-                                ((currbmap[j / 32] & mask) 
-                                >> (31 - (j % 32)));
-                                
+                        uint32_t ibit =
+                                ((currimap[j / 32] & mask)
+                                 >> (31 - (j % 32)));
+                        uint32_t bbit =
+                                ((currbmap[j / 32] & mask)
+                                 >> (31 - (j % 32)));
+
                         // Just testing
                         // TODO: simply add these things to the csv file in the appropriate order
                         dprintf(fd,
@@ -145,7 +151,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                 ibit,
                                 blockBitmapStart,
                                 bbit);
-                }       
+                }
         }
 }
 
