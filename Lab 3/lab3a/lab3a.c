@@ -39,36 +39,45 @@ static struct option long_options[] = {
 };
 
 /* Static function declarations */
-static int          fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
 static void         debug_log(const int opt_index, char **optarg, const int argc);
-static int          fill_superblock(const int fd);
+
+
 static uint32_t     init_GROUP_DESCRIPTOR_TABLE_info();
-static int          fill_GroupDescriptors(const int fd);
-static void         writeCSV_GroupDescriptors();
 static SuperBlock_t *init_superblock_info();
+
+static int          fill_block(const int fd, MetaData_t *toFill, const uint32_t count);
+static int          fill_superblock(const int fd);
+static int          fill_GroupDescriptors(const int fd);
+
+static void         writeCSV_GroupDescriptors();
 static void         writeCSV_superblock();
+
 static void         free_memory();
+/* End static function declarations */
+
 
 int main (int argc, char **argv)
 {
 
+        /* Getting options */
         uint32_t i, j;
         int FD, opt_index;
         /* Read --verbose option if it was passed */
         while(getopt_long_only(argc, argv, "", long_options, &opt_index) != -1)
                 continue;
-
         if(argc <= (VERBOSE ? 2 : 1)) {
                 fprintf(stderr, "FATAL: no file passed as argument!\n");
                 exit(1);
         }
-
         char *TargetFile  = argv[VERBOSE ? 2 : 1];
         FD = open(TargetFile, O_RDONLY, FILE_MODE);
         if(FD < 0) {
                 fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Selecting file '%s'\n", TargetFile);
+        /* END Getting options */
+
+
 
         /* Process superblock information */
         SUPERBLOCK_TABLE = init_superblock_info();
@@ -79,6 +88,19 @@ int main (int argc, char **argv)
         NUM_GROUP_DESCRIPTORS = init_GROUP_DESCRIPTOR_TABLE_info();
         fill_GroupDescriptors(FD);
         writeCSV_GroupDescriptors();
+
+
+        GroupDescriptor_t *g = GROUP_DESCRIPTOR_TABLE[0];
+        int bitmapLoc = g->dataObjects[4].value;
+        int numblocks = g->dataObjects[0].value;
+        printf("numblocks: %d\nbitmapblocksloc: %d\n\n", numblocks, bitmapLoc);
+        int blockBitmapByteLoc = bitmapLoc * SUPERBLOCK_TABLE->dataObjects[3].value;
+        int numBlockBytes = numblocks/4;
+        unsigned int *buff = malloc(numBlockBytes*sizeof(char));
+        pread(FD, buff,sizeof(unsigned int) - 1, blockBitmapByteLoc + 250);
+        printf("%d\n\n", *buff);
+
+
 
         /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -110,7 +132,6 @@ static void writeCSV_superblock() {
 
 /* Fills the given data structure based on the values it stores */
 static int fill_superblock(const int fd) {
-
         /* If filling the block from disk failed, then return 0 */
         if(!fill_block(fd, SUPERBLOCK_TABLE->dataObjects, SUPERBLOCK_TABLE->nDataObjects))
                 return 0;

@@ -28,10 +28,18 @@ struct group_descriptor {
         struct metadata dataObjects[];
 };
 
+
+#define FREE_BITMAP_FIELD       2
+struct free_bitmap_entry {
+        uint32_t nDataObjects;
+        struct metadata dataObjects[];
+};
+
 typedef struct metadata MetaData_t;
 typedef struct superblock Block_t;
 typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
+typedef struct free_bitmap_entry FreeBitmapEntry_t;
 
 static const SuperBlock_t DEFAULT_SUPERBLOCK_T = {
         SUPERBLOCK_FIELDS, // nDataObjects
@@ -62,24 +70,10 @@ static const GroupDescriptor_t DEFAULT_GROUP_DESCR_T = {
         } // dataObjects
 };
 
-// //inode_t inodePtr; TODO :: I still don't understand this
-//
-// struct metadata nBlocks;         // ??
-// struct metadata nFreeBlocks;     // bg_free_blocks_count
-// struct metadata nFreeInodes;     //  bg_free_inodes_count
-// struct metadata nUserDirs;       // bg_used_dirs_count
-// struct metadata inodeMapBlock;   // bg_inode_bitmap
-// struct metadata blockMapBlock;   // bg_block_bitmap
-// struct metadata inodeTableBlock; // bg_inode_table
-
-// struct superblock_t {
-//         metadata_t magicNumber    = {56, 0, 2, "%x"};// s_magic
-//         metadata_t inodeCount     = {0,  0, 4, "%d"};// s_inodes_count
-//         metadata_t blockCount     = {4,  0, 4, "%d"};// s_blocks_count
-//         metadata_t blockSize      = {24, 0, 4, "%d"};// s_log_block_size
-//         metadata_t fragSize       = {28, 0, 4, "%d"};// s_log_frag_size
-//         metadata_t blocksPerGroup = {32, 0, 4, "%d"}; // s_blocks_per_group
-//         metadata_t inodesPerGroup = {40, 0, 4, "%d"}; // s_inodes_per_group
-//         metadata_t fragsPerGroup  = {36, 0, 4, "%d"};// s_frags_per_group
-//         metadata_t firstDataBlock = {20, 0, 4, "%d"}; // s_first_data_block
-// } superblock_t;
+static const FreeBitmapEntry_t DEFAULT_FREE_BITMAP_ENTRY_T = {
+        FREE_BITMAP_FIELD,      // nDataObjects
+        {
+                {0, 0, 0, "%x"},
+                {0, 0, 0, "%d"}
+        }
+};
