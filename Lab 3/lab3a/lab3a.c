@@ -132,7 +132,6 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
-                if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
 
                 for (j = 0; j < blockSize; ++j) {
                         uint32_t ibit =
@@ -151,7 +150,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                 ibit,
                                 blockBitmapStart,
                                 bbit);
-
+                        if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
                         if (mask == 1) mask = 1 << 31;
                         else mask = (mask >> 1);
                 }
