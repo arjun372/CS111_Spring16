@@ -7,14 +7,14 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>  /* for fprintf used in debug_log */
 #include <stdint.h>
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>  /* for fprintf used in debug_log */
 
 #include "lab3a.h"
 
@@ -86,7 +86,7 @@ int main (int argc, char **argv)
         pread(FD, buff,sizeof(unsigned int) - 1, blockBitmapByteLoc + 250);
         printf("%d\n\n", *buff);
 
-        // writeCSV_inode(FD);
+        writeCSV_inode(FD);
 
         free_memory();
         close(FD);     // close TargetFile
