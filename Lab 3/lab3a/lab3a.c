@@ -10,7 +10,7 @@
 #define FILE_GROUP_DESCRIPTOR        "group.csv"
 #define FILE_FREE_BITMAPS            "bitmap.csv"
 #define FILE_SUPERBLOCK              "super.csv"
-#define FILE_INODES                  "inodes.csv"
+#define FILE_INODES                  "inode.csv"
 
 #define CSV_WRITE_FLAGS  O_WRONLY|O_CREAT|O_TRUNC
 #define FILE_MODE 0664
@@ -53,6 +53,8 @@ static void         writeCSV_GroupDescriptors();
 static void         writeCSV_superblock();
 static void         writeCSV_inode(const int fd);
 
+static void         readAndWrite_freeBitmaps(const int fd);
+
 static void         free_memory();
 /* End static function declarations */
 
@@ -90,17 +92,9 @@ int main (int argc, char **argv)
         fill_GroupDescriptors(FD);
         writeCSV_GroupDescriptors();
 
-        GroupDescriptor_t *g = GROUP_DESCRIPTOR_TABLE[0];
-        int bitmapLoc = g->dataObjects[4].value;
-        int numblocks = g->dataObjects[0].value;
-        printf("numblocks: %d\nbitmapblocksloc: %d\n\n", numblocks, bitmapLoc);
-        int blockBitmapByteLoc = bitmapLoc * SUPERBLOCK_TABLE->dataObjects[3].value;
-        int numBlockBytes = numblocks/4;
-        unsigned int *buff = malloc(numBlockBytes*sizeof(char));
-        pread(FD, buff,sizeof(unsigned int) - 1, blockBitmapByteLoc + 250);
-        printf("%d\n\n", *buff);
+        readAndWrite_freeBitmaps(FD);
 
-        // writeCSV_inode(FD);
+        writeCSV_inode(FD);
 
         /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -113,6 +107,68 @@ int main (int argc, char **argv)
 
         close(FD);                                 // close TargetFile
         exit(0);
+}
+
+static void readAndWrite_freeBitmaps(const int diskFD) {
+        uint32_t i, j;
+        uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
+        uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
+        uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
+        
+        /* Stores a bitmap for each of the group descriptors */
+        uint32_t *inodeBitmap[nBlockGroups];
+        uint32_t *blockBitmap[nBlockGroups];
+        
+        unsigned int blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
+        
+        unsigned int blockBitmapStart, inodeBitmapStart;
+        
+        int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_SUPERBLOCK);
+        
+        /* Populate the bitmaps for each of the group descriptors */
+        for (i = 0; i < nBlockGroups; ++i) {
+                inodeBitmap[i] = malloc(SUPERBLOCK_TABLE->dataObjects[3].value);
+                blockBitmap[i] = malloc(SUPERBLOCK_TABLE->dataObjects[3].value);
+                inodeBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
+                blockBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
+                
+                pread(  fd, 
+                        inodeBitmap[i], 
+                        blockSize,
+                        inodeBitmapStart * blockSize);
+                        
+                pread(  fd, 
+                        blockBitmap[i], 
+                        blockSize, 
+                        inodeBitmapStart * blockSize);
+                        
+                        
+                uint32_t mask = 1;      // 000...001
+                uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
+                mask = mask << 31;      // 100...000
+                for (j = 0; j < blockSize; ++j) {
+                        uint32_t ibit = 
+                                ((currimap[j / 32] & mask) 
+                                >> (31 - (j % 32)));
+                        uint32_t bbit = 
+                                ((currbmap[j / 32] & mask) 
+                                >> (31 - (j % 32)));
+                                
+                        // Just testing
+                        // TODO: simply add these things to the csv file in the appropriate order
+                        dprintf(fd,
+                                "Location: %d\nInode block: %d         ibit: %d\nBlock block: %d         bbit: %d\n\n",
+                                j,
+                                inodeBitmapStart,
+                                ibit,
+                                blockBitmapStart,
+                                bbit);
+                }       
+        }
 }
 
 static void writeCSV_superblock() {
@@ -290,6 +346,7 @@ static void writeCSV_GroupDescriptors() {
         close(fd);
         return;
 }
+
 static void writeCSV_inode(const int FD) {
 
         int fd = open(FILE_INODES, CSV_WRITE_FLAGS, FILE_MODE);
