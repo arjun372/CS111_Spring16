@@ -142,10 +142,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         uint32_t ibit = !((mask & (currimap[j / 32]))  >> (31 - (j % 32)) );
                         uint32_t bbit = !((mask & (currbmap[j / 32]))  >> (31 - (j % 32)) );
 
-                        if (!ibit)
-                                dprintf(fd,"%d,%d",inodeBitmapStart,j);
-                        if (!bbit)
-                                dprintf(fd,"%d,%d",inodeBitmapStart,j);
+                        if (!ibit) dprintf(fd,"%d,%d\n",inodeBitmapStart,j);
+                        if (!bbit) dprintf(fd,"%d,%d\n",blockBitmapStart,j);
 
                         // dprintf(fd,
                         //         "%d,%d",
