@@ -150,9 +150,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                         "%d,%d",
                                         blockBitmapStart,
                                         bbit);
-
-                        if (VERBOSE)
-                                fprintf(stdout,
+                        if ((bbit != 0 && bbit != 1) || (ibit != 0 && ibit != 1))
+                                fprintf(stderr,
                                         "Location: %d\nInode block: %d         ibit: %dBlock block: %d         bbit: %d\n\n",
                                         j,
                                         inodeBitmapStart,
