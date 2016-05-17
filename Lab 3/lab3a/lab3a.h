@@ -3,16 +3,15 @@
 #define FILE_GROUP_DESCRIPTOR        "group.csv"
 #define FILE_FREE_BITMAPS            "bitmap.csv"
 #define FILE_SUPERBLOCK              "super.csv"
-#define FILE_INODES                  "inodes.csv"
+#define FILE_INODES                  "inode.csv"
 
-#define GROUPDESCRIPTOR_FIELDS    7
-#define SUPERBLOCK_SIZE        1024
-#define SUPERBLOCK_OFF         1024
-#define SUPERBLOCK_FIELDS         9
-#define FREE_BITMAP_FIELD         2
-#define CSV_WRITE_FLAGS           O_WRONLY|O_CREAT|O_TRUNC
-#define FILE_MODE              0664
-#define BAD                      -1
+#define GROUPDESCRIPTOR_FIELDS       7
+#define FREE_BITMAP_FIELD            2
+#define SUPERBLOCK_FIELDS            9
+#define CSV_WRITE_FLAGS              O_WRONLY|O_CREAT|O_TRUNC
+#define SUPERBLOCK_SIZE              1024
+#define SUPERBLOCK_OFF               1024
+#define FILE_MODE                    0664
 
 struct metadata {
         uint32_t offset;
