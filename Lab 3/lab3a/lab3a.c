@@ -88,16 +88,17 @@ int main (int argc, char **argv)
 }
 
 static void readAndWrite_freeBitmaps(const int diskFD) {
-        uint32_t i, j;
+        uint32_t i, j;    
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
+        uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;                
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
         /* Stores a bitmap for each of the group descriptors */
         uint32_t *inodeBitmap[nBlockGroups];
         uint32_t *blockBitmap[nBlockGroups];
 
-        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value; 
         uint32_t blockBitmapStart, inodeBitmapStart;
 
         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
@@ -108,8 +109,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
-                inodeBitmap[i] = malloc(blockSize); // 1024 bytes
-                blockBitmap[i] = malloc(blockSize); // 1024 bytes
+                
                 if(inodeBitmap[i] == NULL || blockBitmap[i] == NULL) {
                         fprintf(stderr, "FATAL:: Memory error. bye bi**h!\n");
                         exit(1);
@@ -119,37 +119,51 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                 pread(  diskFD,
                         inodeBitmap[i],
-                        blockSize,
+                        // blockSize,
+                        inodesPerGroup/8 + inodesPerGroup%8,
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
                         blockBitmap[i],
-                        blockSize,
+                        // blockSize,
+                        blocksPerGroup/8 + blocksPerGroup%8,
                         blockBitmapStart * blockSize);
 
+
+                inodeBitmap[i] = malloc(inodesPerGroup); // 1024 bytes
+                blockBitmap[i] = malloc(blocksPerGroup); // 1024 bytes
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
-                for (j = 0; j < blockSize * 8; ++j) {
+                for (j = 0; j < inodesPerGroup; ++j) {
                         uint32_t ibit =
                                 ((currimap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-
-                        uint32_t bbit =
-                                ((currbmap[j / 32] & mask)
-                                 >> (31 - (j % 32)));
-
-                        //  uint32_t ibit = !((mask & (currimap[j / 32]))  >> (31 - (j % 32)) );
-                        //  uint32_t bbit = !((mask & (currbmap[j / 32]))  >> (31 - (j % 32)) );
-
-                        // if (!ibit) dprintf(fd,"%d,%d\n",inodeBitmapStart,j);
-                        // if (!bbit) dprintf(fd,"%d,%d\n",blockBitmapStart,j);
 
                         if (ibit == 0)
                                 dprintf(fd,
                                         "%x,%d\n",
                                         inodeBitmapStart,
                                         j);
+
+                        /* throws errors when nodes are not being read correctly */
+                        if (VERBOSE && (ibit != 0 && ibit != 1))
+                                fprintf(stderr,
+                                        "Location: %d\nInode block: %d         ibit: %d\n\n",
+                                        j,
+                                        inodeBitmapStart,
+                                        ibit);
+
+                        if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
+                        if (mask == 1) mask = 1 << 31;
+                        else mask = (mask >> 1);
+                }
+                
+                mask = 1 << 31; // 100...000                
+                for (j = 0; j < blocksPerGroup; ++j) {
+                        uint32_t bbit =
+                                ((currbmap[j / 32] & mask)
+                                 >> (31 - (j % 32)));
 
                         if (bbit == 0)
                                 dprintf(fd,
@@ -158,12 +172,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                         j);
 
                         /* throws errors when nodes are not being read correctly */
-                        if (VERBOSE && ((bbit != 0 && bbit != 1) || (ibit != 0 && ibit != 1)))
+                        if (VERBOSE && ((bbit != 0 && bbit != 1)))
                                 fprintf(stderr,
-                                        "Location: %d\nInode block: %d         ibit: %dBlock block: %d         bbit: %d\n\n",
+                                        "Location: %d\nBlock block: %d         bbit: %d\n\n",
                                         j,
-                                        inodeBitmapStart,
-                                        ibit,
                                         blockBitmapStart,
                                         bbit);
 
