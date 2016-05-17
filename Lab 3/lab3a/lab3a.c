@@ -151,6 +151,9 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                 ibit,
                                 blockBitmapStart,
                                 bbit);
+
+                        if (mask == 1) mask = 1 << 31;
+                        else mask = (mask >> 1);
                 }
         }
 }
