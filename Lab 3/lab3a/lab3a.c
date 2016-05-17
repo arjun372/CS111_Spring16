@@ -131,26 +131,35 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
                 mask = mask << 31;      // 100...000
                 for (j = 0; j < blockSize * 8; ++j) {
-                        uint32_t ibit =
-                                ((currimap[j / 32] & mask)
-                                 >> (31 - (j % 32)));
+                        // uint32_t ibit =
+                        //         ((currimap[j / 32] & mask)
+                        //          >> (31 - (j % 32)));
+                        //
+                        // uint32_t bbit =
+                        //         ((currbmap[j / 32] & mask)
+                        //          >> (31 - (j % 32)));
 
-                        uint32_t bbit =
-                                ((currbmap[j / 32] & mask)
-                                 >> (31 - (j % 32)));
+                        uint32_t ibit = !((mask & (currimap[j / 32]))  >> (31 - (j % 32)) );
+                        uint32_t bbit = !((mask & (currbmap[j / 32]))  >> (31 - (j % 32)) );
 
-                        if (ibit == 0)
-                                dprintf(fd,
-                                        "%d,%d",
-                                        inodeBitmapStart,
-                                        ibit);
+                        if (!ibit)
+                                dprintf(fd,"%d,%d",inodeBitmapStart,j);
+                        if (!bbit)
+                                dprintf(fd,"%d,%d",inodeBitmapStart,j);
 
-                        if (bbit == 0)
-                                dprintf(fd,
-                                        "%d,%d",
-                                        blockBitmapStart,
-                                        bbit);
-                        if ((bbit != 0 && bbit != 1) || (ibit != 0 && ibit != 1))
+                        // dprintf(fd,
+                        //         "%d,%d",
+                        //         inodeBitmapStart,
+                        //         ibit);
+
+                        // if (!bbit)
+                        //         dprintf(fd,
+                        //                 "%d,%d",
+                        //                 blockBitmapStart,
+                        //                 bbit);
+
+                        /* throws errors when nodes are not being read correctly */
+                        if (VERBOSE && ((bbit != 0 && bbit != 1) || (ibit != 0 && ibit != 1)))
                                 fprintf(stderr,
                                         "Location: %d\nInode block: %d         ibit: %dBlock block: %d         bbit: %d\n\n",
                                         j,
@@ -158,6 +167,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                         ibit,
                                         blockBitmapStart,
                                         bbit);
+
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, mask);
                         if (mask == 1) mask = 1 << 31;
                         else mask = (mask >> 1);
