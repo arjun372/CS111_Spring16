@@ -147,13 +147,13 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         if (ibit == 0)
                                 dprintf(fd,
-                                        "%x,%d",
+                                        "%x,%d\n",
                                         inodeBitmapStart,
                                         j);
 
                         if (bbit == 0)
                                 dprintf(fd,
-                                        "%x,%d",
+                                        "%x,%d\n",
                                         blockBitmapStart,
                                         j);
 
