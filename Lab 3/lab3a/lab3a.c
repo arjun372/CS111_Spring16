@@ -5,26 +5,16 @@
     Arjun Arjun     - 504078752
  **/
 
-#define FILE_INDIRECT_BLOCK_ENTRIES  "indirect.csv"
-#define FILE_DIRECTORY_ENTRIES       "directory.csv"
-#define FILE_GROUP_DESCRIPTOR        "group.csv"
-#define FILE_FREE_BITMAPS            "bitmap.csv"
-#define FILE_SUPERBLOCK              "super.csv"
-#define FILE_INODES                  "inode.csv"
-
-#define CSV_WRITE_FLAGS  O_WRONLY|O_CREAT|O_TRUNC
-#define FILE_MODE 0664
-#define BAD         -1
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <fcntl.h>
-#include <stdio.h>  /* for fprintf used in debug_log */
 #include <stdint.h>
 #include <getopt.h> /* Argument Options parse headers */
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <stdio.h>  /* for fprintf used in debug_log */
 
 #include "lab3a.h"
 
@@ -40,7 +30,6 @@ static struct option long_options[] = {
 
 /* Static function declarations */
 static void         debug_log(const int opt_index, char **optarg, const int argc);
-
 
 static uint32_t     init_GROUP_DESCRIPTOR_TABLE_info();
 static SuperBlock_t *init_superblock_info();
@@ -58,10 +47,8 @@ static void         readAndWrite_freeBitmaps(const int fd);
 static void         free_memory();
 /* End static function declarations */
 
-
 int main (int argc, char **argv)
 {
-
         /* Getting options */
         uint32_t i, j;
         int FD, opt_index;
@@ -81,7 +68,6 @@ int main (int argc, char **argv)
         /* END Getting options */
 
 
-
         /* Process superblock information */
         SUPERBLOCK_TABLE = init_superblock_info();
         fill_superblock(FD);
@@ -96,16 +82,8 @@ int main (int argc, char **argv)
 
         writeCSV_inode(FD);
 
-        /* Free memory associated with GROUP_DESCRIPTOR_TABLE */
-        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
-                free(GROUP_DESCRIPTOR_TABLE[i]);
-
-        free(GROUP_DESCRIPTOR_TABLE);                // free gdTable
-
-        /* Free memory associated with SUPERBLOCK_TABLE */
-        free(SUPERBLOCK_TABLE);
-
-        close(FD);                                 // close TargetFile
+        free_memory();
+        close(FD);     // close TargetFile
         exit(0);
 }
 
@@ -425,6 +403,15 @@ static void writeCSV_inode(const int FD) {
                 }
         }
         close(fd);
+}
+
+static void free_memory() {
+        uint32_t i;
+        for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
+                free(GROUP_DESCRIPTOR_TABLE[i]);
+
+        free(GROUP_DESCRIPTOR_TABLE);
+        free(SUPERBLOCK_TABLE);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
