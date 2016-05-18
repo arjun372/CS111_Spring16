@@ -82,6 +82,10 @@ static const GroupDescriptor_t DEFAULT_GROUP_DESCR_T = {
 // static const InodeTableEntry_t DEFAULT_INODE_TABLE_ENTRY_T = {
 //         26,     // nDataObjects
 //         {
+//                 {0, 0, 0, "%d"},        // INode Number
+//                 {0, 0, 2, "%c"},        // File type
+//                 {0, 0, 2, "%o"},        // mode
+//                 {2, 0, 2, "%d"},        // File owner          
                 
 //         }
-// }
+// };
