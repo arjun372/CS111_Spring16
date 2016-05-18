@@ -88,17 +88,17 @@ int main (int argc, char **argv)
 }
 
 static void readAndWrite_freeBitmaps(const int diskFD) {
-        uint32_t i, j;    
+        uint32_t i, j;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
-        uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;                
+        uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
         /* Stores a bitmap for each of the group descriptors */
         uint32_t *inodeBitmap[nBlockGroups];
         uint32_t *blockBitmap[nBlockGroups];
 
-        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value; 
+        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blockBitmapStart, inodeBitmapStart;
 
         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
@@ -109,7 +109,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
-                
+
                 if(inodeBitmap[i] == NULL || blockBitmap[i] == NULL) {
                         fprintf(stderr, "FATAL:: Memory error. bye bi**h!\n");
                         exit(1);
@@ -158,8 +158,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         if (mask == 1) mask = 1 << 31;
                         else mask = (mask >> 1);
                 }
-                
-                mask = 1 << 31; // 100...000                
+
+                mask = 1 << 31; // 100...000
                 for (j = 0; j < blocksPerGroup; ++j) {
                         uint32_t bbit =
                                 ((currbmap[j / 32] & mask)
@@ -383,29 +383,34 @@ static void writeCSV_inode(const int FD) {
         {
                 uint32_t TBL_BLK_OFF = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[6].value;
                 uint32_t numInodes = (i == (NUM_GROUP_DESCRIPTORS - 1)) ? numInodesLastGroup : numInodesPerGroup;
+
                 if(VERBOSE) fprintf(stderr, "Processing descriptor (%d)..with inodes : %d\n", i, numInodes);
+
                 for(j = 0; j < numInodes; j++) {
 
                         uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
 
+                        /* iNode Number */
                         dprintf(fd, "%d,", j);
-                        //TODO :: Read inode number!! :   pread(FD, &data, sizeof(data), )
 
-                        /* read file-mode */
+                        /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
+
                         if     (data0 & 0xA000) dprintf(fd, "s,");
                         else if(data0 & 0x4000) dprintf(fd, "d,");
                         else if(data0 & 0x8000) dprintf(fd, "f,");
                         else                    dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
-                        dprintf(fd, "mode,");
+                        dprintf(fd, "%o,", data0);
 
                         // TODO : FILE_OWNER
-                        dprintf(fd, "owner,");
+                        pread(FD, &data0, sizeof(data0), iNODE_OFF +  2);
+                        dprintf(fd, "%d,", data0);
 
                         // TODO : FILE_GROUP
-                        dprintf(fd, "group,");
+                        pread(FD, &data0, sizeof(data0), iNODE_OFF + 24);
+                        dprintf(fd, "%d,", data0);
 
                         /* read LINK_COUNT */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 26);
