@@ -377,6 +377,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
+        uint32_t ext2_BlockSize     = 512; // from the spec !
         //  uint32_t mArray[inodeSize];
 
         /* run this for each group descriptor */
@@ -398,10 +399,10 @@ static void writeCSV_inode(const int FD) {
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
 
-                        if     (data0 & 0xA000) dprintf(fd, "s,");
-                        else if(data0 & 0x4000) dprintf(fd, "d,");
-                        else if(data0 & 0x8000) dprintf(fd, "f,");
-                        else                    dprintf(fd, "?,");
+                        if     ((data0 & 0xA000) == 0xA000) dprintf(fd, "s,");
+                        else if((data0 & 0x8000) == 0x8000) dprintf(fd, "f,");
+                        else if((data0 & 0x4000) == 0x4000) dprintf(fd, "d,");
+                        else                                dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
                         dprintf(fd, "%o,", data0);
@@ -436,6 +437,7 @@ static void writeCSV_inode(const int FD) {
 
                         /* read NUMBER_OF_BLOCKS */
                         pread(FD, &data, sizeof(data), iNODE_OFF + 28);
+                        data = data * ext2_BlockSize / blockSize;
                         dprintf(fd, "%d,", data);
 
                         /* read BLOCKS+POINTERS */
