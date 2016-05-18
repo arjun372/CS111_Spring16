@@ -82,7 +82,7 @@ int main (int argc, char **argv)
 
         readAndWrite_freeBitmaps(FD);
 
-        if(!VERBOSE) writeCSV_inode(FD);
+        writeCSV_inode(FD);
 
         free_memory();
         close(FD);     // close TargetFile
@@ -364,6 +364,31 @@ static void writeCSV_GroupDescriptors() {
         return;
 }
 
+
+static void writeCSV_dir(int readfd, uint32_t inodenum, uint32_t blocks[15]) {
+        uint32_t i, pos;
+        if (VERBOSE) 
+        for(i = 0; i < 15; ++i){
+                fprintf(stdout, "%x\n", blocks[i]);
+        }
+        uint32_t blockSize           = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t entry[blockSize/4];
+        uint32_t zero[blockSize/4] = {0};
+        uint32_t block;
+        for(i = 0; i < 13; ++i){
+                block = blocks[i];
+                if (block == 0) continue;
+                
+                pos = 0;        // byte offset at beginning of current directory entry
+                pread(readfd, &entry, blockSize, 0);
+                // Only continue while loop if there is enough space for an entry to exist, 
+                //      AND if the inode of the current entry is valid non-zero)
+                // while((pos + 9) < blockSize && entry[pos]) {
+                        
+                // }
+        }
+}
+
 static void writeCSV_inode(const int FD) {
 
         int fd = open(FILE_INODES, CSV_WRITE_FLAGS, FILE_MODE);
@@ -372,7 +397,7 @@ static void writeCSV_inode(const int FD) {
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_INODES);
 
-        uint16_t data0;
+        uint16_t data0, file_type;
         uint32_t i, j, k, data;
         uint32_t blockSize          = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t inodeCount         = SUPERBLOCK_TABLE->dataObjects[1].value;
@@ -380,6 +405,8 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
         uint32_t ext2BlockSize      = 512;
+        
+        uint32_t dirBlocksArray[15];
 
         /* run this for each group descriptor */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -399,16 +426,17 @@ static void writeCSV_inode(const int FD) {
                         /* iNode Number */
                         dprintf(fd, "%d,", inodeNumber);
 
+                        
                         /* read file-type */
-                        pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
+                        pread(FD, &file_type, sizeof(file_type), iNODE_OFF + 0);
 
-                        if     ((data0 & 0xA000) == 0xA000) dprintf(fd, "s,");
-                        else if((data0 & 0x8000) == 0x8000) dprintf(fd, "f,");
-                        else if((data0 & 0x4000) == 0x4000) dprintf(fd, "d,");
+                        if     ((file_type & 0xA000) == 0xA000) dprintf(fd, "s,");
+                        else if((file_type & 0x8000) == 0x8000) dprintf(fd, "f,");
+                        else if((file_type & 0x4000) == 0x4000) dprintf(fd, "d,");
                         else                                dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
-                        dprintf(fd, "%o,", data0);
+                        dprintf(fd, "%o,", file_type);
 
                         // TODO : FILE_OWNER
                         pread(FD, &data0, sizeof(data0), iNODE_OFF +  2);
@@ -448,6 +476,13 @@ static void writeCSV_inode(const int FD) {
                                 pread(FD, &data, sizeof(data), iNODE_OFF + 40 + (4*k));
                                 dprintf(fd, "%x", data);
                                 dprintf(fd, (k==14) ? "\n" : ",");
+                                
+                                dirBlocksArray[k] = data;
+                        }
+                        
+                        // Write Directory Entry Structure
+                        if((file_type & 0x4000) == 0x4000){
+                                writeCSV_dir(FD, inodeNumber, dirBlocksArray);
                         }
                 }
         }
