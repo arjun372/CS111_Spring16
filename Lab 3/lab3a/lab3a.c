@@ -364,28 +364,40 @@ static void writeCSV_GroupDescriptors() {
         return;
 }
 
-
-static void writeCSV_dir(int readfd, uint32_t inodenum, uint32_t blocks[15]) {
-        uint32_t i, pos;
+static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
+        uint32_t i, pos, count;
         if (VERBOSE) 
         for(i = 0; i < 15; ++i){
                 fprintf(stdout, "%x\n", blocks[i]);
         }
         uint32_t blockSize           = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t entry[blockSize/4];
-        uint32_t zero[blockSize/4] = {0};
+        uint32_t zero[blockSize/4];
+        for(i = 0; i < (blockSize/4); ++i) zero[i] = 0;
         uint32_t block;
+        // char* name;
         for(i = 0; i < 13; ++i){
                 block = blocks[i];
                 if (block == 0) continue;
                 
                 pos = 0;        // byte offset at beginning of current directory entry
-                pread(readfd, &entry, blockSize, 0);
+                count = 0;
+                pread(readfd, entry, blockSize, block * blockSize);
                 // Only continue while loop if there is enough space for an entry to exist, 
                 //      AND if the inode of the current entry is valid non-zero)
-                // while((pos + 9) < blockSize && entry[pos]) {
-                        
-                // }
+                while(((pos + 9) < blockSize) && entry[pos]) {
+                        if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
+                        // name = (char*) &entry[pos + 2];
+                        dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
+                                parentInode,                            // parent inode
+                                count++,                                // entry count
+                                (uint16_t) (entry[pos + 1] >> 16) ,     // entry length
+                                (char) (entry[pos + 1] >> 8),           // name length
+                                (char) entry[pos + 1],                  // inode number of file
+                                "name please");                         // name
+                                
+                        pos += ((uint16_t) (entry[1] >> 16));
+                }
         }
 }
 
@@ -396,6 +408,12 @@ static void writeCSV_inode(const int FD) {
                 fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_INODES);
+        
+        int dirfd = open(FILE_DIRECTORY_ENTRIES, CSV_WRITE_FLAGS, FILE_MODE);
+        if(dirfd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing Directory entries: '%s'\n", FILE_DIRECTORY_ENTRIES);
 
         uint16_t data0, file_type;
         uint32_t i, j, k, data;
@@ -482,7 +500,7 @@ static void writeCSV_inode(const int FD) {
                         
                         // Write Directory Entry Structure
                         if((file_type & 0x4000) == 0x4000){
-                                writeCSV_dir(FD, inodeNumber, dirBlocksArray);
+                                writeCSV_dir(FD, dirfd, inodeNumber, dirBlocksArray);
                         }
                 }
         }
