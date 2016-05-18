@@ -90,6 +90,7 @@ int main (int argc, char **argv)
 }
 
 static void readAndWrite_freeBitmaps(const int diskFD) {
+
         uint32_t i, j;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
@@ -143,13 +144,13 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 pread(  diskFD,
                         currimap,
                         // blockSize,
-                        inodesPerGroup,
+                        inodesPerGroup/8 + (!!(inodesPerGroup%8)),
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
                         currbmap,
                         // blockSize,
-                        blocksPerGroup,
+                        blocksPerGroup/8 + (!!(blocksPerGroup%8)),
                         blockBitmapStart * blockSize);
 
 
