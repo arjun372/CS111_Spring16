@@ -377,6 +377,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
+        //  uint32_t mArray[inodeSize];
 
         /* run this for each group descriptor */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -392,7 +393,7 @@ static void writeCSV_inode(const int FD) {
                         uint32_t inodeNumber = (j+1)+(numInodes*i);
 
                         /* iNode Number */
-                        //dprintf(fd, "%d,", inodeNumber);
+                        dprintf(fd, "%d,", inodeNumber);
 
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
