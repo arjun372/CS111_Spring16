@@ -99,16 +99,18 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Stores a bitmap for each of the group descriptors */
         BITMAP_INODES = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
         BITMAP_BLOCKS = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
-        
-        /* Current map for each group descriptor, reused */
-        uint32_t *currimap = (uint32_t*) malloc(inodesPerGroup);
-        uint32_t *currbmap = (uint32_t*) malloc(blocksPerGroup);
-        uint32_t zeroSize = (inodesPerGroup > blocksPerGroup) ? inodesPerGroup : blocksPerGroup; 
-        uint32_t zero[zeroSize];
-        for (i = 0; i < zeroSize; ++i) zero[i] = 0;
+
 
         uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blockBitmapStart, inodeBitmapStart;
+
+        /* Current map for each group descriptor, reused */
+        uint32_t *currimap = (uint32_t*) malloc(blockSize);
+        uint32_t *currbmap = (uint32_t*) malloc(blockSize);
+        uint32_t zeroSize = blockSize;
+        uint32_t zero[zeroSize];
+        for (i = 0; i < zeroSize; ++i) zero[i] = 0;
+
 
         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
         if(fd < 0) {
@@ -119,40 +121,40 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
 
-                BITMAP_INODES[i] = malloc(inodesPerGroup * sizeof(uint32_t)); 
+                BITMAP_INODES[i] = malloc(inodesPerGroup * sizeof(uint32_t));
                 BITMAP_BLOCKS[i] = malloc(blocksPerGroup * sizeof(uint32_t));
-                
+
                 if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
                         fprintf(stderr, "FATAL:: Memory error. bye bye!\n");
                         exit(1);
                 }
-                
+
                 memcpy(currimap, zero, inodesPerGroup);
                 memcpy(currbmap, zero, blocksPerGroup);
-                
+
                 inodeBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
                 blockBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
 
                 pread(  diskFD,
                         currimap,
-                        // blockSize,
-                        inodesPerGroup/8 + inodesPerGroup%8,
+                        blockSize,
+                        // inodesPerGroup/8 + inodesPerGroup%8,
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
                         currbmap,
-                        // blockSize,
-                        blocksPerGroup/8 + blocksPerGroup%8,
+                        blockSize,
+                        // blocksPerGroup/8 + blocksPerGroup%8,
                         blockBitmapStart * blockSize);
-                                
-                
+
+
                 uint32_t mask = 1;      // 000...001
                 mask = mask << 31;      // 100...000
                 for (j = 0; j < inodesPerGroup; ++j) {
                         uint32_t ibit =
                                 ((currimap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-                                 
+
                         BITMAP_INODES[i][j] = ibit;
 
                         if (ibit == 0)
@@ -179,8 +181,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         uint32_t bbit =
                                 ((currbmap[j / 32] & mask)
                                  >> (31 - (j % 32)));
-                                 
-                        BITMAP_BLOCKS[i][j] = bbit;                                 
+
+                        BITMAP_BLOCKS[i][j] = bbit;
 
                         if (bbit == 0)
                                 dprintf(fd,
@@ -201,7 +203,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         else mask = (mask >> 1);
                 }
         }
-        
+
         printf("here\n");
         free(currimap);
         free(currbmap);
@@ -386,24 +388,24 @@ static void writeCSV_GroupDescriptors() {
 
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
         uint32_t i, pos, count;
-        if (VERBOSE) 
-        for(i = 0; i < 15; ++i){
-                fprintf(stdout, "%x\n", blocks[i]);
-        }
+        if (VERBOSE)
+                for(i = 0; i < 15; ++i) {
+                        fprintf(stdout, "%x\n", blocks[i]);
+                }
         uint32_t blockSize           = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t entry[blockSize/4];
         uint32_t zero[blockSize/4];
         for(i = 0; i < (blockSize/4); ++i) zero[i] = 0;
         uint32_t block;
         // char* name;
-        for(i = 0; i < 13; ++i){
+        for(i = 0; i < 13; ++i) {
                 block = blocks[i];
                 if (block == 0) continue;
-                
+
                 pos = 0;        // byte offset at beginning of current directory entry
                 count = 0;
                 pread(readfd, entry, blockSize, block * blockSize);
-                // Only continue while loop if there is enough space for an entry to exist, 
+                // Only continue while loop if there is enough space for an entry to exist,
                 //      AND if the inode of the current entry is valid non-zero)
                 while(((pos + 9) < blockSize) && entry[pos]) {
                         if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
@@ -411,11 +413,11 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
                         dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
                                 parentInode,                            // parent inode
                                 count++,                                // entry count
-                                (uint16_t) (entry[pos + 1] >> 16) ,     // entry length
+                                (uint16_t) (entry[pos + 1] >> 16),      // entry length
                                 (char) (entry[pos + 1] >> 8),           // name length
                                 (char) entry[pos + 1],                  // inode number of file
                                 "name please");                         // name
-                                
+
                         pos += ((uint16_t) (entry[1] >> 16));
                 }
         }
@@ -428,7 +430,7 @@ static void writeCSV_inode(const int FD) {
                 fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing CSV: '%s'\n", FILE_INODES);
-        
+
         int dirfd = open(FILE_DIRECTORY_ENTRIES, CSV_WRITE_FLAGS, FILE_MODE);
         if(dirfd < 0) {
                 fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
@@ -443,7 +445,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
         uint32_t ext2BlockSize      = 512;
-        
+
         uint32_t dirBlocksArray[15];
 
         /* run this for each group descriptor */
@@ -464,7 +466,7 @@ static void writeCSV_inode(const int FD) {
                         /* iNode Number */
                         dprintf(fd, "%d,", inodeNumber);
 
-                        
+
                         /* read file-type */
                         pread(FD, &file_type, sizeof(file_type), iNODE_OFF + 0);
 
@@ -514,12 +516,12 @@ static void writeCSV_inode(const int FD) {
                                 pread(FD, &data, sizeof(data), iNODE_OFF + 40 + (4*k));
                                 dprintf(fd, "%x", data);
                                 dprintf(fd, (k==14) ? "\n" : ",");
-                                
+
                                 dirBlocksArray[k] = data;
                         }
-                        
+
                         // Write Directory Entry Structure
-                        if((file_type & 0x4000) == 0x4000){
+                        if((file_type & 0x4000) == 0x4000) {
                                 writeCSV_dir(FD, dirfd, inodeNumber, dirBlocksArray);
                         }
                 }
