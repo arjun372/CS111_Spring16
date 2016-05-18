@@ -390,6 +390,8 @@ static void writeCSV_inode(const int FD) {
                 if(VERBOSE) fprintf(stderr, "Processing descriptor (%d)..with inodes : %d\n", i, numInodes);
 
                 for(j = 0; j < numInodes; j++) {
+                        
+                        if (!BITMAP_INODES[i][j]) continue;
 
                         uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
                         uint32_t inodeNumber = (j+1)+(numInodes*i);
