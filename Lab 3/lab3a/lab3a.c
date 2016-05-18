@@ -105,8 +105,13 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t blockBitmapStart, inodeBitmapStart;
 
         /* Current map for each group descriptor, reused */
-        uint32_t *currimap = (uint32_t*) malloc(blockSize);
-        uint32_t *currbmap = (uint32_t*) malloc(blockSize);
+        uint32_t *currimap = (uint32_t*) malloc(inodesPerGroup);
+        uint32_t *currbmap = (uint32_t*) malloc(blocksPerGroup);
+        if(currimap == NULL || currbmap == NULL) {
+                fprintf(stderr, "FATAL:: Memory error. bye bye! currimp\n");
+                exit(1);
+        }
+
         uint32_t zeroSize = blockSize;
         uint32_t zero[zeroSize];
         for (i = 0; i < zeroSize; ++i) zero[i] = 0;
@@ -137,14 +142,14 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                 pread(  diskFD,
                         currimap,
-                        blockSize,
-                        // inodesPerGroup/8 + inodesPerGroup%8,
+                        // blockSize,
+                        inodesPerGroup,
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
                         currbmap,
-                        blockSize,
-                        // blocksPerGroup/8 + blocksPerGroup%8,
+                        // blockSize,
+                        blocksPerGroup,
                         blockBitmapStart * blockSize);
 
 
@@ -161,7 +166,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                 dprintf(fd,
                                         "%x,%d\n",
                                         inodeBitmapStart,
-                                        j);
+                                        j + (i * inodesPerGroup));
 
                         /* throws errors when nodes are not being read correctly */
                         if (VERBOSE && (ibit != 0 && ibit != 1))
@@ -188,7 +193,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                                 dprintf(fd,
                                         "%x,%d\n",
                                         blockBitmapStart,
-                                        j);
+                                        j + (i * blocksPerGroup));
 
                         /* throws errors when nodes are not being read correctly */
                         if (VERBOSE && ((bbit != 0 && bbit != 1)))
