@@ -39,7 +39,7 @@ struct group_descriptor {
         struct metadata dataObjects[];
 };
 
-struct free_bitmap_entry {
+struct inode_table_entry {
         uint32_t nDataObjects;
         struct metadata dataObjects[];
 };
@@ -48,7 +48,7 @@ typedef struct metadata MetaData_t;
 typedef struct superblock Block_t;
 typedef struct superblock SuperBlock_t;
 typedef struct group_descriptor GroupDescriptor_t;
-typedef struct free_bitmap_entry FreeBitmapEntry_t;
+typedef struct inode_table_entry InodeTableEntry_t;
 
 static const SuperBlock_t DEFAULT_SUPERBLOCK_T = {
         SUPERBLOCK_FIELDS, // nDataObjects
@@ -79,10 +79,9 @@ static const GroupDescriptor_t DEFAULT_GROUP_DESCR_T = {
         } // dataObjects
 };
 
-static const FreeBitmapEntry_t DEFAULT_FREE_BITMAP_ENTRY_T = {
-        FREE_BITMAP_FIELD,      // nDataObjects
-        {
-                {0, 0, 0, "%x"},
-                {0, 0, 0, "%d"}
-        }
-};
+// static const InodeTableEntry_t DEFAULT_INODE_TABLE_ENTRY_T = {
+//         26,     // nDataObjects
+//         {
+                
+//         }
+// }
