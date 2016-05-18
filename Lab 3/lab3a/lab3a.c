@@ -111,7 +111,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
-                
+
                 BITMAP_INODES[i] = malloc(inodesPerGroup); // 1024 bytes
                 BITMAP_BLOCKS[i] = malloc(blocksPerGroup); // 1024 bytes
                 if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
@@ -133,7 +133,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         blocksPerGroup/8 + blocksPerGroup%8,
                         blockBitmapStart * blockSize);
 
-                
+
                 uint32_t mask = 1;      // 000...001
                 uint32_t *currimap = BITMAP_INODES[i], *currbmap = BITMAP_BLOCKS[i];
                 mask = mask << 31;      // 100...000
@@ -379,7 +379,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
-        //  uint32_t mArray[inodeSize];
+        uint32_t ext2BlockSize      = 512;
 
         /* run this for each group descriptor */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
@@ -390,7 +390,7 @@ static void writeCSV_inode(const int FD) {
                 if(VERBOSE) fprintf(stderr, "Processing descriptor (%d)..with inodes : %d\n", i, numInodes);
 
                 for(j = 0; j < numInodes; j++) {
-                        
+
                         if (!BITMAP_INODES[i][j]) continue;
 
                         uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
@@ -402,10 +402,10 @@ static void writeCSV_inode(const int FD) {
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
 
-                        if     (data0 & 0xA000) dprintf(fd, "s,");
-                        else if(data0 & 0x4000) dprintf(fd, "d,");
-                        else if(data0 & 0x8000) dprintf(fd, "f,");
-                        else                    dprintf(fd, "?,");
+                        if     ((data0 & 0xA000) == 0xA000) dprintf(fd, "s,");
+                        else if((data0 & 0x8000) == 0x8000) dprintf(fd, "f,");
+                        else if((data0 & 0x4000) == 0x4000) dprintf(fd, "d,");
+                        else                                dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
                         dprintf(fd, "%o,", data0);
@@ -440,6 +440,7 @@ static void writeCSV_inode(const int FD) {
 
                         /* read NUMBER_OF_BLOCKS */
                         pread(FD, &data, sizeof(data), iNODE_OFF + 28);
+                        data = data * ext2BlockSize / blockSize;
                         dprintf(fd, "%d,", data);
 
                         /* read BLOCKS+POINTERS */
