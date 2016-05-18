@@ -21,6 +21,8 @@
 static SuperBlock_t       *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
+static uint32_t **BITMAP_BLOCKS;
+static uint32_t **BITMAP_INODES;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -95,8 +97,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
 
         /* Stores a bitmap for each of the group descriptors */
-        uint32_t *inodeBitmap[nBlockGroups];
-        uint32_t *blockBitmap[nBlockGroups];
+        BITMAP_INODES = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
+        BITMAP_BLOCKS = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
 
         uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blockBitmapStart, inodeBitmapStart;
@@ -109,8 +111,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
-
-                if(inodeBitmap[i] == NULL || blockBitmap[i] == NULL) {
+                
+                BITMAP_INODES[i] = malloc(inodesPerGroup); // 1024 bytes
+                BITMAP_BLOCKS[i] = malloc(blocksPerGroup); // 1024 bytes
+                if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
                         fprintf(stderr, "FATAL:: Memory error. bye bi**h!\n");
                         exit(1);
                 }
@@ -118,22 +122,20 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 blockBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
 
                 pread(  diskFD,
-                        inodeBitmap[i],
+                        BITMAP_INODES[i],
                         // blockSize,
                         inodesPerGroup/8 + inodesPerGroup%8,
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
-                        blockBitmap[i],
+                        BITMAP_BLOCKS[i],
                         // blockSize,
                         blocksPerGroup/8 + blocksPerGroup%8,
                         blockBitmapStart * blockSize);
 
-
-                inodeBitmap[i] = malloc(inodesPerGroup); // 1024 bytes
-                blockBitmap[i] = malloc(blocksPerGroup); // 1024 bytes
+                
                 uint32_t mask = 1;      // 000...001
-                uint32_t *currimap = inodeBitmap[i], *currbmap = blockBitmap[i];
+                uint32_t *currimap = BITMAP_INODES[i], *currbmap = BITMAP_BLOCKS[i];
                 mask = mask << 31;      // 100...000
                 for (j = 0; j < inodesPerGroup; ++j) {
                         uint32_t ibit =
@@ -377,7 +379,6 @@ static void writeCSV_inode(const int FD) {
         uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t numInodesLastGroup = inodeCount % numInodesPerGroup;
         uint32_t inodeSize          = 128;
-        uint32_t ext2_BlockSize     = 512; // from the spec !
         //  uint32_t mArray[inodeSize];
 
         /* run this for each group descriptor */
@@ -399,10 +400,10 @@ static void writeCSV_inode(const int FD) {
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
 
-                        if     ((data0 & 0xA000) == 0xA000) dprintf(fd, "s,");
-                        else if((data0 & 0x8000) == 0x8000) dprintf(fd, "f,");
-                        else if((data0 & 0x4000) == 0x4000) dprintf(fd, "d,");
-                        else                                dprintf(fd, "?,");
+                        if     (data0 & 0xA000) dprintf(fd, "s,");
+                        else if(data0 & 0x4000) dprintf(fd, "d,");
+                        else if(data0 & 0x8000) dprintf(fd, "f,");
+                        else                    dprintf(fd, "?,");
 
                         // TODO : FILE_MODE
                         dprintf(fd, "%o,", data0);
@@ -437,7 +438,6 @@ static void writeCSV_inode(const int FD) {
 
                         /* read NUMBER_OF_BLOCKS */
                         pread(FD, &data, sizeof(data), iNODE_OFF + 28);
-                        data = data * ext2_BlockSize / blockSize;
                         dprintf(fd, "%d,", data);
 
                         /* read BLOCKS+POINTERS */
@@ -458,6 +458,12 @@ static void free_memory() {
 
         free(GROUP_DESCRIPTOR_TABLE);
         free(SUPERBLOCK_TABLE);
+        for (i = 0; i < NUM_GROUP_DESCRIPTORS; ++i) {
+                free(BITMAP_BLOCKS[i]);
+                free(BITMAP_INODES[i]);
+        }
+        free(BITMAP_BLOCKS);
+        free(BITMAP_INODES);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
