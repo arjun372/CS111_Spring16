@@ -389,9 +389,10 @@ static void writeCSV_inode(const int FD) {
                 for(j = 0; j < numInodes; j++) {
 
                         uint32_t iNODE_OFF = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
+                        uint32_t inodeNumber = (j+1)+(numInodes*i);
 
                         /* iNode Number */
-                        dprintf(fd, "%d,", j);
+                        dprintf(fd, "%d,", inodeNumber);
 
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
