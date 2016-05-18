@@ -99,6 +99,13 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Stores a bitmap for each of the group descriptors */
         BITMAP_INODES = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
         BITMAP_BLOCKS = (uint32_t**) malloc(nBlockGroups * sizeof(uint32_t*));
+        
+        /* Current map for each group descriptor, reused */
+        uint32_t *currimap = (uint32_t*) malloc(inodesPerGroup);
+        uint32_t *currbmap = (uint32_t*) malloc(blocksPerGroup);
+        uint32_t zeroSize = (inodesPerGroup > blocksPerGroup) ? inodesPerGroup : blocksPerGroup; 
+        uint32_t zero[zeroSize];
+        for (i = 0; i < zeroSize; ++i) zero[i] = 0;
 
         uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blockBitmapStart, inodeBitmapStart;
@@ -112,35 +119,41 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; ++i) {
 
-                BITMAP_INODES[i] = malloc(inodesPerGroup); // 1024 bytes
-                BITMAP_BLOCKS[i] = malloc(blocksPerGroup); // 1024 bytes
+                BITMAP_INODES[i] = malloc(inodesPerGroup * sizeof(uint32_t)); 
+                BITMAP_BLOCKS[i] = malloc(blocksPerGroup * sizeof(uint32_t));
+                
                 if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
-                        fprintf(stderr, "FATAL:: Memory error. bye bi**h!\n");
+                        fprintf(stderr, "FATAL:: Memory error. bye bye!\n");
                         exit(1);
                 }
+                
+                memcpy(currimap, zero, inodesPerGroup);
+                memcpy(currbmap, zero, blocksPerGroup);
+                
                 inodeBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
                 blockBitmapStart = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
 
                 pread(  diskFD,
-                        BITMAP_INODES[i],
+                        currimap,
                         // blockSize,
                         inodesPerGroup/8 + inodesPerGroup%8,
                         inodeBitmapStart * blockSize);
 
                 pread(  diskFD,
-                        BITMAP_BLOCKS[i],
+                        currbmap,
                         // blockSize,
                         blocksPerGroup/8 + blocksPerGroup%8,
                         blockBitmapStart * blockSize);
-
-
+                                
+                
                 uint32_t mask = 1;      // 000...001
-                uint32_t *currimap = BITMAP_INODES[i], *currbmap = BITMAP_BLOCKS[i];
                 mask = mask << 31;      // 100...000
                 for (j = 0; j < inodesPerGroup; ++j) {
                         uint32_t ibit =
                                 ((currimap[j / 32] & mask)
                                  >> (31 - (j % 32)));
+                                 
+                        BITMAP_INODES[i][j] = ibit;
 
                         if (ibit == 0)
                                 dprintf(fd,
@@ -166,6 +179,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         uint32_t bbit =
                                 ((currbmap[j / 32] & mask)
                                  >> (31 - (j % 32)));
+                                 
+                        BITMAP_BLOCKS[i][j] = bbit;                                 
 
                         if (bbit == 0)
                                 dprintf(fd,
@@ -186,6 +201,11 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         else mask = (mask >> 1);
                 }
         }
+        
+        printf("here\n");
+        free(currimap);
+        free(currbmap);
+        printf("there\n");
 }
 
 static void writeCSV_superblock() {
