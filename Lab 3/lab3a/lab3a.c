@@ -392,7 +392,7 @@ static void writeCSV_inode(const int FD) {
                         uint32_t inodeNumber = (j+1)+(numInodes*i);
 
                         /* iNode Number */
-                        dprintf(fd, "%d,", inodeNumber);
+                        //dprintf(fd, "%d,", inodeNumber);
 
                         /* read file-type */
                         pread(FD, &data0, sizeof(data0), iNODE_OFF + 0);
@@ -440,7 +440,7 @@ static void writeCSV_inode(const int FD) {
                         /* read BLOCKS+POINTERS */
                         for(k = 0; k < 15; k++) {
                                 pread(FD, &data, sizeof(data), iNODE_OFF + 40 + (4*k));
-                                dprintf(fd, "%d", data);
+                                dprintf(fd, "%x", data);
                                 dprintf(fd, (k==14) ? "\n" : ",");
                         }
                 }
