@@ -319,7 +319,7 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
         uint8_t  *name_len   = (uint8_t *)  malloc(sizeof(uint8_t));        // 1 byte
         char     *name       = (char *)     malloc(sizeof(char) * 256);  // 0 to 256 bytes
 
-        while(1) {
+        while(prevEntryLength < blockSize) {
                 name = memset(name, 0, 256);
                 pread(readfd, inode_num,         4, blockByteOffset + prevEntryLength + 0);
                 pread(readfd, rec_len,           2, blockByteOffset + prevEntryLength + 4);
@@ -337,9 +337,6 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
                                 *name_len,                // name length
                                 *inode_num,               // inode number of file
                                 name);                   // name
-
-                if(prevEntryLength >= blockSize)
-                        break;
         }
         free(inode_num);
         free(rec_len);
