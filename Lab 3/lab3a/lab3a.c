@@ -337,7 +337,7 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
                                 *inode_num,               // inode number of file
                                 name);                   // name
 
-                if(*rec_len - (*name_len + 8) <= 0)
+                if(prevEntryLength >= blockSize)
                         break;
         }
         free(inode_num);
