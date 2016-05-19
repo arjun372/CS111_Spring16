@@ -296,6 +296,44 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
         return count;
 }
 
+static int dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
+
+        uint32_t blockSize       = (SUPERBLOCK_TABLE->dataObjects[3].value);
+        uint32_t blockByteOffset = blockNum * blockSize;
+        uint32_t prevEntryLength = 0;
+        int count                = 0;
+
+        uint32_t *inode_num  = (uint32_t *) malloc(sizeof(uint32_t));       // 4 bytes
+        uint16_t *rec_len    = (uint16_t *) malloc(sizeof(uint16_t));       // 2 bytes
+        uint8_t  *name_len   = (uint8_t *)  malloc(sizeof(uint8_t));        // 1 byte
+        char     *name       = (char *)     malloc(sizeof(char) * 255);  // 0 to 255 bytes
+
+        while(1) {
+                pread(readfd, inode_num,         4, blockByteOffset + prevEntryLength + 0);
+                pread(readfd, rec_len,           2, blockByteOffset + prevEntryLength + 4);
+                pread(readfd, name_len,          1, blockByteOffset + prevEntryLength + 6);
+                pread(readfd, name,      *name_len, blockByteOffset + prevEntryLength + 8); // read upto @param name_len bytes into name
+
+                prevEntryLength += rec_len;
+                if (VERBOSE) printf("In block %x, count: %d\n", blockNum, count);
+                dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
+                        parentInode,                     // parent inode
+                        count++,                         // entry count
+                        rec_len,                         // entry length
+                        name_len,                        // name length
+                        inode_num,                       // inode number of file
+                        name);                           // name
+
+                if(*name_len + 8 == rec_len)
+                        break;
+        }
+        free(inode_num);
+        free(rec_len);
+        free(name_len);
+        free(name);
+        return count;
+}
+
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
         uint32_t i, j, k, count = 0;
         if (VERBOSE)
@@ -311,7 +349,7 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
         for(i = 0; i < 12; ++i) {
                 block = blocks[i];
                 if (block == 0) return;   // This is last bock, return count
-                count = dir_doWrite(readfd, writefd, parentInode, blocks[i], count);
+                count = dir_doWrite2(readfd, writefd, parentInode, blocks[i], count);
         }
 
 
