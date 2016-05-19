@@ -327,15 +327,17 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
 
                 prevEntryLength += *rec_len;
                 if (VERBOSE) printf("In block %x, count: %d\n", blockNum, currCount);
-                dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
-                        parentInode,                     // parent inode
-                        currCount++,                         // entry count
-                        *rec_len,                         // entry length
-                        *name_len,                        // name length
-                        *inode_num,                       // inode number of file
-                        name);                           // name
 
-                if(*name_len + 8 == *rec_len)
+                if(!inode_num)
+                        dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
+                                parentInode,             // parent inode
+                                currCount++,                 // entry count
+                                *rec_len,                 // entry length
+                                *name_len,                // name length
+                                *inode_num,               // inode number of file
+                                name);                   // name
+
+                if(*name_len + 8 >= *rec_len)
                         break;
         }
         free(inode_num);
