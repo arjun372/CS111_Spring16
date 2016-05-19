@@ -21,8 +21,8 @@
 static SuperBlock_t      *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
-static uint32_t           **BITMAP_BLOCKS;
-static uint32_t           **BITMAP_INODES;
+static uint8_t           **BITMAP_BLOCKS;
+static uint8_t           **BITMAP_INODES;
 
 /* option-specific variables */
 static int VERBOSE = 0;
