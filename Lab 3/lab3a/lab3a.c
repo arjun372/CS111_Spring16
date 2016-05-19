@@ -441,9 +441,9 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
         uint32_t bitsInBMP      = blockSize * 8;
-        uint8_t BYTE_MASK      = 0x80;  /* 1000 0000 */
-        uint8_t iBIT           = 0x00;
-        uint8_t bBIT           = 0x00;
+        uint8_t BYTE_MASK       = 0x80;  /* 1000 0000 */
+        uint8_t iBIT            = 0x00;
+        uint8_t bBIT            = 0x00;
 
         /* Stores a bitmap for each of the group descriptors */
         BITMAP_INODES      = (uint8_t**) malloc(nBlockGroups * sizeof(uint8_t*));
@@ -482,8 +482,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         //BITMAP_INODES[i][j] = ibit;
 
-                        if (!iBIT) dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + (i * inodesPerGroup));
-                        if (!bBIT) dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + (i * blocksPerGroup));
+                        if (!iBIT) dprintf(fd, "%x,%d\n", iBMP_OFFSET, j+1 + (i * inodesPerGroup));
+                        if (!bBIT) dprintf(fd, "%x,%d\n", bBMP_OFFSET, j+1 + (i * blocksPerGroup));
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
