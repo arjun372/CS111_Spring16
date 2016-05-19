@@ -518,8 +518,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
-                        uint32_t I_POS = i * inodesPerGroup + j * i;
-                        uint32_t B_POS = i * blocksPerGroup + j * i;  //20k
+                        uint32_t I_POS = i * inodesPerGroup + j/8;
+                        uint32_t B_POS = i * blocksPerGroup + j/8;  //20k
 
                         if(VERBOSE) fprintf(stderr, "pos[%d]\n", i * inodesPerGroup + j);
 
