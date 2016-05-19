@@ -537,14 +537,14 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         if(inodeindex <= maxInodes) {
                                 iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
                                 if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, inodeindex);
-                                BITMAP_INODES[inodeindex] = !!iBIT;
+                                BITMAP_INODES[inodeindex-1] = !!iBIT;
                                 inodeindex++;
                         }
 
                         if(blockindex <= maxBlocks) {
                                 bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
                                 if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, blockindex);
-                                BITMAP_BLOCKS[blockindex] = !!bBIT;
+                                BITMAP_BLOCKS[blockindex-1] = !!bBIT;
                                 blockindex++;
                         }
 
