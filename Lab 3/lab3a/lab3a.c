@@ -15,7 +15,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>  /* for fprintf used in debug_log */
-
+#include <inttypes.h>
 #include "lab3a.h"
 
 static SuperBlock_t      *SUPERBLOCK_TABLE;
