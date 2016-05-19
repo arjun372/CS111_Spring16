@@ -527,7 +527,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         //isFree(current_Block_BMP, j);
 
                         /* Set all bitMasks to NULL */
-                        if(j < inodesPerGroup) {
+                        if(j < inodesPerGroup && I_POS < inodeCount) {
                                 iNode_BITMAP[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
                                 if(!iNode_BITMAP[I_POS])
                                         dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
