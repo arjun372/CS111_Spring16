@@ -480,6 +480,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
+        uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
         uint32_t blockSize      = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
         uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;
