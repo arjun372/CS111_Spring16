@@ -320,6 +320,7 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
         char     *name       = (char *)     malloc(sizeof(char) * 256);  // 0 to 256 bytes
 
         while(1) {
+                name = memset(name, 0, 256);
                 pread(readfd, inode_num,         4, blockByteOffset + prevEntryLength + 0);
                 pread(readfd, rec_len,           2, blockByteOffset + prevEntryLength + 4);
                 pread(readfd, name_len,          1, blockByteOffset + prevEntryLength + 6);
