@@ -469,6 +469,13 @@ static void debug_log(const int opt_index, char **optarg, const int argc) {
         fprintf(stderr,"\n");
 }
 
+static int isFree(void *buffer, uint32_t pos) {
+        uint32_t nbyte = pos/8;
+        int nbit       = pos % 8;
+        char *ptr      = buffer + nbyte;
+        return !((*ptr)&(1 << nbit));
+}
+
 static void readAndWrite_freeBitmaps(const int diskFD) {
 
         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
@@ -513,9 +520,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         uint32_t I_POS = i * inodesPerGroup + j;
                         uint32_t B_POS = i * blocksPerGroup + j;  //20k
-
-                        iNode_BITMAP[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
-                        Block_BITMAP[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
+//!!(current_iNode_BMP[j/8] & BYTE_MASK);
+//!!(current_Block_BMP[j/8] & BYTE_MASK);
+                        iNode_BITMAP[I_POS] = isFree(current_iNode_BMP, j/8);
+                        Block_BITMAP[B_POS] = isFree(current_Block_BMP, j/8);
 
                         /* Set all bitMasks to NULL */
                         if((j < inodesPerGroup) && !iNode_BITMAP[I_POS])
