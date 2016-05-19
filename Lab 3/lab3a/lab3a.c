@@ -521,7 +521,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
-                        if(VERBOSE) fprintf(stderr, "pos[%d]\n", POS);
+                        if(VERBOSE) fprintf(stderr, "I_POS : %d, B_BOS: %d\n", I_POS, B_POS);
 
                         //isFree(current_iNode_BMP, j);
                         //isFree(current_Block_BMP, j);
