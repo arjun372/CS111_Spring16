@@ -507,7 +507,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
 
         uint32_t maxInodes = 0, maxBlocks = 0;
-        uint32_t inodeindex = 0, blockindex = 0;
+        uint32_t inodeindex = 1, blockindex = 1;
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; i++) {
