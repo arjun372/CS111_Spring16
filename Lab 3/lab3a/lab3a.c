@@ -519,7 +519,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
                 BYTE_MASK = 0x80;
-                for (j = 0; j < bitsInBMP; j++) {
+                for (j = 0; j < bitsInBMP; j++) { //8192
 
                         if(VERBOSE) fprintf(stderr, "I_POS : %d, B_BOS: %d\n", I_POS, B_POS);
 
@@ -536,7 +536,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
 
 
-                        if(j < blocksPerGroup) {
+                        if(j < blocksPerGroup && B_POS < blockCount) {
                                 Block_BITMAP[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
                                 if(!Block_BITMAP[B_POS])
                                         dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
