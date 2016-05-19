@@ -532,12 +532,12 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
                 // 8192
-                BYTE_MASK = 0x80;
+                BYTE_MASK = 0x01;
                 for (j = 0; j < bitsInBMP; j++) {
 
                         //BITMAP_INODES[i][j] = ibit;
-                        inodeindex = j + 1 + (i * inodesPerGroup);
-                        blockindex = j + 1 + (i * blocksPerGroup);
+                        // inodeindex = j + 1 + (i * inodesPerGroup);
+                        // blockindex = j + 1 + (i * blocksPerGroup);
 
                         if(inodeindex <= maxInodes) {
                                 iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
@@ -553,7 +553,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
-                        BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
+                        // BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
+                        BYTE_MASK = (BYTE_MASK == 0x80) ? 0x01 : (BYTE_MASK << 1);
 
                         // TODO WHY MALLOC AGAIN?
                         // BITMAP_INODES[i] = malloc(bitsInBMP);
