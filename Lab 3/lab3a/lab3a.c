@@ -283,12 +283,12 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
                 dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
                         parentInode,                            // parent inode
                         count++,                                // entry count
-                        (uint16_t) (entry[pos + 1] >> 16),      // entry length
-                        (char) (entry[pos + 1] >> 8),           // name length
+                        (uint16_t) (entry[pos + 1] << 16),      // entry length
+                        (char) (entry[pos + 1] << 8),           // name length
                         (char) entry[pos + 1],                  // inode number of file
                         "name please");                         // name
 
-                pos += ((uint16_t) (entry[1] >> 16));
+                pos += ((uint16_t) (entry[pos + 1] << 16));
         }
         return count;
 }
