@@ -475,6 +475,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
                 // 8192
+                BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
                         iBIT = !!(currI_BMP[j/8] & BYTE_MASK);  //1024
