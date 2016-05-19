@@ -376,7 +376,7 @@ static void writeCSV_inode(const int FD) {
 
                 for(j = 0; j < numInodes; j++) {
 
-                        if (iNode_BITMAP[i][j] == NULL) continue;
+                        //if (iNode_BITMAP[i][j] == NULL) continue;
 
                         uint32_t iNODE_OFF   = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
                         uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
@@ -456,10 +456,6 @@ static void free_memory() {
 
         free(GROUP_DESCRIPTOR_TABLE);
         free(SUPERBLOCK_TABLE);
-        for (i = 0; i < NUM_GROUP_DESCRIPTORS; ++i) {
-                free(Block_BITMAP[i]);
-                free(iNode_BITMAP[i]);
-        }
         free(Block_BITMAP);
         free(iNode_BITMAP);
 }
@@ -490,10 +486,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
         /* Stores a bitmap for each of the group descriptors */
-        iNode_BITMAP      = (uint8_t*) malloc(inodeCount);
-        Block_BITMAP      = (uint8_t*) malloc(blockCount);
-        current_iNode_BMP = (uint8_t*) malloc(blockSize);
-        current_Block_BMP = (uint8_t*) malloc(blockSize);
+        iNode_BITMAP               = (uint8_t*) malloc(inodeCount);
+        Block_BITMAP               = (uint8_t*) malloc(blockCount);
+        uint8_t* current_iNode_BMP = (uint8_t*) malloc(blockSize);
+        uint8_t* current_Block_BMP = (uint8_t*) malloc(blockSize);
         if(iNode_BITMAP == NULL || Block_BITMAP == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
