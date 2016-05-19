@@ -481,7 +481,7 @@ static void writeCSV_inode(const int FD) {
                         }
 
                         // Write indirect blocks, if any
-                        writeCSV_indirectBlocks();
+                        // writeCSV_indirectBlocks();
                 }
         }
         close(fd);
