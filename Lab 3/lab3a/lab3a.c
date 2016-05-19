@@ -478,6 +478,9 @@ static int isFree(void *buffer, uint32_t pos) {
 
 static void readAndWrite_freeBitmaps(const int diskFD) {
 
+
+        uint32_t I_POS = 0;
+        uint32_t B_POS = 0;                    //20k
         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
         uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
@@ -518,13 +521,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
-                        uint32_t I_POS = i * inodesPerGroup + j/8;
-                        uint32_t B_POS = i * blocksPerGroup + j/8;  //20k
-
                         if(VERBOSE) fprintf(stderr, "pos[%d]\n", i * inodesPerGroup + j);
 
-                        iNode_BITMAP[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);//isFree(current_iNode_BMP, j);
-                        Block_BITMAP[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);//isFree(current_Block_BMP, j);
+                        iNode_BITMAP[I_POS++] = !!(current_iNode_BMP[j/8] & BYTE_MASK);//isFree(current_iNode_BMP, j);
+                        Block_BITMAP[B_POS++] = !!(current_Block_BMP[j/8] & BYTE_MASK);//isFree(current_Block_BMP, j);
 
                         /* Set all bitMasks to NULL */
                         if((j < inodesPerGroup) && !iNode_BITMAP[I_POS])
@@ -533,7 +533,6 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         if((j < blocksPerGroup) && !Block_BITMAP[B_POS])
                                 dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
-
 
                         //if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
