@@ -294,7 +294,7 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
 }
 
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
-        uint32_t i, pos, count = 0;
+        uint32_t i, j, k, count = 0;
         if (VERBOSE)
                 for(i = 0; i < 15; ++i) {
                         fprintf(stdout, "%x\n", blocks[i]);
@@ -303,9 +303,11 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
         uint32_t entry[blockSize];
         uint32_t zero[blockSize];
         for(i = 0; i < (blockSize/4); ++i) zero[i] = 0;
-        // uint32_t block;
+        uint32_t block;
         // char* name;
-        for(i = 0; i < 13; ++i) {
+        for(i = 0; i < 12; ++i) {
+                block = block[i];
+                if (block == 0) return count;   // This is last bock, return count
                 count = dir_doWrite(readfd, writefd, parentInode, blocks[i], count);
                 // block = blocks[i];
                 // if (block == 0) continue;
@@ -330,10 +332,46 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
                 // }
         }
 
-        // Single Indirect block Pointer
-        // uint32_t iblock_1 = blocks[13];
-        // pread(readfd, entry, blockSize, iblock_1 * blockSize);
 
+        uint32_t numPtrsPerBlock = blockSize/4;
+        // Single Indirect block Pointer
+        block = blocks[12];
+        if (block == 0) return;    // This is the ending block, end and return count
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if (entry[i] == 0) return;
+                count = dir_doWrite(readfd, writefd, parentInode, entry[i], count);
+        }
+
+        // Double Indirect Block Pointer
+        block = blocks[13];
+        uint32_t ind1[blockSize];
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if(entry[i] == 0) return;
+                pread(readfd, ind1, blockSize, block * blockSize);
+                for (j = 0; j < numPtrsPerBlock; ++j) {
+                        if (ind1[j] == 0) return;
+                        count = dir_doWrite(readfd, writefd, parentInode, ind1[j], count);
+                }
+        }
+
+        // Triple Indirect Block Pointer
+        block = blocks[14];
+        uint32_t ind2[blockSize];
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if(entry[i] == 0) return;
+                pread(readfd, ind1, blockSize, block * blockSize);
+                for (j = 0; j < numPtrsPerBlock; ++j) {
+                        if (ind1[j] == 0) return;
+                        pread(readfd, writefd, parentInode, ind2[j], count);
+                        for (k = 0; k < numPtrsPerBlock; ++k) {
+                                if (ind2[k] == 0) return;
+                                count = dir_doWrite(readfd, writefd, parentInode, ind2[k], count);
+                        }
+                }
+        }
 }
 
 // static void writeCSV_indirectBlocks(int writefd, uint32_t iblocks[3]) {
@@ -443,7 +481,7 @@ static void writeCSV_inode(const int FD) {
                         }
 
                         // Write indirect blocks, if any
-                        // writeCSV_indirectBlocks();
+                        writeCSV_indirectBlocks();
                 }
         }
         close(fd);
