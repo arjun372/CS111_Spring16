@@ -512,8 +512,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 pread(diskFD, current_Block_BMP, blockSize, bBMP_OFFSET * blockSize);
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
-                // 8192
-                //BYTE_MASK = 0x80;
+                BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
                         uint32_t I_POS = i * inodesPerGroup + j;
@@ -523,15 +522,13 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         Block_BITMAP[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
 
                         /* Set all bitMasks to NULL */
-                        if(j < inodesPerGroup) {
-                                if (!iNode_BITMAP[I_POS])
-                                        dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
-                        }
+                        if((j < inodesPerGroup) && !iNode_BITMAP[I_POS])
+                                dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
 
-                        if(j < blocksPerGroup) {
-                                if (!Block_BITMAP[B_POS])
-                                        dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
-                        }
+
+                        if((j < blocksPerGroup) && !Block_BITMAP[B_POS])
+                                dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
+
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
