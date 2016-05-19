@@ -21,8 +21,8 @@
 static SuperBlock_t      *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
-static uint8_t           *Block_BITMAP;
-static uint8_t           *iNode_BITMAP;
+static uint32_t           *Block_BITMAP;
+static uint32_t           *iNode_BITMAP;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -493,10 +493,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
         /* Stores a bitmap for each of the group descriptors */
-        iNode_BITMAP               = (uint8_t*) malloc(inodeCount);
-        Block_BITMAP               = (uint8_t*) malloc(blockCount);
-        uint8_t* current_iNode_BMP = (uint8_t*) malloc(blockSize);
-        uint8_t* current_Block_BMP = (uint8_t*) malloc(blockSize);
+        iNode_BITMAP               = (uint32_t*) malloc(inodeCount);
+        Block_BITMAP               = (uint32_t*) malloc(blockCount);
+        uint8_t* current_iNode_BMP = (uint8_t*)  malloc(blockSize);
+        uint8_t* current_Block_BMP = (uint8_t*)  malloc(blockSize);
         if(iNode_BITMAP == NULL || Block_BITMAP == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
@@ -520,6 +520,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         uint32_t I_POS = i * inodesPerGroup + j;
                         uint32_t B_POS = i * blocksPerGroup + j;  //20k
+
                         if(VERBOSE) fprintf(stderr, "pos[%d]\n", i * inodesPerGroup + j);
 
                         iNode_BITMAP[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);//isFree(current_iNode_BMP, j);
