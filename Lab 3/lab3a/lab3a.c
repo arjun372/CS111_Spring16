@@ -21,8 +21,8 @@
 static SuperBlock_t      *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
-static uint8_t           **Block_BITMAP;
-static uint8_t           **iNode_BITMAP;
+static uint8_t           *Block_BITMAP;
+static uint8_t           *iNode_BITMAP;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -484,22 +484,20 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
         uint32_t bitsInBMP      = blockSize * 8;
         uint8_t BYTE_MASK       = 0x80;  /* 1000 0000 */
-        //uint8_t iBIT            = 0x00;
-        //uint8_t bBIT            = 0x00;
+
+        int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno)); exit(1); }
+        else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
         /* Stores a bitmap for each of the group descriptors */
-        iNode_BITMAP  = (uint8_t*) malloc(inodeCount);
-        Block_BITMAP  = (uint8_t*) malloc(blockCount);
-        if(iNode_BITMAP == NULL || Block_BITMAP == NULL) {
+        iNode_BITMAP      = (uint8_t*) malloc(inodeCount);
+        Block_BITMAP      = (uint8_t*) malloc(blockCount);
+        current_iNode_BMP = (uint8_t*) malloc(blockSize);
+        current_Block_BMP = (uint8_t*) malloc(blockSize);
+        if(iNode_BITMAP == NULL || Block_BITMAP == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
         }
-
-        int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
-        if(fd < 0) {
-                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
-                exit(1);
-        } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; i++) {
