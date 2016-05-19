@@ -317,7 +317,7 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
         uint32_t *inode_num  = (uint32_t *) malloc(sizeof(uint32_t));       // 4 bytes
         uint16_t *rec_len    = (uint16_t *) malloc(sizeof(uint16_t));       // 2 bytes
         uint8_t  *name_len   = (uint8_t *)  malloc(sizeof(uint8_t));        // 1 byte
-        char     *name       = (char *)     malloc(sizeof(char) * 255);  // 0 to 255 bytes
+        char     *name       = (char *)     malloc(sizeof(char) * 256);  // 0 to 256 bytes
 
         while(1) {
                 pread(readfd, inode_num,         4, blockByteOffset + prevEntryLength + 0);
