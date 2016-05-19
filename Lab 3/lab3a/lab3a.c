@@ -488,8 +488,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Stores a bitmap for each of the group descriptors */
         iNode_BITMAP               = (uint8_t*) malloc(inodeCount);
         Block_BITMAP               = (uint8_t*) malloc(blockCount);
-        uint8_t* current_iNode_BMP = (uint8_t*) malloc(blockSize);
-        uint8_t* current_Block_BMP = (uint8_t*) malloc(blockSize);
+        void* current_iNode_BMP    = (void*)    malloc(blockSize);
+        void* current_Block_BMP    = (void*)    malloc(blockSize);
         if(iNode_BITMAP == NULL || Block_BITMAP == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
@@ -529,7 +529,6 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
                         BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
-
                 }
         }
 
