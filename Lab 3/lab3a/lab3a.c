@@ -82,7 +82,7 @@ int main (int argc, char **argv)
 
         readAndWrite_freeBitmaps(FD);
 
-        writeCSV_inode(FD);
+        //writeCSV_inode(FD);
 
         free_memory();
         close(FD);     // close TargetFile
