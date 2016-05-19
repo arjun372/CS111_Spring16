@@ -482,8 +482,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         //BITMAP_INODES[i][j] = ibit;
 
-                        if (!iBIT) dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 3 + (i * inodesPerGroup));
-                        if (!bBIT) dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 3 + (i * blocksPerGroup));
+                        if (!iBIT) dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 2 + (i * inodesPerGroup));
+                        if (!bBIT) dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 2 + (i * blocksPerGroup));
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
