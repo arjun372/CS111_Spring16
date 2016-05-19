@@ -287,7 +287,7 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
                 rec_len = (entry[pos+1] << 16) >> 16;
                 if (!rec_len) break;
                 name_len = (char) (entry[pos + 1] << 8);
-                name[0] = '\0';                
+                name[0] = '\0';
                 if (name_len != 0) {
                         for (i = 0; (i*4) <= (unsigned) (name_len-1); ++i) {
                                 sprintf(toAdd, "%d", entry[pos + 2 + i]);       // Convert int to char*
@@ -308,12 +308,11 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
         return count;
 }
 
-static int dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
+static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
 
         uint32_t blockSize       = (SUPERBLOCK_TABLE->dataObjects[3].value);
         uint32_t blockByteOffset = blockNum * blockSize;
         uint32_t prevEntryLength = 0;
-        int count                = 0;
 
         uint32_t *inode_num  = (uint32_t *) malloc(sizeof(uint32_t));       // 4 bytes
         uint16_t *rec_len    = (uint16_t *) malloc(sizeof(uint16_t));       // 2 bytes
@@ -326,24 +325,24 @@ static int dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uint32_t
                 pread(readfd, name_len,          1, blockByteOffset + prevEntryLength + 6);
                 pread(readfd, name,      *name_len, blockByteOffset + prevEntryLength + 8); // read upto @param name_len bytes into name
 
-                prevEntryLength += rec_len;
+                prevEntryLength += *rec_len;
                 if (VERBOSE) printf("In block %x, count: %d\n", blockNum, count);
                 dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
                         parentInode,                     // parent inode
-                        count++,                         // entry count
-                        rec_len,                         // entry length
-                        name_len,                        // name length
-                        inode_num,                       // inode number of file
+                        currCount++,                         // entry count
+                        *rec_len,                         // entry length
+                        *name_len,                        // name length
+                        *inode_num,                       // inode number of file
                         name);                           // name
 
-                if(*name_len + 8 == rec_len)
+                if(*name_len + 8 == *rec_len)
                         break;
         }
         free(inode_num);
         free(rec_len);
         free(name_len);
         free(name);
-        return count;
+        return currCount;
 }
 
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
