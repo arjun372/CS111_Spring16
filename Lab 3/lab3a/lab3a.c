@@ -504,6 +504,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
+
+        uint32_t maxInodes = 0, maxBlocks = 0;
+        uint32_t inodeindex = 0, blockindex = 0;
+
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; i++) {
 
@@ -516,21 +520,34 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
                 pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
 
+                if (i < nBlockGroups - 1) {
+                        maxInodes += inodesPerGroup;
+                        maxBlocks += blocksPerGroup;
+                } else {
+                        maxInodes = inodeCount;
+                        maxBlocks = blockCount;
+                }
+
+
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
                 // 8192
                 BYTE_MASK = 0x80;
                 for (j = 0; j < bitsInBMP; j++) {
 
                         //BITMAP_INODES[i][j] = ibit;
+                        inodeindex = j + 1 + (i * inodesPerGroup);
+                        blockindex = j + 1 + (i * blocksPerGroup);
 
-                        if(j < inodesPerGroup) {
+                        if(inodeindex <= maxInodes) {
                                 iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
-                                if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, j + 1 + (i * inodesPerGroup));
+                                if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, inodeindex);
+                                inodeindex++;
                         }
 
-                        if(j < blocksPerGroup) {
+                        if(blockindex <= maxBlocks) {
                                 bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
-                                if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
+                                if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, blockindex);
+                                blockindex++;
                         }
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
