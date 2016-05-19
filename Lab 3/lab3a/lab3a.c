@@ -21,8 +21,8 @@
 static SuperBlock_t      *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
-static uint32_t           *Block_BITMAP;
-static uint32_t           *iNode_BITMAP;
+static uint32_t           **BITMAP_BLOCKS;
+static uint32_t           **BITMAP_INODES;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -376,7 +376,7 @@ static void writeCSV_inode(const int FD) {
 
                 for(j = 0; j < numInodes; j++) {
 
-                        //if (iNode_BITMAP[i][j] == NULL) continue;
+                        //if (BITMAP_INODES[i][j] == NULL) continue;
 
                         uint32_t iNODE_OFF   = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
                         uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
@@ -456,8 +456,8 @@ static void free_memory() {
 
         free(GROUP_DESCRIPTOR_TABLE);
         free(SUPERBLOCK_TABLE);
-        free(Block_BITMAP);
-        free(iNode_BITMAP);
+        free(BITMAP_BLOCKS);
+        free(BITMAP_INODES);
 }
 
 /* if --VERBOSE is passed, logs to stdout */
@@ -478,11 +478,7 @@ static int isFree(void *buffer, uint32_t pos) {
 
 static void readAndWrite_freeBitmaps(const int diskFD) {
 
-
-        uint32_t I_POS = 0;
-        uint32_t B_POS = 0;                    //20k
         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
-        uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
         uint32_t blockSize      = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
@@ -490,20 +486,23 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
         uint32_t bitsInBMP      = blockSize * 8;
         uint8_t BYTE_MASK       = 0x80;  /* 1000 0000 */
-
-        int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
-        if(fd < 0) {fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno)); exit(1); }
-        else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
+        uint8_t iBIT            = 0x00;
+        uint8_t bBIT            = 0x00;
 
         /* Stores a bitmap for each of the group descriptors */
-        iNode_BITMAP               = (uint32_t*) malloc(inodeCount);
-        Block_BITMAP               = (uint32_t*) malloc(blockCount);
-        uint8_t* current_iNode_BMP = (uint8_t*)  malloc(blockSize);
-        uint8_t* current_Block_BMP = (uint8_t*)  malloc(blockSize);
-        if(iNode_BITMAP == NULL || Block_BITMAP == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
+        BITMAP_INODES      = (uint8_t**) malloc(nBlockGroups * sizeof(uint8_t*));
+        BITMAP_BLOCKS      = (uint8_t**) malloc(nBlockGroups * sizeof(uint8_t*));
+        uint8_t *currI_BMP = (uint8_t*)  malloc(blockSize);
+        uint8_t *currB_BMP = (uint8_t*)  malloc(blockSize);
+        if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
         }
+        int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
+        if(fd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
 
         /* Populate the bitmaps for each of the group descriptors */
         for (i = 0; i < nBlockGroups; i++) {
@@ -511,46 +510,123 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 iBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
                 bBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
 
-                //current_iNode_BMP = memset(current_iNode_BMP, 0, blockSize);
-                //current_Block_BMP = memset(current_Block_BMP, 0, blockSize);
+                currI_BMP = memset(currI_BMP, 0, blockSize);
+                currB_BMP = memset(currB_BMP, 0, blockSize);
 
-                pread(diskFD, current_iNode_BMP, blockSize, iBMP_OFFSET * blockSize);
-                pread(diskFD, current_Block_BMP, blockSize, bBMP_OFFSET * blockSize);
+                pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
+                pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
+                // 8192
                 BYTE_MASK = 0x80;
-                for (j = 0; j < bitsInBMP; j++) { //8192
+                for (j = 0; j < bitsInBMP; j++) {
 
-                        if(VERBOSE) fprintf(stderr, "I_POS : %d, B_BOS: %d\n", I_POS, B_POS);
+                        //BITMAP_INODES[i][j] = ibit;
 
-                        //isFree(current_iNode_BMP, j);
-                        //isFree(current_Block_BMP, j);
-
-                        /* Set all bitMasks to NULL */
-                        if(j < inodesPerGroup && I_POS < inodeCount) {
-                                iNode_BITMAP[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
-                                if(!iNode_BITMAP[I_POS])
-                                        dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
-                                I_POS++;
+                        if(j < inodesPerGroup) {
+                                iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
+                                if (!iBIT) dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
                         }
 
-
-
-                        if(j < blocksPerGroup && B_POS < blockCount) {
-                                Block_BITMAP[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
-                                if(!Block_BITMAP[B_POS])
-                                        dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
-                                B_POS++;
+                        if(j < blocksPerGroup) {
+                                bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
+                                if (!bBIT) dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
                         }
 
-                        //if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
+                        if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
                         BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
+
+                        // TODO WHY MALLOC AGAIN?
+                        // BITMAP_INODES[i] = malloc(bitsInBMP);
+                        // BITMAP_BLOCKS[i] = malloc(bitsInBMP);
+                        // if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
+                        //         fprintf(stderr, "FATAL:: Memory error. bye bye!\n");
+                        //         exit(1);
+                        // }
                 }
         }
 
         printf("here\n");
-        free(current_iNode_BMP);
-        free(current_Block_BMP);
+        free(currI_BMP);
+        free(currB_BMP);
         printf("there\n");
 }
+// static void readAndWrite_freeBitmaps(const int diskFD) {
+//
+//
+//         uint32_t I_POS = 0;
+//         uint32_t B_POS = 0;                    //20k
+//         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
+//         uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
+//         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
+//         uint32_t blockSize      = SUPERBLOCK_TABLE->dataObjects[3].value;
+//         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
+//         uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;
+//         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
+//         uint32_t bitsInBMP      = blockSize * 8;
+//         uint8_t BYTE_MASK       = 0x80;  /* 1000 0000 */
+//
+//         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
+//         if(fd < 0) {fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno)); exit(1); }
+//         else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
+//
+//         /* Stores a bitmap for each of the group descriptors */
+//         BITMAP_INODES               = (uint32_t*) malloc(inodeCount);
+//         BITMAP_BLOCKS               = (uint32_t*) malloc(blockCount);
+//         uint8_t* current_iNode_BMP = (uint8_t*)  malloc(blockSize);
+//         uint8_t* current_Block_BMP = (uint8_t*)  malloc(blockSize);
+//         if(BITMAP_INODES == NULL || BITMAP_BLOCKS == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
+//                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
+//                 exit(1);
+//         }
+//
+//         /* Populate the bitmaps for each of the group descriptors */
+//         for (i = 0; i < nBlockGroups; i++) {
+//
+//                 iBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
+//                 bBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
+//
+//                 //current_iNode_BMP = memset(current_iNode_BMP, 0, blockSize);
+//                 //current_Block_BMP = memset(current_Block_BMP, 0, blockSize);
+//
+//                 pread(diskFD, current_iNode_BMP, blockSize, iBMP_OFFSET * blockSize);
+//                 pread(diskFD, current_Block_BMP, blockSize, bBMP_OFFSET * blockSize);
+//
+//                 /* Now check if each bit in @param blockSize array is 1 or 0 */
+//                 BYTE_MASK = 0x80;
+//                 for (j = 0; j < bitsInBMP; j++) { //8192
+//
+//                         if(VERBOSE) fprintf(stderr, "I_POS : %d, B_BOS: %d\n", I_POS, B_POS);
+//
+//                         //isFree(current_iNode_BMP, j);
+//                         //isFree(current_Block_BMP, j);
+//
+//                         /* Set all bitMasks to NULL */
+//                         if(j < inodesPerGroup && I_POS < inodeCount) {
+//                                 BITMAP_INODES[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
+//                                 if(!BITMAP_INODES[I_POS])
+//                                         dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
+//                                 I_POS++;
+//                         }
+//
+//
+//
+//                         if(j < blocksPerGroup && B_POS < blockCount) {
+//                                 BITMAP_BLOCKS[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
+//                                 if(!BITMAP_BLOCKS[B_POS])
+//                                         dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
+//                                 B_POS++;
+//                         }
+//
+//                         //if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
+//
+//                         BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
+//                 }
+//         }
+//
+//         printf("here\n");
+//         free(current_iNode_BMP);
+//         free(current_Block_BMP);
+//         printf("there\n");
+// }
