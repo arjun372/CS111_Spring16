@@ -21,8 +21,8 @@
 static SuperBlock_t      *SUPERBLOCK_TABLE;
 static GroupDescriptor_t **GROUP_DESCRIPTOR_TABLE;
 static uint32_t NUM_GROUP_DESCRIPTORS;
-static uint8_t           **BITMAP_BLOCKS;
-static uint8_t           **BITMAP_INODES;
+static uint8_t           *BITMAP_BLOCKS;
+static uint8_t           *BITMAP_INODES;
 
 /* option-specific variables */
 static int VERBOSE = 0;
@@ -82,7 +82,7 @@ int main (int argc, char **argv)
 
         readAndWrite_freeBitmaps(FD);
 
-        //writeCSV_inode(FD);
+        writeCSV_inode(FD);
 
         free_memory();
         close(FD);     // close TargetFile
@@ -376,7 +376,7 @@ static void writeCSV_inode(const int FD) {
 
                 for(j = 0; j < numInodes; j++) {
 
-                        //if (BITMAP_INODES[i][j] == NULL) continue;
+                        if (BITMAP_INODES[i] == 0) continue;
 
                         uint32_t iNODE_OFF   = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
                         uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
@@ -491,8 +491,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint8_t bBIT            = 0x00;
 
         /* Stores a bitmap for each of the group descriptors */
-        BITMAP_INODES      = (uint8_t**) malloc(nBlockGroups * sizeof(uint8_t*));
-        BITMAP_BLOCKS      = (uint8_t**) malloc(nBlockGroups * sizeof(uint8_t*));
+        BITMAP_INODES      = (uint8_t*) malloc(nBlockGroups * sizeof(uint8_t));
+        BITMAP_BLOCKS      = (uint8_t*) malloc(nBlockGroups * sizeof(uint8_t));
         uint8_t *currI_BMP = (uint8_t*)  malloc(blockSize);
         uint8_t *currB_BMP = (uint8_t*)  malloc(blockSize);
         if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL) {
@@ -529,40 +529,28 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         maxBlocks = blockCount;
                 }
 
-
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
                 // 8192
                 BYTE_MASK = 0x01;
                 for (j = 0; j < bitsInBMP; j++) {
 
-                        //BITMAP_INODES[i][j] = ibit;
-                        // inodeindex = j + 1 + (i * inodesPerGroup);
-                        // blockindex = j + 1 + (i * blocksPerGroup);
-
                         if(inodeindex <= maxInodes) {
                                 iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
                                 if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, inodeindex);
+                                BITMAP_INODES[inodeindex] = !!iBIT;
                                 inodeindex++;
                         }
 
                         if(blockindex <= maxBlocks) {
                                 bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
                                 if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, blockindex);
+                                BITMAP_BLOCKS[blockindex] = !!bBIT;
                                 blockindex++;
                         }
 
                         if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
-                        // BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
                         BYTE_MASK = (BYTE_MASK == 0x80) ? 0x01 : (BYTE_MASK << 1);
-
-                        // TODO WHY MALLOC AGAIN?
-                        // BITMAP_INODES[i] = malloc(bitsInBMP);
-                        // BITMAP_BLOCKS[i] = malloc(bitsInBMP);
-                        // if(BITMAP_INODES[i] == NULL || BITMAP_BLOCKS[i] == NULL) {
-                        //         fprintf(stderr, "FATAL:: Memory error. bye bye!\n");
-                        //         exit(1);
-                        // }
                 }
         }
 
