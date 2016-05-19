@@ -364,7 +364,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t ext2BlockSize      = 512;
 
         uint32_t dirBlocksArray[15];
-
+        uint32_t k = 0;
         /* run this for each group descriptor */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
         {
@@ -376,10 +376,11 @@ static void writeCSV_inode(const int FD) {
 
                 for(j = 0; j < numInodes; j++) {
 
-                        if (BITMAP_INODES[i] == 0) continue;
+                        if (BITMAP_INODES[k++] == 0) continue;
 
                         uint32_t iNODE_OFF   = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
-                        uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
+                        // uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
+                        uint32_t inodeNumber = k;
 
                         /* iNode Number */
                         dprintf(fd, "%d,", inodeNumber);
@@ -493,8 +494,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         /* Stores a bitmap for each of the group descriptors */
         BITMAP_INODES      = (uint8_t*) malloc(inodeCount * sizeof(uint8_t));
         BITMAP_BLOCKS      = (uint8_t*) malloc(blockCount * sizeof(uint8_t));
-        uint8_t *currI_BMP = (uint8_t*)  malloc(blockSize);
-        uint8_t *currB_BMP = (uint8_t*)  malloc(blockSize);
+        uint8_t *currI_BMP = (uint8_t*) malloc(blockSize);
+        uint8_t *currB_BMP = (uint8_t*) malloc(blockSize);
         if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
