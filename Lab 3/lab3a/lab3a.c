@@ -265,50 +265,7 @@ static void writeCSV_GroupDescriptors() {
         return;
 }
 
-
-static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t block, uint32_t currCount){
-        if (block == 0) return currCount;
-        uint32_t blockSize = (SUPERBLOCK_TABLE->dataObjects[3].value);
-        //uint32_t *entry = calloc(blockSize/sizeof(uint32_t), sizeof(uint32_t));
-        uint32_t entry[blockSize];
-        //entry = memset(entry, 0, blockSize/sizeof(uint32_t));
-        uint32_t pos = 0, i;        // byte offset at beginning of current directory block
-        uint32_t count = currCount;
-        pread(readfd, entry, blockSize, block * blockSize);
-        uint16_t rec_len;
-        uint8_t name_len;
-        char *name = (char*) malloc(256);               // Maximum word size of 255, one extra in case we need to add a null char
-        char *toAdd = (char*) malloc(4);
-        // Only continue while loop if there is enough space for an entry to exist,
-        //      AND if the inode of the current entry is valid non-zero)
-        while(((pos + 8) < blockSize)) {
-                if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
-                // name = (char*) &entry[pos + 2];
-                rec_len = (entry[pos+1] << 16) >> 16;
-                if (!rec_len) break;
-                name_len = (char) (entry[pos + 1] << 8);
-                name[0] = '\0';
-                if (name_len != 0) {
-                        for (i = 0; (i*4) <= (unsigned) (name_len-1); ++i) {
-                                sprintf(toAdd, "%d", entry[pos + 2 + i]);       // Convert int to char*
-                                name = strncat(name, (const char*) toAdd, 4);
-                        }
-                        if (name[name_len - 1] != '\0') name[name_len] = '\0';  // Append null if needed
-                }
-                dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
-                        parentInode,                            // parent inode
-                        count++,                                // entry count
-                        (uint16_t) (rec_len),                   // entry length
-                        name_len,                                // name length
-                        (char) entry[pos + 1],                  // inode number of file
-                        name);                                     // name
-
-                pos += ((uint16_t) (rec_len));
-        }
-        return count;
-}
-
-static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
+static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
 
         uint32_t blockSize       = (SUPERBLOCK_TABLE->dataObjects[3].value);
         uint32_t blockByteOffset = blockNum * blockSize;
@@ -360,7 +317,7 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
         for(i = 0; i < 12; ++i) {
                 block = blocks[i];
                 if (block == 0) return;   // This is last bock, return count
-                count = dir_doWrite2(readfd, writefd, parentInode, blocks[i], count);
+                count = dir_doWrite(readfd, writefd, parentInode, blocks[i], count);
         }
 
 
