@@ -381,41 +381,79 @@ static void writeCSV_GroupDescriptors() {
         return;
 }
 
+
+static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t block, uint32_t currCount){
+        if (block == 0) return currCount;
+        uint32_t blockSize = (SUPERBLOCK_TABLE->dataObjects[3].value);
+        // uint32_t *entry = calloc(blockSize/sizeof(uint32_t), sizeof(uint32_t));
+        uint32_t entry[blockSize/sizeof(uint32_t)];
+        entry = memset(entry, 0, blockSize/sizeof(uint32_t));
+        uint32_t pos = 0;        // byte offset at beginning of current directory block
+        uint32_t count = currCount;
+        pread(readfd, entry, blockSize, block * blockSize);
+        // Only continue while loop if there is enough space for an entry to exist, 
+        //      AND if the inode of the current entry is valid non-zero)
+        while(((pos + 9) < blockSize) && entry[pos]) {
+                if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
+                // name = (char*) &entry[pos + 2];
+                dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
+                        parentInode,                            // parent inode
+                        count++,                                // entry count
+                        (uint16_t) (entry[pos + 1] >> 16) ,     // entry length
+                        (char) (entry[pos + 1] >> 8),           // name length
+                        (char) entry[pos + 1],                  // inode number of file
+                        "name please");                         // name
+                        
+                pos += ((uint16_t) (entry[1] >> 16));
+        }
+        return count;
+}
+
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
-        uint32_t i, pos, count;
+        uint32_t i, pos, count = 0;
         if (VERBOSE) 
         for(i = 0; i < 15; ++i){
                 fprintf(stdout, "%x\n", blocks[i]);
         }
-        uint32_t blockSize           = SUPERBLOCK_TABLE->dataObjects[3].value;
-        uint32_t entry[blockSize/4];
-        uint32_t zero[blockSize/4];
+        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t entry[blockSize];
+        uint32_t zero[blockSize];
         for(i = 0; i < (blockSize/4); ++i) zero[i] = 0;
-        uint32_t block;
+        // uint32_t block;
         // char* name;
         for(i = 0; i < 13; ++i){
-                block = blocks[i];
-                if (block == 0) continue;
+                count = dir_doWrite(readfd, writefd, parentInode, blocks[i], count);
+                // block = blocks[i];
+                // if (block == 0) continue;
                 
-                pos = 0;        // byte offset at beginning of current directory entry
-                count = 0;
-                pread(readfd, entry, blockSize, block * blockSize);
-                // Only continue while loop if there is enough space for an entry to exist, 
-                //      AND if the inode of the current entry is valid non-zero)
-                while(((pos + 9) < blockSize) && entry[pos]) {
-                        if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
-                        // name = (char*) &entry[pos + 2];
-                        dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
-                                parentInode,                            // parent inode
-                                count++,                                // entry count
-                                (uint16_t) (entry[pos + 1] >> 16) ,     // entry length
-                                (char) (entry[pos + 1] >> 8),           // name length
-                                (char) entry[pos + 1],                  // inode number of file
-                                "name please");                         // name
+                // pos = 0;        // byte offset at beginning of current directory entry
+                // count = 0;
+                // pread(readfd, entry, blockSize, block * blockSize);
+                // // Only continue while loop if there is enough space for an entry to exist, 
+                // //      AND if the inode of the current entry is valid non-zero)
+                // while(((pos + 9) < blockSize) && entry[pos]) {
+                //         if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
+                //         // name = (char*) &entry[pos + 2];
+                //         dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
+                //                 parentInode,                            // parent inode
+                //                 count++,                                // entry count
+                //                 (uint16_t) (entry[pos + 1] >> 16) ,     // entry length
+                //                 (char) (entry[pos + 1] >> 8),           // name length
+                //                 (char) entry[pos + 1],                  // inode number of file
+                //                 "name please");                         // name
                                 
-                        pos += ((uint16_t) (entry[1] >> 16));
-                }
+                //         pos += ((uint16_t) (entry[1] >> 16));
+                // }
         }
+        
+        // Single Indirect block Pointer
+        // uint32_t iblock_1 = blocks[13];
+        // pread(readfd, entry, blockSize, iblock_1 * blockSize);
+        
+}
+
+static void writeCSV_indirectBlocks(int writefd, uint32_t iblocks[3]) {
+        
 }
 
 static void writeCSV_inode(const int FD) {
@@ -519,6 +557,9 @@ static void writeCSV_inode(const int FD) {
                         if((file_type & 0x4000) == 0x4000){
                                 writeCSV_dir(FD, dirfd, inodeNumber, dirBlocksArray);
                         }
+                        
+                        // Write indirect blocks, if any
+                        // writeCSV_indirectBlocks();
                 }
         }
         close(fd);
