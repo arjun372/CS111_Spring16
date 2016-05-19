@@ -491,8 +491,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint8_t bBIT            = 0x00;
 
         /* Stores a bitmap for each of the group descriptors */
-        BITMAP_INODES      = (uint8_t*) malloc(nBlockGroups * sizeof(uint8_t));
-        BITMAP_BLOCKS      = (uint8_t*) malloc(nBlockGroups * sizeof(uint8_t));
+        BITMAP_INODES      = (uint8_t*) malloc(inodeCount * sizeof(uint8_t));
+        BITMAP_BLOCKS      = (uint8_t*) malloc(blockCount * sizeof(uint8_t));
         uint8_t *currI_BMP = (uint8_t*)  malloc(blockSize);
         uint8_t *currB_BMP = (uint8_t*)  malloc(blockSize);
         if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL) {
