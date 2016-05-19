@@ -269,9 +269,9 @@ static void writeCSV_GroupDescriptors() {
 static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t block, uint32_t currCount){
         if (block == 0) return currCount;
         uint32_t blockSize = (SUPERBLOCK_TABLE->dataObjects[3].value);
-        // uint32_t *entry = calloc(blockSize/sizeof(uint32_t), sizeof(uint32_t));
+        //uint32_t *entry = calloc(blockSize/sizeof(uint32_t), sizeof(uint32_t));
         uint32_t entry[blockSize/sizeof(uint32_t)];
-        entry = memset(entry, 0, blockSize/sizeof(uint32_t));
+        //entry = memset(entry, 0, blockSize/sizeof(uint32_t));
         uint32_t pos = 0;        // byte offset at beginning of current directory block
         uint32_t count = currCount;
         pread(readfd, entry, blockSize, block * blockSize);
