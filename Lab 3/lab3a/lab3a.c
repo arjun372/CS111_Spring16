@@ -451,7 +451,7 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         uint8_t *currI_BMP = (uint8_t*)  malloc(blockSize);
         uint8_t *currB_BMP = (uint8_t*)  malloc(blockSize);
 
-        if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL || zero_BMP == NULL) {
+        if(BITMAP_INODES == NULL || BITMAP_INODES == NULL || currB_BMP == NULL || currI_BMP == NULL) {
                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
                 exit(1);
         }
