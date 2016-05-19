@@ -328,7 +328,7 @@ static uint32_t dir_doWrite2(int readfd, int writefd,  uint32_t parentInode, uin
                 prevEntryLength += *rec_len;
                 if (VERBOSE) printf("In block %x, count: %d\n", blockNum, currCount);
 
-                if(!inode_num)
+                if(inode_num)
                         dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
                                 parentInode,             // parent inode
                                 currCount++,                 // entry count
