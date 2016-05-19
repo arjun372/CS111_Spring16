@@ -34,10 +34,14 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 
 clean:
 	rm -rf *.log *.o *~ *.bak *.tar.gz core *.core *.tmp *.csv lab$(LAB) $(DISTDIR)
-	
+
 cbitmap:
-	sort -n bitmap.csv > mbitmap.csv
-	sort -n ../lab3a-official_csv/correct/bitmap.csv > obitmap.csv
-	diff mbitmap.csv obitmap.csv
+	sort bitmap.csv > mbitmap.csv
+	sort ../lab3a-official_csv/correct/bitmap.csv > obitmap.csv
+	diff mbitmap.csv obitmap.csv | cat -n
+
+cinode: sort inode.csv > minode.csv
+	sort ../lab3a-official_csv/correct/inode.csv > oinode.csv
+	diff minode.csv oinode.csv | cat -n
 
 .PHONY: all dist check clean
