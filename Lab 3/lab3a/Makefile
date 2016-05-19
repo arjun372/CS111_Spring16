@@ -35,13 +35,27 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 clean:
 	rm -rf *.log *.o *~ *.bak *.tar.gz core *.core *.tmp *.csv lab$(LAB) $(DISTDIR)
 
-cbitmap:
-	sort bitmap.csv > mbitmap.csv
-	sort ../lab3a-official_csv/correct/bitmap.csv > obitmap.csv
-	diff mbitmap.csv obitmap.csv | cat -n
+run: 	all
+	./lab3a --verbose ../disk-image
+super:
+	sort -n super.csv > my_super.csv
+	sort -n ../lab3a-official_csv/correct/super.csv | diff my_super.csv - | cat -n
+group:
+	sort -n group.csv > my_group.csv
+	sort -n ../lab3a-official_csv/correct/group.csv | diff my_group.csv - | cat -n
+bitmap:
+	sort bitmap.csv > my_bitmap.csv
+	sort ../lab3a-official_csv/correct/bitmap.csv | diff mbitmap.csv obitmap.csv | cat -n
+inode:
+	sort -n inode.csv > my_inode.csv
+	sort -n ../lab3a-official_csv/correct/inode.csv | diff minode.csv oinode.csv | cat -n
+directory:
+	sort -n directory.csv > my_directory.csv
+	sort -n ../lab3a-official_csv/correct/directory.csv | diff my_directory.csv - | cat -n
+indirect:
+	sort -n indirect.csv > my_indirect.csv
+	sort -n ../lab3a-official_csv/correct/indirect.csv | diff my_indirect.csv - | cat -n
 
-cinode: sort inode.csv > minode.csv
-	sort ../lab3a-official_csv/correct/inode.csv > oinode.csv
-	diff minode.csv oinode.csv | cat -n
+check: run super group bitmap inode directory indirect
 
 .PHONY: all dist check clean
