@@ -286,7 +286,7 @@ static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint
                 prevEntryLength += *rec_len;
                 if (VERBOSE) printf("In block %x, count: %d\n", blockNum, currCount);
 
-                if(inode_num)
+                if(inode_num != 0)
                         dprintf(writefd, "%u,%u,%u,%u,%u,\"%s\"\n",
                                 parentInode,             // parent inode
                                 currCount++,                 // entry count
@@ -579,11 +579,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                         BYTE_MASK = (BYTE_MASK == 0x80) ? 0x01 : (BYTE_MASK << 1);
                 }
         }
-
-        printf("here\n");
         free(currI_BMP);
         free(currB_BMP);
-        printf("there\n");
 }
 // static void readAndWrite_freeBitmaps(const int diskFD) {
 //
