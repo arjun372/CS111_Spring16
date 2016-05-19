@@ -265,7 +265,7 @@ static void writeCSV_GroupDescriptors() {
         return;
 }
 
-static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currCount){
+static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t blockNum, uint32_t currEntryNumber){
 
         uint32_t blockSize       = (SUPERBLOCK_TABLE->dataObjects[3].value);
         uint32_t blockByteOffset = blockNum * blockSize;
@@ -284,26 +284,27 @@ static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint
                 pread(readfd, name,      *name_len, blockByteOffset + prevEntryLength + 8); // read upto @param name_len bytes into name
 
                 prevEntryLength += *rec_len;
-                if (VERBOSE) printf("In block %x, count: %d\n", blockNum, currCount);
+                if (VERBOSE) printf("In block %x, count: %d\n", blockNum, currEntryNumber);
 
                 if(*inode_num != 0)
                         dprintf(writefd, "%u,%u,%u,%u,%u,\"%s\"\n",
                                 parentInode,             // parent inode
-                                currCount++,                 // entry count
+                                currEntryNumber,         // entry count
                                 *rec_len,                 // entry length
                                 *name_len,                // name length
                                 *inode_num,               // inode number of file
                                 name);                   // name
+                currEntryNumber++;
         }
         free(inode_num);
         free(rec_len);
         free(name_len);
         free(name);
-        return currCount;
+        return currEntryNumber;
 }
 
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
-        uint32_t i, j, k, count = 0;
+        uint32_t i, j, k, entryNumber = 0;
         if (VERBOSE)
                 for(i = 0; i < 15; ++i) {
                         fprintf(stdout, "%x\n", blocks[i]);
@@ -316,19 +317,19 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
         // char* name;
         for(i = 0; i < 12; ++i) {
                 block = blocks[i];
-                if (block == 0) return;   // This is last bock, return count
-                count = dir_doWrite(readfd, writefd, parentInode, blocks[i], count);
+                if (block == 0) return;   // This is last bock, return entryNumber
+                entryNumber = dir_doWrite(readfd, writefd, parentInode, blocks[i], entryNumber);
         }
 
 
         uint32_t numPtrsPerBlock = blockSize/4;
         // Single Indirect block Pointer
         block = blocks[12];
-        if (block == 0) return;    // This is the ending block, end and return count
+        if (block == 0) return;    // This is the ending block, end and return entryNumber
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if (entry[i] == 0) return;
-                count = dir_doWrite(readfd, writefd, parentInode, entry[i], count);
+                entryNumber = dir_doWrite(readfd, writefd, parentInode, entry[i], entryNumber);
         }
 
         // Double Indirect Block Pointer
@@ -340,7 +341,7 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
                 pread(readfd, ind1, blockSize, entry[i] * blockSize);
                 for (j = 0; j < numPtrsPerBlock; ++j) {
                         if (ind1[j] == 0) return;
-                        count = dir_doWrite(readfd, writefd, parentInode, ind1[j], count);
+                        entryNumber = dir_doWrite(readfd, writefd, parentInode, ind1[j], entryNumber);
                 }
         }
 
@@ -356,7 +357,7 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
                         pread(readfd, ind2, blockSize, ind1[j] * blockSize);
                         for (k = 0; k < numPtrsPerBlock; ++k) {
                                 if (ind2[k] == 0) return;
-                                count = dir_doWrite(readfd, writefd, parentInode, ind2[k], count);
+                                entryNumber = dir_doWrite(readfd, writefd, parentInode, ind2[k], entryNumber);
                         }
                 }
         }
