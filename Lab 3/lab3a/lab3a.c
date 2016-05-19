@@ -479,7 +479,8 @@ static int isFree(void *buffer, uint32_t pos) {
 static void readAndWrite_freeBitmaps(const int diskFD) {
 
 
-        uint32_t POS = 0;                   //20k
+        uint32_t I_POS = 0;
+        uint32_t B_POS = 0;                    //20k
         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
         uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
@@ -522,16 +523,23 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         if(VERBOSE) fprintf(stderr, "pos[%d]\n", POS);
 
-                        iNode_BITMAP[POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);//isFree(current_iNode_BMP, j);
-                        Block_BITMAP[POS++] = !!(current_Block_BMP[j/8] & BYTE_MASK);//isFree(current_Block_BMP, j);
+                        //isFree(current_iNode_BMP, j);
+                        //isFree(current_Block_BMP, j);
 
                         /* Set all bitMasks to NULL */
-                        if((j < inodesPerGroup) && !iNode_BITMAP[I_POS])
-                                dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
+                        if(j < inodesPerGroup) {
+                                iNode_BITMAP[I_POS++] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
+                                if(!iNode_BITMAP[I_POS])
+                                        dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
+                        }
 
 
-                        if((j < blocksPerGroup) && !Block_BITMAP[B_POS])
-                                dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
+
+                        if(j < blocksPerGroup) {
+                                Block_BITMAP[B_POS++] = !!(current_Block_BMP[j/8] & BYTE_MASK);
+                                if(!Block_BITMAP[B_POS])
+                                        dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
+                        }
 
                         //if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
 
