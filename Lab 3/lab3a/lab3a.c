@@ -355,7 +355,7 @@ static void writeCSV_inode(const int FD) {
         } else if(VERBOSE) fprintf(stderr, "Writing Directory entries: '%s'\n", FILE_DIRECTORY_ENTRIES);
 
         uint16_t data0, file_type;
-        uint32_t i, j, k=0, data;
+        uint32_t i, j, k, l=0, data;
         uint32_t blockSize          = SUPERBLOCK_TABLE->dataObjects[3].value;
         uint32_t inodeCount         = SUPERBLOCK_TABLE->dataObjects[1].value;
         uint32_t numInodesPerGroup  = SUPERBLOCK_TABLE->dataObjects[6].value;
@@ -375,11 +375,11 @@ static void writeCSV_inode(const int FD) {
 
                 for(j = 0; j < numInodes; j++) {
 
-                        if (BITMAP_INODES[k++] == 0) continue;
+                        if (BITMAP_INODES[l++] == 0) continue;
 
                         uint32_t iNODE_OFF   = (inodeSize * j) + (TBL_BLK_OFF * blockSize);
                         // uint32_t inodeNumber = (j + 1) + (numInodesPerGroup * i);
-                        uint32_t inodeNumber = k;
+                        uint32_t inodeNumber = l;
 
                         /* iNode Number */
                         dprintf(fd, "%d,", inodeNumber);
