@@ -336,9 +336,9 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
 
 }
 
-static void writeCSV_indirectBlocks(int writefd, uint32_t iblocks[3]) {
-
-}
+// static void writeCSV_indirectBlocks(int writefd, uint32_t iblocks[3]) {
+//
+// }
 
 static void writeCSV_inode(const int FD) {
 
