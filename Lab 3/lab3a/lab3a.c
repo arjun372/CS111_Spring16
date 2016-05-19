@@ -275,20 +275,23 @@ static int dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint32_t 
         uint32_t pos = 0;        // byte offset at beginning of current directory block
         uint32_t count = currCount;
         pread(readfd, entry, blockSize, block * blockSize);
+        uint16_t rec_len;
         // Only continue while loop if there is enough space for an entry to exist,
         //      AND if the inode of the current entry is valid non-zero)
         while(((pos + 9) < blockSize)) {
                 if (VERBOSE) printf("In block %x for pos %d\n", block, pos);
                 // name = (char*) &entry[pos + 2];
+                rec_len = entry[pos+1] << 16;
+                if (!rec_len) break;
                 dprintf(writefd, "%d,%d,%d,%d,%d,%s\n",
                         parentInode,                            // parent inode
                         count++,                                // entry count
-                        (uint16_t) (entry[pos + 1] << 16),      // entry length
+                        (uint16_t) (rec_len),                   // entry length
                         (char) (entry[pos + 1] << 8),           // name length
                         (char) entry[pos + 1],                  // inode number of file
                         "name please");                         // name
 
-                pos += ((uint16_t) (entry[pos + 1] << 16));
+                pos += ((uint16_t) (rec_len));
         }
         return count;
 }
