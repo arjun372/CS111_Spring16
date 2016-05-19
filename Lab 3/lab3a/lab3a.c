@@ -474,10 +474,10 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
 
                 /* Now check if each bit in @param blockSize array is 1 or 0 */
-
+                // 8192
                 for (j = 0; j < bitsInBMP; j++) {
 
-                        iBIT = !!(currI_BMP[j/8] & BYTE_MASK);
+                        iBIT = !!(currI_BMP[j/8] & BYTE_MASK);  //1024
                         bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
 
                         //BITMAP_INODES[i][j] = ibit;
