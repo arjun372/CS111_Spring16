@@ -10,27 +10,13 @@ Files
 1. Makefile     - Commands for building the executable & creating a tarball for
                   submission.
 
-2. SortedList.h - Header file containing interfaces for linked list operations.
+2. lab3a.h      - Header file containing some structure definitions and constants
+                  used throughout the lab3a.c source module.
 
-3. SortedList.c - source file that compiles cleanly (with no errors or warnings)
-                  and implements insert, delete, lookup, and length methods for
-                  a sorted doubly linked list (described in the provided header
-                  file, including correct placement of pthread_yield calls).
+3. lab3a.c      - C source module containing the code that parses the ext2 file
+                  system, given the disk image as an argument.
 
-4. lab2b.c      - source file compiles cleanly (with no errors or warnings), and
-                  implements the specified command line options (--threads,
-                  --iterations, --yield, --sync), drives one or more parallel
-                  threads that do operations on a shared linked list, and
-                  reports on the final list and performance.
-
-
-5. graph1.png   - Illustrates the average time per unprotected operation vs
-                  number of iteration (single thread).
-
-6. graph2.png   - (corrected) average time per operation (for unprotected,
-                  mutex, and spin-lock) vs number of threads.
-
-7. README   :: [[ self ]]
+4. README   :: [[ self ]]
 
 ---------------
 Extra features
