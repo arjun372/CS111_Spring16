@@ -314,9 +314,9 @@ static uint32_t indirect_doWrite(int writefd, uint32_t parentBlock, uint32_t blo
 }
 
 static void writeCSV_indirectBlocks(int readfd, int writefd, uint32_t blocks[3]) {
-        uint32_t i, j, k, entryNumber = 0;
+        uint32_t i, j, k;
         if (VERBOSE)
-                for(i = 0; i < 15; ++i) {
+                for(i = 0; i < 3; ++i) {
                         fprintf(stdout, "%x\n", blocks[i]);
                 }
         uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
@@ -332,38 +332,40 @@ static void writeCSV_indirectBlocks(int readfd, int writefd, uint32_t blocks[3])
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if (entry[i] == 0) return;
-                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
+                indirect_doWrite(writefd, block, entry[i], i);
         }
 
         // Double Indirect Block Pointer
-        block = blocks[13];
+        block = blocks[1];
+        if (block == 0) return;    // This is the ending block, end and return entryNumber        
         uint32_t ind1[blockSize];
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if(entry[i] == 0) return;
-                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
+                indirect_doWrite(writefd, block, entry[i], i);
                 pread(readfd, ind1, blockSize, entry[i] * blockSize);
                 for (j = 0; j < numPtrsPerBlock; ++j) {
                         if (ind1[j] == 0) return;
-                        entryNumber = indirect_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                        indirect_doWrite(writefd, entry[i], ind1[j], j);
                 }
         }
 
         // Triple Indirect Block Pointer
-        block = blocks[14];
+        block = blocks[2];
+        if (block == 0) return;    // This is the ending block, end and return entryNumber        
         uint32_t ind2[blockSize];
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if(entry[i] == 0) return;
-                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
+                indirect_doWrite(writefd, block, entry[i], i);
                 pread(readfd, ind1, blockSize, entry[i] * blockSize);
                 for (j = 0; j < numPtrsPerBlock; ++j) {
                         if (ind1[j] == 0) return;
-                        entryNumber = indirect_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                        indirect_doWrite(writefd, entry[i], ind1[j], j);
                         pread(readfd, ind2, blockSize, ind1[j] * blockSize);
                         for (k = 0; k < numPtrsPerBlock; ++k) {
                                 if (ind2[k] == 0) return;
-                                entryNumber = indirect_doWrite(writefd, ind1[j], ind2[k], entryNumber);
+                                indirect_doWrite(writefd, ind1[j], ind2[k], k);
                         }
                 }
         }
@@ -532,6 +534,7 @@ static void writeCSV_inode(const int FD) {
                                 dprintf(fd, (k==14) ? "\n" : ",");
 
                                 dirBlocksArray[k] = data;
+                                if (k >= 12) indirectBlocks[k-12] = data;
                         }
 
                         // Write Directory Entry Structure
