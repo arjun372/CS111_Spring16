@@ -29,8 +29,12 @@ Extra features
 Use of slip days - (3 days total)  (Rahul -> 2 days) (Arjun -> 1 day)
 ----------------
 
-We had issues
+Issues with pread :: We spent a LOT of time trying to debug code that had
+                     errors due to enddianess of data that was read thru pread.
+                     Unfortunately, the documentation did not mention anything
+                     about byte-order. Our shift OPs were incorrect until we
+                     changed our byte ordering.
 
 --------------------------------------------------------------------------------
-Known bugs - None
+Known bugs - None, although our code runs quite slowly (about 16sec).
 ---------------
