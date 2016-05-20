@@ -618,8 +618,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 currI_BMP = memset(currI_BMP, 0, blockSize);
                 currB_BMP = memset(currB_BMP, 0, blockSize);
 
-                //  pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
-                //  pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
+                pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
+                pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
 
                 if (i < nBlockGroups - 1) {
                         maxInodes += inodesPerGroup;
