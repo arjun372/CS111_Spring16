@@ -1,0 +1,30 @@
+UCLA CS 111 - Spring '16
+Rahul Malavalli - 204429252
+Arjun Arjun     - 504078752
+Lab 3B - File System Analysis
+
+------
+Files
+------
+
+1. Makefile     - Commands for executing the file using Python2.7 & creating a
+                  tarball for submission.
+
+2. lab3b.py     - Python source for analyzing the CSV files
+
+4. README   :: [[ self ]]
+
+---------------
+Extra features
+---------------
+
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging.
+
+----------------
+Use of slip days - None
+----------------
+
+--------------------------------------------------------------------------------
+Known bugs - None, although our code runs quite slowly (about 16sec).
+---------------
