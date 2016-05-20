@@ -618,8 +618,8 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
                 currI_BMP = memset(currI_BMP, 0, blockSize);
                 currB_BMP = memset(currB_BMP, 0, blockSize);
 
-                pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
-                pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
+                //  pread(diskFD, currI_BMP, blockSize, iBMP_OFFSET * blockSize);
+                //  pread(diskFD, currB_BMP, blockSize, bBMP_OFFSET * blockSize);
 
                 if (i < nBlockGroups - 1) {
                         maxInodes += inodesPerGroup;
@@ -636,14 +636,14 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
 
                         if(inodeindex <= maxInodes) {
                                 iBIT = !!(currI_BMP[j/8] & BYTE_MASK); //1024
-                                //if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, inodeindex);
+                                if (!iBIT) dprintf(fd, "%x,%" PRIu32 "\n", iBMP_OFFSET, inodeindex);
                                 BITMAP_INODES[inodeindex-1] = (uint8_t) !!iBIT;
                                 inodeindex++;
                         }
 
                         if(blockindex <= maxBlocks) {
                                 bBIT = !!(currB_BMP[j/8] & BYTE_MASK);
-                                //if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, blockindex);
+                                if (!bBIT) dprintf(fd, "%x,%" PRIu32 "\n", bBMP_OFFSET, blockindex);
                                 BITMAP_BLOCKS[blockindex-1] = (uint8_t) !!bBIT;
                                 blockindex++;
                         }
