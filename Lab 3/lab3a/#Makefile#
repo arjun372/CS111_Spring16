@@ -15,10 +15,10 @@ DISTDIR = lab$(LAB)-$(UID)
 
 all: lab$(LAB)
 
-SRC = lab$(LAB).c
+SRC = lab$(LAB).c 
 OBJ = $(subst .c,.o,$(SRC))
 
-DIST_SOURCES = Makefile README $(SRC) lab$(LAB).h
+DIST_SOURCES = Makefile README $(LAB)
 
 lab$(LAB): $(OBJ)
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
