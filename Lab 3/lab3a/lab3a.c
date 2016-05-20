@@ -337,7 +337,7 @@ static void writeCSV_indirectBlocks(int readfd, int writefd, uint32_t blocks[3])
 
         // Double Indirect Block Pointer
         block = blocks[1];
-        if (block == 0) return;    // This is the ending block, end and return entryNumber        
+        if (block == 0) return;    // This is the ending block, end and return entryNumber
         uint32_t ind1[blockSize];
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
@@ -352,7 +352,7 @@ static void writeCSV_indirectBlocks(int readfd, int writefd, uint32_t blocks[3])
 
         // Triple Indirect Block Pointer
         block = blocks[2];
-        if (block == 0) return;    // This is the ending block, end and return entryNumber        
+        if (block == 0) return;    // This is the ending block, end and return entryNumber
         uint32_t ind2[blockSize];
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
