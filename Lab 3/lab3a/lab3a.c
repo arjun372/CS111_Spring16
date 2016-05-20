@@ -303,6 +303,72 @@ static uint32_t dir_doWrite(int readfd, int writefd,  uint32_t parentInode, uint
         return currEntryNumber;
 }
 
+static uint32_t indirect_doWrite(int writefd, uint32_t parentBlock, uint32_t blockNum, uint32_t currEntryNumber){
+        if (blockNum != 0)
+                dprintf(writefd, "%x,%d,%x\n",
+                        parentBlock,
+                        currEntryNumber,
+                        blockNum);
+
+        return ++currEntryNumber;
+}
+
+static void writeCSV_indirect(int readfd, int writefd, uint32_t blocks[3]) {
+        uint32_t i, j, k, entryNumber = 0;
+        if (VERBOSE)
+                for(i = 0; i < 15; ++i) {
+                        fprintf(stdout, "%x\n", blocks[i]);
+                }
+        uint32_t blockSize = SUPERBLOCK_TABLE->dataObjects[3].value;
+        uint32_t entry[blockSize];
+        uint32_t zero[blockSize];
+        for(i = 0; i < (blockSize/4); ++i) zero[i] = 0;
+        uint32_t block;
+
+        uint32_t numPtrsPerBlock = blockSize/4;
+        // Single Indirect block Pointer
+        block = blocks[0];
+        if (block == 0) return;    // This is the ending block, end and return entryNumber
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if (entry[i] == 0) return;
+                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
+        }
+
+        // Double Indirect Block Pointer
+        block = blocks[13];
+        uint32_t ind1[blockSize];
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if(entry[i] == 0) return;
+                entryNumber = dir_doWrite(writefd, block, entry[i], entryNumber);
+                pread(readfd, ind1, blockSize, entry[i] * blockSize);
+                for (j = 0; j < numPtrsPerBlock; ++j) {
+                        if (ind1[j] == 0) return;
+                        entryNumber = dir_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                }
+        }
+
+        // Triple Indirect Block Pointer
+        block = blocks[14];
+        uint32_t ind2[blockSize];
+        pread(readfd, entry, blockSize, block * blockSize);
+        for (i = 0; i < numPtrsPerBlock; ++i) {
+                if(entry[i] == 0) return;
+                entryNumber = dir_doWrite(writefd, block, entry[i], entryNumber);
+                pread(readfd, ind1, blockSize, entry[i] * blockSize);
+                for (j = 0; j < numPtrsPerBlock; ++j) {
+                        if (ind1[j] == 0) return;
+                        entryNumber = dir_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                        pread(readfd, ind2, blockSize, ind1[j] * blockSize);
+                        for (k = 0; k < numPtrsPerBlock; ++k) {
+                                if (ind2[k] == 0) return;
+                                entryNumber = dir_doWrite(writefd, ind1[j], ind2[k], entryNumber);
+                        }
+                }
+        }
+}
+
 static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t blocks[15]) {
         uint32_t i, j, k, entryNumber = 0;
         if (VERBOSE)
@@ -363,10 +429,6 @@ static void writeCSV_dir(int readfd, int writefd, uint32_t parentInode, uint32_t
         }
 }
 
-// static void writeCSV_indirectBlocks(int writefd, uint32_t iblocks[3]) {
-//
-// }
-
 static void writeCSV_inode(const int FD) {
 
         int fd = open(FILE_INODES, CSV_WRITE_FLAGS, FILE_MODE);
@@ -381,6 +443,13 @@ static void writeCSV_inode(const int FD) {
                 exit(1);
         } else if(VERBOSE) fprintf(stderr, "Writing Directory entries: '%s'\n", FILE_DIRECTORY_ENTRIES);
 
+        int indirectfd = open(FILE_INDIRECT_BLOCK_ENTRIES, CSV_WRITE_FLAGS, FILE_MODE);
+        if(dirfd < 0) {
+                fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno));
+                exit(1);
+        } else if(VERBOSE) fprintf(stderr, "Writing Directory entries: '%s'\n", FILE_INDIRECT_BLOCK_ENTRIES);
+
+
         uint16_t data0, file_type;
         uint32_t i, j, k, l=0, data;
         uint32_t blockSize          = SUPERBLOCK_TABLE->dataObjects[3].value;
@@ -391,6 +460,7 @@ static void writeCSV_inode(const int FD) {
         uint32_t ext2BlockSize      = 512;
 
         uint32_t dirBlocksArray[15];
+        uint32_t indirectBlocks[3];
         /* run this for each group descriptor */
         for(i = 0; i < NUM_GROUP_DESCRIPTORS; i++)
         {
@@ -470,7 +540,7 @@ static void writeCSV_inode(const int FD) {
                         }
 
                         // Write indirect blocks, if any
-                        // writeCSV_indirectBlocks();
+                        writeCSV_indirectBlocks(FD, indirectfd, indirectBlocks);
                 }
         }
         close(fd);
@@ -583,81 +653,3 @@ static void readAndWrite_freeBitmaps(const int diskFD) {
         free(currI_BMP);
         free(currB_BMP);
 }
-// static void readAndWrite_freeBitmaps(const int diskFD) {
-//
-//
-//         uint32_t I_POS = 0;
-//         uint32_t B_POS = 0;                    //20k
-//         uint32_t i, j, iBMP_OFFSET, bBMP_OFFSET;
-//         uint32_t inodeCount     = SUPERBLOCK_TABLE->dataObjects[1].value;
-//         uint32_t blockCount     = SUPERBLOCK_TABLE->dataObjects[2].value;
-//         uint32_t blockSize      = SUPERBLOCK_TABLE->dataObjects[3].value;
-//         uint32_t blocksPerGroup = SUPERBLOCK_TABLE->dataObjects[5].value;
-//         uint32_t inodesPerGroup = SUPERBLOCK_TABLE->dataObjects[6].value;
-//         uint32_t nBlockGroups   = (blockCount + blocksPerGroup - 1) / blocksPerGroup;
-//         uint32_t bitsInBMP      = blockSize * 8;
-//         uint8_t BYTE_MASK       = 0x80;  /* 1000 0000 */
-//
-//         int fd = open(FILE_FREE_BITMAPS, CSV_WRITE_FLAGS, FILE_MODE);
-//         if(fd < 0) {fprintf(stderr, "FATAL(%d): %s\n", errno, strerror(errno)); exit(1); }
-//         else if(VERBOSE) fprintf(stderr, "Writing Free Bitmaps: '%s'\n", FILE_FREE_BITMAPS);
-//
-//         /* Stores a bitmap for each of the group descriptors */
-//         BITMAP_INODES               = (uint32_t*) malloc(inodeCount);
-//         BITMAP_BLOCKS               = (uint32_t*) malloc(blockCount);
-//         uint8_t* current_iNode_BMP = (uint8_t*)  malloc(blockSize);
-//         uint8_t* current_Block_BMP = (uint8_t*)  malloc(blockSize);
-//         if(BITMAP_INODES == NULL || BITMAP_BLOCKS == NULL || current_iNode_BMP == NULL || current_Block_BMP == NULL) {
-//                 fprintf(stderr, "FATAL:: Memory error. bye bye! \n");
-//                 exit(1);
-//         }
-//
-//         /* Populate the bitmaps for each of the group descriptors */
-//         for (i = 0; i < nBlockGroups; i++) {
-//
-//                 iBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[4].value;
-//                 bBMP_OFFSET = GROUP_DESCRIPTOR_TABLE[i]->dataObjects[5].value;
-//
-//                 //current_iNode_BMP = memset(current_iNode_BMP, 0, blockSize);
-//                 //current_Block_BMP = memset(current_Block_BMP, 0, blockSize);
-//
-//                 pread(diskFD, current_iNode_BMP, blockSize, iBMP_OFFSET * blockSize);
-//                 pread(diskFD, current_Block_BMP, blockSize, bBMP_OFFSET * blockSize);
-//
-//                 /* Now check if each bit in @param blockSize array is 1 or 0 */
-//                 BYTE_MASK = 0x80;
-//                 for (j = 0; j < bitsInBMP; j++) { //8192
-//
-//                         if(VERBOSE) fprintf(stderr, "I_POS : %d, B_BOS: %d\n", I_POS, B_POS);
-//
-//                         //isFree(current_iNode_BMP, j);
-//                         //isFree(current_Block_BMP, j);
-//
-//                         /* Set all bitMasks to NULL */
-//                         if(j < inodesPerGroup && I_POS < inodeCount) {
-//                                 BITMAP_INODES[I_POS] = !!(current_iNode_BMP[j/8] & BYTE_MASK);
-//                                 if(!BITMAP_INODES[I_POS])
-//                                         dprintf(fd, "%x,%d\n", iBMP_OFFSET, j + 0 + (i * inodesPerGroup));
-//                                 I_POS++;
-//                         }
-//
-//
-//
-//                         if(j < blocksPerGroup && B_POS < blockCount) {
-//                                 BITMAP_BLOCKS[B_POS] = !!(current_Block_BMP[j/8] & BYTE_MASK);
-//                                 if(!BITMAP_BLOCKS[B_POS])
-//                                         dprintf(fd, "%x,%d\n", bBMP_OFFSET, j + 1 + (i * blocksPerGroup));
-//                                 B_POS++;
-//                         }
-//
-//                         //if(VERBOSE) fprintf(stderr, "mask[%d] :: %x\n", i, BYTE_MASK);
-//
-//                         BYTE_MASK = (BYTE_MASK == 0x01) ? 0x80 : (BYTE_MASK >> 1);
-//                 }
-//         }
-//
-//         printf("here\n");
-//         free(current_iNode_BMP);
-//         free(current_Block_BMP);
-//         printf("there\n");
-// }
