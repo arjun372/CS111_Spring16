@@ -10,7 +10,7 @@ Files
 1. Makefile     - Commands for building the executable & creating a tarball for
                   submission.
 
-2. lab3a.h      - Header file containing some structure definitions and constants
+2. lab3a.h      - Header file containing some structure definitions & constants
                   used throughout the lab3a.c source module.
 
 3. lab3a.c      - C source module containing the code that parses the ext2 file
