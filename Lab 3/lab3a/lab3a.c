@@ -313,7 +313,7 @@ static uint32_t indirect_doWrite(int writefd, uint32_t parentBlock, uint32_t blo
         return ++currEntryNumber;
 }
 
-static void writeCSV_indirect(int readfd, int writefd, uint32_t blocks[3]) {
+static void writeCSV_indirectBlocks(int readfd, int writefd, uint32_t blocks[3]) {
         uint32_t i, j, k, entryNumber = 0;
         if (VERBOSE)
                 for(i = 0; i < 15; ++i) {
@@ -341,11 +341,11 @@ static void writeCSV_indirect(int readfd, int writefd, uint32_t blocks[3]) {
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if(entry[i] == 0) return;
-                entryNumber = dir_doWrite(writefd, block, entry[i], entryNumber);
+                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
                 pread(readfd, ind1, blockSize, entry[i] * blockSize);
                 for (j = 0; j < numPtrsPerBlock; ++j) {
                         if (ind1[j] == 0) return;
-                        entryNumber = dir_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                        entryNumber = indirect_doWrite(writefd, entry[i], ind1[j], entryNumber);
                 }
         }
 
@@ -355,15 +355,15 @@ static void writeCSV_indirect(int readfd, int writefd, uint32_t blocks[3]) {
         pread(readfd, entry, blockSize, block * blockSize);
         for (i = 0; i < numPtrsPerBlock; ++i) {
                 if(entry[i] == 0) return;
-                entryNumber = dir_doWrite(writefd, block, entry[i], entryNumber);
+                entryNumber = indirect_doWrite(writefd, block, entry[i], entryNumber);
                 pread(readfd, ind1, blockSize, entry[i] * blockSize);
                 for (j = 0; j < numPtrsPerBlock; ++j) {
                         if (ind1[j] == 0) return;
-                        entryNumber = dir_doWrite(writefd, entry[i], ind1[j], entryNumber);
+                        entryNumber = indirect_doWrite(writefd, entry[i], ind1[j], entryNumber);
                         pread(readfd, ind2, blockSize, ind1[j] * blockSize);
                         for (k = 0; k < numPtrsPerBlock; ++k) {
                                 if (ind2[k] == 0) return;
-                                entryNumber = dir_doWrite(writefd, ind1[j], ind2[k], entryNumber);
+                                entryNumber = indirect_doWrite(writefd, ind1[j], ind2[k], entryNumber);
                         }
                 }
         }

@@ -44,11 +44,11 @@ group:
 	sort -n group.csv > my_group.csv
 	sort -n ../lab3a-official_csv/correct/group.csv | diff my_group.csv - | cat -n
 bitmap:
-	sort bitmap.csv > my_bitmap.csv
-	sort ../lab3a-official_csv/correct/bitmap.csv | diff mbitmap.csv obitmap.csv | cat -n
+	sort bitmap.csv > mbitmap.csv
+	sort ../lab3a-official_csv/correct/bitmap.csv | diff mbitmap.csv - | cat -n
 inode:
-	sort -n inode.csv > my_inode.csv
-	sort -n ../lab3a-official_csv/correct/inode.csv | diff minode.csv oinode.csv | cat -n
+	sort -n inode.csv > minode.csv
+	sort -n ../lab3a-official_csv/correct/inode.csv | diff minode.csv - | cat -n
 directory:
 	sort -n directory.csv > my_directory.csv
 	sort -n ../lab3a-official_csv/correct/directory.csv | diff my_directory.csv - | cat -n
