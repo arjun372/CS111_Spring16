@@ -26,10 +26,14 @@ $(DISTDIR).tar.gz: $(DIST_SOURCES)
 clean:
 	rm -rf *.log *.o *~ *.bak *.tar.gz core *.core *.tmp lab3b_check.txt $(DISTDIR)
 
-run: $(SRC)
+test: $(SRC)
 	python $(SRC) --verbose
 
-check: run lab3b_check.txt sorted_lab3b_check.txt
-			sort lab3b_check.txt | diff - sorted_lab3b_check.txt
+run: $(SRC)
+	python $(SRC)
+
+check: run
+# lab3b_check.txt off-sols/sorted_lab3b_check.txt
+			sort lab3b_check.txt | diff - off-sols/sorted_lab3b_check.txt
 
 .PHONY: run all dist check clean

@@ -1,0 +1,40 @@
+UCLA CS 111 - Spring '16
+Rahul Malavalli - 204429252
+Arjun Arjun     - 504078752
+Lab 3a - File System Dump
+
+------
+Files
+------
+
+1. Makefile     - Commands for building the executable & creating a tarball for
+                  submission.
+
+2. lab3a.h      - Header file containing some structure definitions & constants
+                  used throughout the lab3a.c source module.
+
+3. lab3a.c      - C source module containing the code that parses the ext2 file
+                  system, given the disk image as an argument.
+
+4. README   :: [[ self ]]
+
+---------------
+Extra features
+---------------
+
+1. Optional argument '--verbose' can be passed to the program to display a log
+   as the code executes. Helpful in debugging.
+
+----------------
+Use of slip days - (3 days total)  (Rahul -> 2 days) (Arjun -> 1 day)
+----------------
+
+Issues with pread :: We spent a LOT of time trying to debug code that had
+                     errors due to enddianess of data that was read thru pread.
+                     Unfortunately, the documentation did not mention anything
+                     about byte-order. Our shift OPs were incorrect until we
+                     changed our byte ordering.
+
+--------------------------------------------------------------------------------
+Known bugs - None, although our code runs quite slowly (about 16sec).
+---------------
