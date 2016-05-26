@@ -140,10 +140,12 @@ def handleDirectories():
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
         # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
+
         if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
             ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
-        if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        if this_DirEntry.inodeNumber in INODES_IN_USE :
+            INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
         elif this_DirEntry.inodeNumber in UNALLOCATED_INODES :
             UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
         else:
@@ -157,6 +159,8 @@ def handleDirectories():
             INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
             #                                 DirEntry, Should link to value
 
+    return
+
 def handleMissingInodes():
     # Finding Missing inodes
     totalinodes = 0
@@ -169,7 +173,7 @@ def handleIndirectBlocks():
     for line in indirect_blocks:
         ContainingBlockNumber             = int(line[0], 16)
         (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
-        if ContainingBlockNumber not in INDIRECT_BLOCKS:
+        if ContainingBlockNumber not in indirect_blocks:
             INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
@@ -197,6 +201,38 @@ def write2():
     return
 
 
+# Incorrect Link Count
+def write5():
+    buff = ""
+
+    for inum in sorted(INODES_IN_USE):
+        entry = INODES_IN_USE[inum]
+        dirlinks = len(entry.dirEntries)
+        # if inum < 10 and dirlinks == 0:
+        #     bitmapBlockNum = BitmapPointers_FreeInodes
+        #     buff += "MISSING INODE < " + str(inum) + " > SHOULD BE IN FREE LIST < " + str(bitmapBlockNum) + " >\n"
+        if (not (inum > 10 and dirlinks == 0)) and dirlinks != entry.linkCount:
+            buff += ("LINKCOUNT < " + str(inum) + " >")
+            buff += (" IS < " + str(entry.linkCount) + " >")
+            buff += (" SHOULD BE < " + str(dirlinks) + " >")
+            buff += "\n"
+
+    if verbose: print(buff)
+    output_file.write(buff)
+
+    # for inum, iobj in INODES_IN_USE.iteritems():
+    #     # if inum > 10 and len(iobj.dirEntries) == 0: continue
+    #     if iobj.linkCount != len(iobj.dirEntries):
+    #         buff += ("LINKCOUNT < " + str(iobj.inodeNumber) + " >")
+    #         buff += (" IS < " + str(iobj.linkCount) + " >")
+    #         buff += (" SHOULD BE < " + str(len(iobj.dirEntries)) + " >")
+    #         buff += "\n"
+    #
+    # if verbose: print(buff)
+    # output_file.write(buff)
+    return
+
+# Incorrect Directory Entry
 def write6():
     buff = ""
     for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
@@ -205,7 +241,7 @@ def write6():
         buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
         buff += (" SHOULD BE < " + str(shouldbe) + " >")
         buff += "\n"
-    if verbose == True: print(buff)
+    if verbose: print(buff)
     output_file.write(buff)
     return
 
@@ -220,4 +256,5 @@ if __name__ == "__main__":
     ALL_BLOCKS = sorted(ALL_BLOCKS)
     write1()
     write2()
+    write5()    # NOT WORKING
     write6()
