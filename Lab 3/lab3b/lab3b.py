@@ -49,6 +49,7 @@ FreeBlocks        = [];
 
 BLOCKS_IN_USE     = dict()
 INODES_IN_USE     = dict()
+INDIRECT_BLOCKS   = dict()
 
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
@@ -86,16 +87,26 @@ for line in group_descriptor:
     BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
     BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
 
-
 # parse free_bitmap_entry data : list of free inodes and free blocks
 for line in bitmap:
     MapBlock_Number       = int(line[0], 16);
     Block_or_Inode_Number = int(line[1]);
-    if   MapBlock_Number in BITMAP_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
-    elif MapBlock_Number in BITMAP_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
+    if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
+    elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
     elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
+# parse indirect block entry: These are all the non-zero block pointers in an indirect block.
+#                             The blocks that contain indirect block pointers are included.
+for line in indirect_blocks:
+    ContainingBlockNumber             = int(line[0], 16)
+    (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
+    if ContainingBlockNumber not in INDIRECT_BLOCKS:
+        INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
+    else:
+        INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
+
 if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
+
 
 
 
