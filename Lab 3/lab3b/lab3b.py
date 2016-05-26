@@ -140,6 +140,14 @@ def handleDirectories():
         if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
         elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
 
+    for (inum, entry) in ALL_DIR_ENTRIES.iteritems():
+        if entry.entryName == '.' and (entry.inodeNumber != entry.parentInode):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
+            #                                 DirEntry, Should link to value
+        elif entry.entryName == '..' and (entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
+            #                                 DirEntry, Should link to value
+
 def handleMissingInodes():
     # Finding Missing inodes
     totalinodes = 0
