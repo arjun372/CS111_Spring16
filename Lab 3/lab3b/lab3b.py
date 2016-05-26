@@ -37,9 +37,15 @@ class block():
         self.indirectBlock = indirectblock
 
 class inode():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, inum, linkcount = 0):
+        self.inodeNumber = inum
+        self.linkCount = linkcount
+        self.dirEntries = []
+
+class directoryEntry():
+    def __init__(self, parentinode, entrynum):
+        self.parentInode = parentinode
+        self.entryNumber = entrynum
 
 # initialize helper data structures
 BitmapPointers_FreeInodes = [];
