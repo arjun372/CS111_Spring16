@@ -30,9 +30,11 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 verbose         = options.verbose
 
 class block():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
+        self.blockNumber = bnum
+        self.inodeNumber = inodenum
+        self.entryNumber = entrynum
+        self.indirectBlock = indirectblock
 
 class inode():
     def __init__(self, number):
