@@ -166,6 +166,17 @@ def handleIndirectBlocks():
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
 
+def write6():
+    buff = ""
+    for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
+        buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
+        buff += (" NAME < " + str(entry.entryName) + " >")
+        buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
+        buff += (" SHOULD BE < " + str(shouldbe) + " >")
+        buff += "\n"
+
+    print(buff)
+
 if __name__ == "__main__":
     # Open file to write the resulting output
     output_file = open('lab3b_check.txt', 'w+')
@@ -175,5 +186,8 @@ if __name__ == "__main__":
     handleIndirectBlocks()
     handleDirectories()
     handleMissingInodes()
+
+
+    write6()
 
     for item in UNALLOCATED_BLOCKS : output_file.write("UNALLOCATED BLOCK < " + 1035 + " > REFERENCED BY INODE < " + 16 + " > ENTRY < " + 0 + " > INODE < " + 17 + " > INDIRECT BLOCK < " + 10 + " > ENTRY < " + 0 + " >\n")
