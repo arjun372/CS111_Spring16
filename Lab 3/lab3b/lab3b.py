@@ -1,41 +1,19 @@
 import csv
 from optparse import OptionParser
 
-# Constants used to index fields for ease of use
 ROOT_DIR = 2
-
-# Super block
 s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
-
-# Block Group Descriptors
-bg_total_blocks, bg_free_blocks, bg_free_indoes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
-
-# Free Bitmap entry
+bg_total_blocks, bg_free_blocks, bg_free_inodes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
 bm_map_blocknum, bm_num = tuple(range(2))
-
-# Inode
 i_num, i_filetype, i_mode, i_owner, i_group, i_linkcount, i_createtime, i_modtime, i_accesstime, i_filesize, i_numblocks, i_firstblockpointer = tuple(range(12))
-
-# Directory entry
 dir_parentinode, dir_entrynum, dir_entrylen, dir_namelen, dir_fileinode, dir_name = tuple(range(6))
-
-# Indirect block entry
 ind_containingblock, ind_entrynum, ind_blockpointerval = tuple(range(3))
-
-# End constants
 
 # Read verbose option, if any
 parser          = OptionParser()
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False)
 (options, args) = parser.parse_args()
 verbose         = options.verbose
-
-# class blockObj():
-#     def __init__(self, bnum, inodenum, entrynum):
-#         self.blockNumber    = bnum
-#         self.inodeNumber    = inodenum
-#         self.entryNumber    = entrynum
-#         self.referencePtrs  = []
 
 class blockObj():
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
@@ -117,15 +95,22 @@ def initStructs():
 
     # parse group descriptor data : information for each group descriptor
     for line in group_descriptor:
+        global ALL_BLOCKS
+        global BitmapPointers_FreeInodes
+        global BitmapPointers_FreeBlocks
         free_inode_bitmap_block = int(line[4], 16)
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_BLOCKS[free_inode_bitmap_block] = [blockObj(free_inode_bitmap_block, 0, 0)]
-        ALL_BLOCKS[free_block_bitmap_block] = [blockObj(free_block_bitmap_block, 0, 0)]
+        ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
+        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
+        #global BitmapPointers_FreeInodes
+        #global BitmapPointers_FreeBlocks
+        global FreeInodes
+        global FreeBlocks
         MapBlock_Number       = int(line[0], 16);
         Block_or_Inode_Number = int(line[1]);
         if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
@@ -133,16 +118,10 @@ def initStructs():
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
     if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
-    # UNALLOCATED BLOCK : Blocks that are in use but also listed on the free bitmap.
-    #                     Here the INODEs should be listed in increasing order of inode_num.
-
-
-    # UNALLOCATED_DIRECTORY :
-
+    return
 
 def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
     global ALL_BLOCKS
-
     if ptr == 0: return
     obj = blockObj(ptr, inodenum, entrynum, indirectblock)
     if ptr in ALL_BLOCKS:
@@ -153,6 +132,8 @@ def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
 
 def handleInodesInUse():
     # Parse Inodes into INODES_IN_USE
+    global INODES_IN_USE
+    global INDIRECT_BLOCKS
     for line in inode:
         inodenum    = int(line[i_num])
         linkcount   = int(line[i_linkcount])
@@ -181,10 +162,12 @@ def handleInodesInUse():
     return
 
 def handleDirectories():
+    global INODES_IN_USE
+    global ALL_DIR_ENTRIES
+    global UNALLOCATED_INODES
+    global INCORRECT_DIRECTORY_ENTRIES
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
-
         if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
             ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
@@ -207,10 +190,12 @@ def handleDirectories():
 
 # Finding Missing inodes
 def handleMissingInodes():
-    totalinodes = 0
-    for line in superblock: totalinodes = line[s_total_inodes]
-    MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
-
+    global ALL_DIR_ENTRIES
+    global MISSING_INODES
+    global InodeCount
+    # totalinodes = 0
+    # for line in superblock: totalinodes = line[s_total_inodes]
+    MISSING_INODES = [i for i in range(InodeCount) if i not in ALL_DIR_ENTRIES]
 
 # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
 #                             The blocks that contain indirect block pointers are included.
