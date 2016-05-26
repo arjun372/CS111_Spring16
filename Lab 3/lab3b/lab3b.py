@@ -36,6 +36,7 @@ class blockObj():
         self.inodeNumber   = inodenum
         self.entryNumber   = entrynum
         self.indirectBlock = indirectblock
+        self.blockPtrs = []
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
@@ -135,20 +136,28 @@ def handleInodesInUse():
         inodenum    = line[i_num]
         linkcount   = line[i_linkcount]
         iobj = inodeObj(inodenum, linkcount)
+        blkptrs = []
+        for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
+        iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
 
 def handleDirectories():
     for line in directory :
-        this_DirEntry = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        if this_DirEntry.parentInode == ROOT_DIR or this_DirEntry.inodeNumber != this_DirEntry.parentInode: ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
+        #if this_DirEntry.parentInode == 2:
+        # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
+        ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
-        if this_DirEntry.entryNumber >= 1 and (this_DirEntry.inodeNumber != ALL_DIR_ENTRIES[this_DirEntry.parentInode] or this_DirEntry.parentInode not in ALL_DIR_ENTRIES):
-            INCORRECT_DIRECTORY_ENTRIES.append((this_DirEntry.parentInode, this_DirEntry.entryName, this_DirEntry.inodeNumber, ))
-        # elif EntryNumber == 0:
-        if   this_DirEntry.inodeNumber in ALL_INODES : ALL_INODES[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        #TODO :
-        #elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
-    #    else
+        if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+
+    for (inum, entry) in ALL_DIR_ENTRIES.iteritems():
+        if entry.entryName == '.' and (entry.inodeNumber != entry.parentInode):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
+            #                                 DirEntry, Should link to value
+        elif entry.entryName == '..' and (entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
+            #                                 DirEntry, Should link to value
 
 def handleMissingInodes():
     # Finding Missing inodes
