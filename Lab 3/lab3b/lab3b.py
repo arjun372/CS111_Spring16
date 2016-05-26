@@ -197,7 +197,6 @@ def write2():
     return
 
 
-
 def write6():
     buff = ""
     for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
