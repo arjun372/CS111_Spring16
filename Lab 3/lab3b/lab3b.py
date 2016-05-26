@@ -157,11 +157,10 @@ def handleInodesInUse():
         inodenum    = int(line[i_num])
         linkcount   = int(line[i_linkcount])
         iobj = inodeObj(inodenum, linkcount)
-        INODES_IN_USE[inodenum] = iobj
         blkptrs = []
         for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
         iobj.blockPtrs = blkptrs
-        #INODES_IN_USE[inodenum] = iobj
+        INODES_IN_USE[inodenum] = iobj
 
         # Read blocks
         entrynum = 0
@@ -205,16 +204,18 @@ def handleDirectories():
             #                                 DirEntry, Should link to value
     return
 
+
+# Finding Missing inodes
 def handleMissingInodes():
-    # Finding Missing inodes
     totalinodes = 0
     for line in superblock: totalinodes = line[s_total_inodes]
     MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
 
+
+# parse indirect block entry: These are all the non-zero block pointers in an indirect block.
+#                             The blocks that contain indirect block pointers are included.
 def handleIndirectBlocks():
     global INDIRECT_BLOCKS
-    # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
-    #                             The blocks that contain indirect block pointers are included.
     for line in indirect_blocks:
         ContainingBlockNumber             = int(line[ind_containingblock], 16)
         (EntryNumber, BlockPointer_Value) = (int(line[ind_entrynum]), int(line[ind_blockpointerval], 16))
@@ -222,19 +223,7 @@ def handleIndirectBlocks():
             INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
-
     return
-
-# # 1. UNALLOCATED BLOCKS
-# def write1():
-#     buff = ""
-#     for item in ALL_BLOCKS:
-#         if item in FreeBlocks:
-#             buff += "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-#             for entry in sorted(ALL_BLOCKS[item].referencePtrs):
-#                 buff += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
-#                 output_file.write(buff.strip() + "\n");
-#     return
 
 # 1. UNALLOCATED BLOCKS
 def write1():
