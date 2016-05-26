@@ -30,14 +30,23 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 verbose         = options.verbose
 
 class block():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
+        self.blockNumber = bnum
+        self.inodeNumber = inodenum
+        self.entryNumber = entrynum
+        self.indirectBlock = indirectblock
 
 class inode():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, inum, linkcount = 0):
+        self.inodeNumber = inum
+        self.linkCount = linkcount
+        self.dirEntries = []
+
+class directoryEntry():
+    def __init__(self, parentinode, entrynum, entryname = ''):
+        self.parentInode = parentinode
+        self.entryNumber = entrynum
+        self.entryName   = entryname
 
 # initialize helper data structures
 BitmapPointers_FreeInodes = [];
@@ -98,6 +107,14 @@ def initStructs():
         if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
         elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
+
+    for line in directory :
+        ParentInodeNumber = int(line[0])
+        EntryNumber       = int(line[1])
+        InodeNumber       = int(line[4])
+        # if   EntryNumber >= 1:
+        # elif EntryNumber == 0:
+        if InodeNumber in INODES_IN_USE : INODES_IN_USE[InodeNumber].append
 
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
