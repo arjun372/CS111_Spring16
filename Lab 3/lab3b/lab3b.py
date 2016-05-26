@@ -40,8 +40,8 @@ class inode():
         self.referenced_by = []
 
 # initialize helper data structures
-BITMAP_FreeInodes = [];
-BITMAP_FreeBlocks = [];
+BitmapPointers_FreeInodes = [];
+BitmapPointers_FreeBlocks = [];
 FreeInodes        = [];
 FreeBlocks        = [];
 
@@ -81,9 +81,8 @@ for line in superblock:
 for line in group_descriptor:
     free_inode_bitmap_block = int(line[4], 16)
     free_block_bitmap_block = int(line[5], 16)
-    BITMAP_FreeInodes.append(free_inode_bitmap_block)
-    BITMAP_FreeBlocks.append(free_block_bitmap_block)
-
+    BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
+    BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
 
 
 # parse free_bitmap_entry data : list of free inodes and free blocks
