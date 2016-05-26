@@ -2,6 +2,7 @@ import csv
 from optparse import OptionParser
 
 # Constants used to index fields for ease of use
+ROOT_DIR = 2
 
 # Super block
 s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
@@ -31,17 +32,18 @@ verbose         = options.verbose
 
 class blockObj():
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber = bnum
-        self.inodeNumber = inodenum
-        self.entryNumber = entrynum
+        self.blockNumber   = bnum
+        self.inodeNumber   = inodenum
+        self.entryNumber   = entrynum
         self.indirectBlock = indirectblock
         self.blockPtrs = []
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
         self.inodeNumber = inum
-        self.linkCount = linkcount
-        self.dirEntries = []
+        self.linkCount   = linkcount
+        self.dirEntries  = []
+        self.blockPtrs   = []
 
 class directoryEntry():
     def __init__(self, inodenumber, parentinode, entrynum, entryname = ''):
@@ -71,6 +73,7 @@ DUPLICATELY_ALLOCATED_BLOCKS = []
 
 ALL_DIR_ENTRIES = dict()
 ALL_BLOCKS      = dict()
+ALL_INODES      = dict()
 
 # Super block entries
 MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([None]*9)
@@ -102,6 +105,14 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
+        ALL_INODES[free_inode_bitmap_block] = InodeObj(free_inode_bitmap_block)
+        ALL_BLOCKS[free_block_bitmap_block] = BlockObj(free_block_bitmap_block)
+
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
+        self.blockNumber = bnum
+        self.inodeNumber = inodenum
+        self.entryNumber = entrynum
+        self.indirectBlock = indirectblock
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
