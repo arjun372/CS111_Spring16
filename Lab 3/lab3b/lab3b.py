@@ -2,6 +2,7 @@ import csv
 from optparse import OptionParser
 
 # Constants used to index fields for ease of use
+ROOT_DIR = 2
 
 # Super block
 s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
@@ -70,6 +71,7 @@ DUPLICATELY_ALLOCATED_BLOCKS = []
 
 ALL_DIR_ENTRIES = dict()
 ALL_BLOCKS      = dict()
+ALL_INODES      = dict()
 
 # Super block entries
 MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([None]*9)
@@ -118,14 +120,15 @@ def initStructs():
         INODES_IN_USE[inodenum] = iobj
 
     for line in directory :
-        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        #if this_DirEntry.parentInode == 2:
-        ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        this_DirEntry = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
+        if this_DirEntry.parentInode == ROOT_DIR or this_DirEntry.inodeNumber != this_DirEntry.parentInode: ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
-        # if   EntryNumber >= 1:
+        if this_DirEntry.entryNumber >= 1 and (this_DirEntry.inodeNumber != ALL_DIR_ENTRIES[this_DirEntry.parentInode] or this_DirEntry.parentInode not in ALL_DIR_ENTRIES):
+            INCORRECT_DIRECTORY_ENTRIES.append((this_DirEntry.parentInode, this_DirEntry.entryName, this_DirEntry.inodeNumber, ))
         # elif EntryNumber == 0:
-        if   this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        if   this_DirEntry.inodeNumber in ALL_INODES : ALL_INODES[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        #TODO :  
+        #elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
     #    else
 
 
