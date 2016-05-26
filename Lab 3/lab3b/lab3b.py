@@ -178,6 +178,21 @@ def handleInodesInUse():
         for (entrynum, blockval) in blocks:
             addReferenceToBlock(blockval, inodenum, 12+1)
             entrynum = entrynum + 1
+
+        # Double indirect pointers
+        ptr = int(line[i_firstblockpointer + 12 + 2], 16)
+        if ptr == 0: continue
+        blocks = INDIRECT_BLOCKS[ptr]
+        for (en, bv) in blocks:
+            if bw == 0: continue
+            blocks2 = INDIRECT_BLOCKS[bv]
+            for (entrynum, blockval) in blocks2:
+                if blockval == 0: continue
+                addReferenceToBlock(blockval, inodenum, 12+1)
+                entrynum = entrynum + 1
+
+        # Triple Indirect pointers
+
     return
 
 def handleDirectories():
