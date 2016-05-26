@@ -29,14 +29,14 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 (options, args) = parser.parse_args()
 verbose         = options.verbose
 
-class block():
+class blockObj():
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
         self.blockNumber = bnum
         self.inodeNumber = inodenum
         self.entryNumber = entrynum
         self.indirectBlock = indirectblock
 
-class inode():
+class inodeObj():
     def __init__(self, inum, linkcount = 0):
         self.inodeNumber = inum
         self.linkCount = linkcount
@@ -107,6 +107,13 @@ def initStructs():
         if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
         elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
+
+    # Parse Inodes into INODES_IN_USE
+    for line in inode:
+        inodenum    = line[i_num]
+        linkcount   = line[i_linkcount]
+        iobj = inodeObj(inodenum, linkcount)
+        INODES_IN_USE[inodenum] = iobj
 
     for line in directory :
         ParentInodeNumber = int(line[0])
