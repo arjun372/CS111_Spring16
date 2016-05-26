@@ -105,8 +105,9 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_INODES[free_inode_bitmap_block] = InodeObj(free_inode_bitmap_block)
-        ALL_BLOCKS[free_block_bitmap_block] = BlockObj(free_block_bitmap_block)
+        # ALL_INODES[free_inode_bitmap_block] = inodeObj(free_inode_bitmap_block, 0, 0)
+        ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
+        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
 
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
         self.blockNumber = bnum
@@ -141,21 +142,29 @@ def handleInodesInUse():
         iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
 
+
 def handleDirectories():
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
         #if this_DirEntry.parentInode == 2:
         # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
-        ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
+            ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
         if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES :
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        else:
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber] = [this_DirEntry]
 
-    for (inum, entry) in ALL_DIR_ENTRIES.iteritems():
-        if entry.entryName == '.' and (entry.inodeNumber != entry.parentInode):
+
+    # for (inum, entry) in ALL_DIR_ENTRIES.iteritems():
+        inum = this_DirEntry.inodeNumber
+        entry = this_DirEntry
+        if (entry.entryNumber == 0 or entry.entryName == '.') and (entry.inodeNumber != entry.parentInode):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
             #                                 DirEntry, Should link to value
-        elif entry.entryName == '..' and (entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode):
+        elif (entry.entryNumber == 1 or entry.entryName == '..') and ((entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode) or (entry.parentInode not in ALL_DIR_ENTRIES)):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
             #                                 DirEntry, Should link to value
 
