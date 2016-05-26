@@ -105,7 +105,7 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_INODES[free_inode_bitmap_block] = InodeObj(free_inode_bitmap_block)
+        ALL_INODES[free_inode_bitmap_block] = nodeObj(free_inode_bitmap_block)
         ALL_BLOCKS[free_block_bitmap_block] = BlockObj(free_block_bitmap_block)
 
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
