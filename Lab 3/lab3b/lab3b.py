@@ -131,7 +131,10 @@ def initStructs():
         #elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
     #    else
 
-
+    # Finding Missing inodes
+    totalinodes = 0
+    for line in superblock: totalinodes = line[s_total_inodes]
+    MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
 
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
