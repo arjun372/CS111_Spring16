@@ -43,7 +43,8 @@ class inode():
         self.dirEntries = []
 
 class directoryEntry():
-    def __init__(self, parentinode, entrynum, entryname = ''):
+    def __init__(self, inodenumber, parentinode, entrynum, entryname = ''):
+        self.inodeNumber = inodenumber
         self.parentInode = parentinode
         self.entryNumber = entrynum
         self.entryName   = entryname
@@ -54,19 +55,21 @@ BitmapPointers_FreeBlocks = [];
 FreeInodes        = [];
 FreeBlocks        = [];
 
-BLOCKS_IN_USE     = dict()
-INODES_IN_USE     = dict()
-INDIRECT_BLOCKS   = dict()
+BLOCKS_IN_USE       = dict()
+INODES_IN_USE       = dict()
+INDIRECT_BLOCKS     = dict()
+UNALLOCATED_INODES  = dict()
 
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
-UNALLOCATED_INODES           = []
 UNALLOCATED_BLOCKS           = []
 INVALID_BLOCK_POINTERS       = []
 INCORRECT_LINKCOUNT_INODES   = []
 INCORRECT_DIRECTORY_ENTRIES  = []
 DUPLICATELY_ALLOCATED_BLOCKS = []
 
+ALL_DIR_ENTRIES = dict()
+ALL_BLOCKS      = dict()
 
 # Super block entries
 MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([None]*9)
@@ -92,7 +95,6 @@ def initStructs():
         FragmentsPerGroup = int(line[7]);
         FirstDataBlock    = int(line[8]);
 
-
     # parse group descriptor data : information for each group descriptor
     for line in group_descriptor:
         free_inode_bitmap_block = int(line[4], 16)
@@ -109,12 +111,21 @@ def initStructs():
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
     for line in directory :
-        ParentInodeNumber = int(line[0])
-        EntryNumber       = int(line[1])
-        InodeNumber       = int(line[4])
+        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), int(line[dir_name]))
+        ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+
         # if   EntryNumber >= 1:
         # elif EntryNumber == 0:
-        if InodeNumber in INODES_IN_USE : INODES_IN_USE[InodeNumber].append
+        if   this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+    #    else
+
+
+        self.inodeNumber = inodenumber
+        self.parentInode = parentinode
+        self.entryNumber = entrynum
+        self.entryName   = entryname
+
 
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
