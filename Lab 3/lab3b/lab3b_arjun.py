@@ -23,6 +23,9 @@ BITMAP_FreeBlocks = [];
 FreeInodes        = [];
 FreeBlocks        = [];
 
+BLOCKS_IN_USE     = dict()
+INODES_IN_USE     = dict()
+
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
 UNALLOCATED_INODES           = []
@@ -54,8 +57,12 @@ for line in superblock:
 
 # parse group descriptor data : information for each group descriptor
 for line in group_descriptor:
-    BITMAP_FreeInodes.append(int(line[4], 16));
-    BITMAP_FreeBlocks.append(int(line[5], 16));
+    free_inode_bitmap_block = int(line[4], 16)
+    free_block_bitmap_block = int(line[5], 16)
+    BITMAP_FreeInodes.append(free_inode_bitmap_block)
+    BITMAP_FreeBlocks.append(free_block_bitmap_block)
+
+
 
 # parse free_bitmap_entry data : list of free inodes and free blocks
 for line in bitmap:
@@ -65,10 +72,15 @@ for line in bitmap:
     elif MapBlock_Number in BITMAP_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
     elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
+if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
+
+
 
 # UNALLOCATED BLOCK : Blocks that are in use but also listed on the free bitmap.
 #                     Here the INODEs should be listed in increasing order of inode_num.
 
+
+# UNALLOCATED_DIRECTORY :
 
 
 
