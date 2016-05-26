@@ -132,6 +132,8 @@ def initStructs():
 
 
 def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
+    global ALL_BLOCKS
+
     if ptr == 0: return
     obj = blockObj(ptr, inodenum, entrynum, indirectblock)
     if ptr in ALL_BLOCKS:
@@ -143,8 +145,8 @@ def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
 def handleInodesInUse():
     # Parse Inodes into INODES_IN_USE
     for line in inode:
-        inodenum    = line[i_num]
-        linkcount   = line[i_linkcount]
+        inodenum    = int(line[i_num])
+        linkcount   = int(line[i_linkcount])
         iobj = inodeObj(inodenum, linkcount)
         blkptrs = []
         for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
@@ -161,7 +163,12 @@ def handleInodesInUse():
             entrynum = entrynum + 1
 
         # Single indirect pointers
-
+        ptr = int(line[i_firstblockpointer + 12 + 1], 16)
+        if ptr == 0: continue
+        blocks = INDIRECT_BLOCKS[ptr]
+        for (entrynum, blockval) in blocks:
+            addReferenceToBlock(blockval, inodenum, 12+1)
+            entrynum = entrynum + 1
     return
 
 
@@ -197,15 +204,19 @@ def handleMissingInodes():
     MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
 
 def handleIndirectBlocks():
+    global INDIRECT_BLOCKS
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
     for line in indirect_blocks:
-        ContainingBlockNumber             = int(line[0], 16)
-        (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
-        if ContainingBlockNumber not in indirect_blocks:
+        ContainingBlockNumber             = int(line[ind_containingblock], 16)
+        print (ContainingBlockNumber)
+        (EntryNumber, BlockPointer_Value) = (int(line[ind_entrynum]), int(line[ind_blockpointerval], 16))
+        if ContainingBlockNumber not in INDIRECT_BLOCKS:
             INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
+
+    return
 
 # # 1. UNALLOCATED BLOCKS
 # def write1():
@@ -289,8 +300,8 @@ def write6():
 if __name__ == "__main__":
 
     initStructs()
-    handleInodesInUse()
     handleIndirectBlocks()
+    handleInodesInUse()
     handleDirectories()
     handleMissingInodes()
 
