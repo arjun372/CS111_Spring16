@@ -82,7 +82,7 @@ ALL_BLOCKS      = dict()
 ALL_INODES      = dict()
 
 # Super block entries
-MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([None]*9)
+MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([0]*9)
 
 # Read CSV files into program
 superblock       = csv.reader(open('super.csv', 'rb'), delimiter=',', quotechar='"');
@@ -96,6 +96,15 @@ output_file      = open('lab3b_check.txt', 'w+')
 def initStructs():
     # parse superblock data
     for line in superblock:
+        global MagicNumber
+        global InodeCount
+        global BlockCount
+        global BlockSize
+        global FragmentSize
+        global BlocksPerGroup
+        global InodesPerGroup
+        global FragmentsPerGroup
+        global FirstDataBlock
         MagicNumber       = int(line[0], 16);
         InodeCount        = int(line[1]);
         BlockCount        = int(line[2]);
@@ -143,13 +152,14 @@ def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
 def handleInodesInUse():
     # Parse Inodes into INODES_IN_USE
     for line in inode:
-        inodenum    = line[i_num]
-        linkcount   = line[i_linkcount]
+        inodenum    = int(line[i_num])
+        linkcount   = int(line[i_linkcount])
         iobj = inodeObj(inodenum, linkcount)
+        INODES_IN_USE[inodenum] = iobj
         blkptrs = []
         for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
         iobj.blockPtrs = blkptrs
-        INODES_IN_USE[inodenum] = iobj
+        #INODES_IN_USE[inodenum] = iobj
 
         # Read blocks
         entrynum = 0
@@ -163,7 +173,6 @@ def handleInodesInUse():
         # Single indirect pointers
 
     return
-
 
 def handleDirectories():
     for line in directory :
@@ -187,7 +196,6 @@ def handleDirectories():
         elif (entry.entryNumber == 1 or entry.entryName == '..') and ((entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode) or (entry.parentInode not in ALL_DIR_ENTRIES)):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
             #                                 DirEntry, Should link to value
-
     return
 
 def handleMissingInodes():
@@ -202,7 +210,7 @@ def handleIndirectBlocks():
     for line in indirect_blocks:
         ContainingBlockNumber             = int(line[0], 16)
         (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
-        if ContainingBlockNumber not in indirect_blocks:
+        if ContainingBlockNumber not in INDIRECT_BLOCKS:
             INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
@@ -220,12 +228,13 @@ def handleIndirectBlocks():
 
 # 1. UNALLOCATED BLOCKS
 def write1():
+    return
     buff = ""
     for (bnum, refs) in ALL_BLOCKS.iteritems():
         if bnum in FreeBlocks:
             buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
             for entry in sorted(refs):
-                buff += ()" INODE < " + str(entry.inodeNumber) + " >")
+                buff += (" INODE < " + str(entry.inodeNumber) + " >")
     return
 
 # 2. DUPLICATELY ALLOCATED BLOCKS
@@ -239,36 +248,23 @@ def write2():
             output_file.write(line.strip() + "\n");
     return
 
-
 # Incorrect Link Count
 def write5():
     buff = ""
-
     for inum in sorted(INODES_IN_USE):
-        entry = INODES_IN_USE[inum]
+        entry    = INODES_IN_USE[inum]
         dirlinks = len(entry.dirEntries)
-        # if inum < 10 and dirlinks == 0:
-        #     bitmapBlockNum = BitmapPointers_FreeInodes
-        #     buff += "MISSING INODE < " + str(inum) + " > SHOULD BE IN FREE LIST < " + str(bitmapBlockNum) + " >\n"
-        if (not (inum > 10 and dirlinks == 0)) and dirlinks != entry.linkCount:
+        if inum > 10 and dirlinks == 0:
+            buff += ("MISSING INODE < " + str(inum) + " > SHOULD BE IN FREE LIST < ")
+            buff += str(BitmapPointers_FreeBlocks[int(inum)/InodesPerGroup]+1)
+            buff += " >\n"
+        elif dirlinks != entry.linkCount:
             buff += ("LINKCOUNT < " + str(inum) + " >")
             buff += (" IS < " + str(entry.linkCount) + " >")
             buff += (" SHOULD BE < " + str(dirlinks) + " >")
             buff += "\n"
-
     if verbose: print(buff)
     output_file.write(buff)
-
-    # for inum, iobj in INODES_IN_USE.iteritems():
-    #     # if inum > 10 and len(iobj.dirEntries) == 0: continue
-    #     if iobj.linkCount != len(iobj.dirEntries):
-    #         buff += ("LINKCOUNT < " + str(iobj.inodeNumber) + " >")
-    #         buff += (" IS < " + str(iobj.linkCount) + " >")
-    #         buff += (" SHOULD BE < " + str(len(iobj.dirEntries)) + " >")
-    #         buff += "\n"
-    #
-    # if verbose: print(buff)
-    # output_file.write(buff)
     return
 
 # Incorrect Directory Entry
@@ -287,8 +283,8 @@ def write6():
 if __name__ == "__main__":
 
     initStructs()
-    handleInodesInUse()
     handleIndirectBlocks()
+    handleInodesInUse()
     handleDirectories()
     handleMissingInodes()
 
