@@ -112,6 +112,7 @@ def initStructs():
 
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), int(line[dir_name]))
+        if(this_DirEntry.parentInode == 2):
         ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
         # if   EntryNumber >= 1:
