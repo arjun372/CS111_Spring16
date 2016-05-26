@@ -31,12 +31,11 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 verbose         = options.verbose
 
 class blockObj():
-    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber   = bnum
-        self.inodeNumber   = inodenum
-        self.entryNumber   = entrynum
-        self.indirectBlock = indirectblock
-        self.blockPtrs = []
+    def __init__(self, bnum, inodenum, entrynum):
+        self.blockNumber    = bnum
+        self.inodeNumber    = inodenum
+        self.entryNumber    = entrynum
+        self.referencePtrs  = []
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
@@ -85,6 +84,7 @@ bitmap           = csv.reader(open('bitmap.csv', 'rb'), delimiter=',');
 inode            = csv.reader(open('inode.csv', 'rb'), delimiter=',');
 directory        = csv.reader(open('directory.csv', 'rb'), delimiter=',');
 indirect_blocks  = csv.reader(open('indirect.csv', 'rb'), delimiter=',');
+output_file      = open('lab3b_check.txt', 'w+')
 
 def initStructs():
     # parse superblock data
@@ -105,14 +105,8 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_INODES[free_inode_bitmap_block] = nodeObj(free_inode_bitmap_block)
-        ALL_BLOCKS[free_block_bitmap_block] = BlockObj(free_block_bitmap_block)
-
-    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber = bnum
-        self.inodeNumber = inodenum
-        self.entryNumber = entrynum
-        self.indirectBlock = indirectblock
+        ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
+        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
@@ -141,21 +135,25 @@ def handleInodesInUse():
         iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
 
+
 def handleDirectories():
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        #if this_DirEntry.parentInode == 2:
         # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
-        ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
+            ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
         if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES :
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        else:
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber] = [this_DirEntry]
 
-    for (inum, entry) in ALL_DIR_ENTRIES.iteritems():
-        if entry.entryName == '.' and (entry.inodeNumber != entry.parentInode):
+        inum = this_DirEntry.inodeNumber; entry = this_DirEntry
+        if (entry.entryNumber == 0 or entry.entryName == '.') and (entry.inodeNumber != entry.parentInode):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
             #                                 DirEntry, Should link to value
-        elif entry.entryName == '..' and (entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode):
+        elif (entry.entryNumber == 1 or entry.entryName == '..') and ((entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode) or (entry.parentInode not in ALL_DIR_ENTRIES)):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
             #                                 DirEntry, Should link to value
 
@@ -176,6 +174,29 @@ def handleIndirectBlocks():
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
+# 1. UNALLOCATED BLOCKS
+def write1():
+    return
+    for item in ALL_BLOCKS:
+        if item in BitmapPointers_FreeBlocks:
+            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
+            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+                output_file.write(line.strip() + "\n");
+    return
+
+# 2. DUPLICATELY ALLOCATED BLOCKS
+def write2():
+    return
+    for item in ALL_BLOCKS:
+        if len(ALL_BLOCKS[item].referencePtrs) > 1:
+            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
+            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+            output_file.write(line.strip() + "\n");
+    return
+
+
 
 def write6():
     buff = ""
@@ -185,12 +206,11 @@ def write6():
         buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
         buff += (" SHOULD BE < " + str(shouldbe) + " >")
         buff += "\n"
-
-    print(buff)
+    if verbose == True: print(buff)
+    output_file.write(buff)
+    return
 
 if __name__ == "__main__":
-    # Open file to write the resulting output
-    output_file = open('lab3b_check.txt', 'w+')
 
     initStructs()
     handleInodesInUse()
@@ -198,7 +218,7 @@ if __name__ == "__main__":
     handleDirectories()
     handleMissingInodes()
 
-
+    ALL_BLOCKS = sorted(ALL_BLOCKS)
+    write1()
+    write2()
     write6()
-
-    for item in UNALLOCATED_BLOCKS : output_file.write("UNALLOCATED BLOCK < " + 1035 + " > REFERENCED BY INODE < " + 16 + " > ENTRY < " + 0 + " > INODE < " + 17 + " > INDIRECT BLOCK < " + 10 + " > ENTRY < " + 0 + " >\n")
