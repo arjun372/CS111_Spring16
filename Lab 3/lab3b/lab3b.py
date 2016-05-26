@@ -32,16 +32,17 @@ verbose         = options.verbose
 
 class blockObj():
     def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber = bnum
-        self.inodeNumber = inodenum
-        self.entryNumber = entrynum
+        self.blockNumber   = bnum
+        self.inodeNumber   = inodenum
+        self.entryNumber   = entrynum
         self.indirectBlock = indirectblock
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
         self.inodeNumber = inum
-        self.linkCount = linkcount
-        self.dirEntries = []
+        self.linkCount   = linkcount
+        self.dirEntries  = []
+        self.blockPtrs   = []
 
 class directoryEntry():
     def __init__(self, inodenumber, parentinode, entrynum, entryname = ''):
@@ -103,6 +104,14 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
+        ALL_INODES[free_inode_bitmap_block] = InodeObj(free_inode_bitmap_block)
+        ALL_BLOCKS[free_block_bitmap_block] = BlockObj(free_block_bitmap_block)
+
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
+        self.blockNumber = bnum
+        self.inodeNumber = inodenum
+        self.entryNumber = entrynum
+        self.indirectBlock = indirectblock
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
@@ -137,7 +146,7 @@ def handleDirectories():
             INCORRECT_DIRECTORY_ENTRIES.append((this_DirEntry.parentInode, this_DirEntry.entryName, this_DirEntry.inodeNumber, ))
         # elif EntryNumber == 0:
         if   this_DirEntry.inodeNumber in ALL_INODES : ALL_INODES[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        #TODO :  
+        #TODO :
         #elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
     #    else
 
