@@ -186,6 +186,21 @@ def handleIndirectBlocks():
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
 
+
+# Incorrect Link Count
+def write5():
+    buff = ""
+    for inum, iobj in INODES_IN_USE.iteritems():
+        if iobj.linkCount != len(iobj.dirEntries):
+            buff += ("LINKCOUNT < " + str(iobj.inodeNumber) + " >")
+            buff += (" IS < " + str(iobj.linkCount) + " >")
+            buff += (" SHOULD BE < " + str(len(iobj.dirEntries)) + " >")
+            buff += "\n"
+
+    if verbose: print(buff)
+    # output_file.write(buff)
+
+# Incorrect Directory Entry
 def write6():
     buff = ""
     for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
@@ -208,6 +223,7 @@ if __name__ == "__main__":
     handleMissingInodes()
 
 
+    write5()
     write6()
 
     for item in UNALLOCATED_BLOCKS : output_file.write("UNALLOCATED BLOCK < " + 1035 + " > REFERENCED BY INODE < " + 16 + " > ENTRY < " + 0 + " > INODE < " + 17 + " > INDIRECT BLOCK < " + 10 + " > ENTRY < " + 0 + " >\n")
