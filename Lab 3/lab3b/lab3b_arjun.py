@@ -194,4 +194,3 @@ if __name__ == "__main__":
             for entry in sorted(ALL_BLOCKS[item].referencePtrs):
                 line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
             output_file.write(line.strip() + "\n");
-        
