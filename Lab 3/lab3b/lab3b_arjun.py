@@ -84,6 +84,7 @@ bitmap           = csv.reader(open('bitmap.csv', 'rb'), delimiter=',');
 inode            = csv.reader(open('inode.csv', 'rb'), delimiter=',');
 directory        = csv.reader(open('directory.csv', 'rb'), delimiter=',');
 indirect_blocks  = csv.reader(open('indirect.csv', 'rb'), delimiter=',');
+output_file      = open('lab3b_check.txt', 'w+')
 
 def initStructs():
     # parse superblock data
@@ -105,13 +106,7 @@ def initStructs():
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
         ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
-        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0 ,0)
-
-    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber = bnum
-        self.inodeNumber = inodenum
-        self.entryNumber = entrynum
-        self.indirectBlock = indirectblock
+        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
@@ -135,20 +130,32 @@ def handleInodesInUse():
         inodenum    = line[i_num]
         linkcount   = line[i_linkcount]
         iobj = inodeObj(inodenum, linkcount)
+        blkptrs = []
+        for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
+        iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
+
 
 def handleDirectories():
     for line in directory :
-        this_DirEntry = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        if this_DirEntry.parentInode == ROOT_DIR or this_DirEntry.inodeNumber != this_DirEntry.parentInode: ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
+        # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
+        if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
+            ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
-        if this_DirEntry.entryNumber >= 1 and (this_DirEntry.inodeNumber != ALL_DIR_ENTRIES[this_DirEntry.parentInode] or this_DirEntry.parentInode not in ALL_DIR_ENTRIES):
-            INCORRECT_DIRECTORY_ENTRIES.append((this_DirEntry.parentInode, this_DirEntry.entryName, this_DirEntry.inodeNumber, ))
-        # elif EntryNumber == 0:
-        if   this_DirEntry.inodeNumber in ALL_INODES : ALL_INODES[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        #TODO :
-        #elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
-    #    else
+        if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES :
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        else:
+            UNALLOCATED_INODES[this_DirEntry.inodeNumber] = [this_DirEntry]
+
+        inum = this_DirEntry.inodeNumber; entry = this_DirEntry
+        if (entry.entryNumber == 0 or entry.entryName == '.') and (entry.inodeNumber != entry.parentInode):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
+            #                                 DirEntry, Should link to value
+        elif (entry.entryNumber == 1 or entry.entryName == '..') and ((entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode) or (entry.parentInode not in ALL_DIR_ENTRIES)):
+            INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
+            #                                 DirEntry, Should link to value
 
 def handleMissingInodes():
     # Finding Missing inodes
@@ -167,9 +174,43 @@ def handleIndirectBlocks():
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
+# 1. UNALLOCATED BLOCKS
+def write1():
+    return
+    for item in ALL_BLOCKS:
+        if item in BitmapPointers_FreeBlocks:
+            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
+            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+                output_file.write(line.strip() + "\n");
+    return
+
+# 2. DUPLICATELY ALLOCATED BLOCKS
+def write2():
+    return
+    for item in ALL_BLOCKS:
+        if len(ALL_BLOCKS[item].referencePtrs) > 1:
+            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
+            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+            output_file.write(line.strip() + "\n");
+    return
+
+
+
+def write6():
+    buff = ""
+    for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
+        buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
+        buff += (" NAME < " + str(entry.entryName) + " >")
+        buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
+        buff += (" SHOULD BE < " + str(shouldbe) + " >")
+        buff += "\n"
+    if verbose == True: print(buff)
+    output_file.write(buff)
+    return
+
 if __name__ == "__main__":
-    # Open file to write the resulting output
-    output_file = open('lab3b_check.txt', 'w+')
 
     initStructs()
     handleInodesInUse()
@@ -178,19 +219,6 @@ if __name__ == "__main__":
     handleMissingInodes()
 
     ALL_BLOCKS = sorted(ALL_BLOCKS)
-
-    # 1. UNALLOCATED BLOCKS
-    for item in ALL_BLOCKS:
-        if item in BitmapPointers_FreeBlocks:
-            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
-                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
-            output_file.write(line.strip() + "\n");
-
-    # 2. DUPLICATELY ALLOCATED BLOCKS
-    for item in ALL_BLOCKS:
-        if len(ALL_BLOCKS[item].referencePtrs) > 1:
-            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
-                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
-            output_file.write(line.strip() + "\n");
+    write1()
+    write2()
+    write6()
