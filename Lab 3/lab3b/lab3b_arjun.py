@@ -1,6 +1,28 @@
 import csv
 from optparse import OptionParser
 
+# Constants used to index fields for ease of use
+
+# Super block
+s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
+
+# Block Group Descriptors
+bg_total_blocks, bg_free_blocks, bg_free_indoes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
+
+# Free Bitmap entry
+bm_map_blocknum, bm_num = tuple(range(2))
+
+# Inode
+i_num, i_filetype, i_mode, i_owner, i_group, i_linkcount, i_createtime, i_modtime, i_accesstime, i_filesize, i_numblocks, i_firstblockpointer = tuple(range(12))
+
+# Directory entry
+dir_parentinode, dir_entrynum, dir_entrylen, dir_namelen, dir_fileinode, dir_name = tuple(range(6))
+
+# Indirect block entry
+ind_containingblock, ind_entrynum, ind_blockpointerval = tuple(range(3))
+
+# End constants
+
 # Read verbose option, if any
 parser          = OptionParser()
 parser.add_option("-v", "--verbose", action="store_true", dest="verbose", default=False)
@@ -8,23 +30,32 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 verbose         = options.verbose
 
 class block():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
+        self.blockNumber = bnum
+        self.inodeNumber = inodenum
+        self.entryNumber = entrynum
+        self.indirectBlock = indirectblock
 
 class inode():
-    def __init__(self, number):
-        self.number = number;
-        self.referenced_by = []
+    def __init__(self, inum, linkcount = 0):
+        self.inodeNumber = inum
+        self.linkCount = linkcount
+        self.dirEntries = []
+
+class directoryEntry():
+    def __init__(self, parentinode, entrynum):
+        self.parentInode = parentinode
+        self.entryNumber = entrynum
 
 # initialize helper data structures
-BITMAP_FreeInodes = [];
-BITMAP_FreeBlocks = [];
+BitmapPointers_FreeInodes = [];
+BitmapPointers_FreeBlocks = [];
 FreeInodes        = [];
 FreeBlocks        = [];
 
 BLOCKS_IN_USE     = dict()
 INODES_IN_USE     = dict()
+INDIRECT_BLOCKS   = dict()
 
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
@@ -59,20 +90,31 @@ for line in superblock:
 for line in group_descriptor:
     free_inode_bitmap_block = int(line[4], 16)
     free_block_bitmap_block = int(line[5], 16)
-    BITMAP_FreeInodes.append(free_inode_bitmap_block)
-    BITMAP_FreeBlocks.append(free_block_bitmap_block)
-
-
+    BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
+    BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
 
 # parse free_bitmap_entry data : list of free inodes and free blocks
 for line in bitmap:
     MapBlock_Number       = int(line[0], 16);
     Block_or_Inode_Number = int(line[1]);
-    if   MapBlock_Number in BITMAP_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
-    elif MapBlock_Number in BITMAP_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
+    if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
+    elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
     elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
-if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
+
+
+# parse indirect block entry: These are all the non-zero block pointers in an indirect block.
+#                             The blocks that contain indirect block pointers are included.
+for line in indirect_blocks:
+    ContainingBlockNumber             = int(line[0], 16)
+    (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
+    if ContainingBlockNumber not in INDIRECT_BLOCKS:
+        INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
+    else:
+        INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
+
+if MagicNumber == 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
+
 
 
 

@@ -30,22 +30,14 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 verbose         = options.verbose
 
 class block():
-    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
-        self.blockNumber = bnum
-        self.inodeNumber = inodenum
-        self.entryNumber = entrynum
-        self.indirectBlock = indirectblock
+    def __init__(self, number):
+        self.number = number;
+        self.referenced_by = []
 
 class inode():
-    def __init__(self, inum, linkcount = 0):
-        self.inodeNumber = inum
-        self.linkCount = linkcount
-        self.dirEntries = []
-
-class directoryEntry():
-    def __init__(self, parentinode, entrynum):
-        self.parentInode = parentinode
-        self.entryNumber = entrynum
+    def __init__(self, number):
+        self.number = number;
+        self.referenced_by = []
 
 # initialize helper data structures
 BitmapPointers_FreeInodes = [];
@@ -111,6 +103,8 @@ for line in indirect_blocks:
     else:
         INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
+
+
 if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
 
 
@@ -151,3 +145,17 @@ for item in UNALLOCATED_BLOCKS : output_file.write("UNALLOCATED BLOCK < " + 1035
 #     # for line in inode: fout.write(str(line))
 #     # for line in directory: fout.write(str(line))
 #     # for line in indirect_blocks: fout.write(str(line))
+
+
+
+for line in directory :
+    ParentInodeNumber = int(line[0])
+    EntryNumber       = int(line[1])
+    InodeNumber       = int(line[4])
+
+
+    if   EntryNumber >= 1:
+    elif EntryNumber == 0:
+
+    if InodeNumber in INODES_IN_USE :
+                
