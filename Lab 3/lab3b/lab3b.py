@@ -35,6 +35,7 @@ class blockObj():
         self.inodeNumber = inodenum
         self.entryNumber = entrynum
         self.indirectBlock = indirectblock
+        self.blockPtrs = []
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
@@ -124,19 +125,20 @@ def handleInodesInUse():
         inodenum    = line[i_num]
         linkcount   = line[i_linkcount]
         iobj = inodeObj(inodenum, linkcount)
+        blkptrs = []
+        for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
+        iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
 
 def handleDirectories():
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
         #if this_DirEntry.parentInode == 2:
+        # Add this_DirEntry to the ALL_DIR_ENTRIES dictionary
         ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
-        # if   EntryNumber >= 1:
-        # elif EntryNumber == 0:
-        if   this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
+        if this_DirEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
         elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
-    #    else
 
 def handleMissingInodes():
     # Finding Missing inodes
