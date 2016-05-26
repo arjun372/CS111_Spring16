@@ -221,11 +221,11 @@ def handleIndirectBlocks():
 # 1. UNALLOCATED BLOCKS
 def write1():
     buff = ""
-    for (bnum, refs) in ALL_BLOCKS.iteritems():
+    for bnum in ALL_BLOCKS:
         if bnum in FreeBlocks:
             buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
-            for entry in sorted(refs):
-                buff += ()" INODE < " + str(entry.inodeNumber) + " >")
+            for entry in sorted(ALL_BLOCKS[bnum]):
+                buff += (" INODE < " + str(entry.inodeNumber) + " >")
     return
 
 # 2. DUPLICATELY ALLOCATED BLOCKS
