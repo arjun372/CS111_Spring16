@@ -30,12 +30,19 @@ parser.add_option("-v", "--verbose", action="store_true", dest="verbose", defaul
 (options, args) = parser.parse_args()
 verbose         = options.verbose
 
+# class blockObj():
+#     def __init__(self, bnum, inodenum, entrynum):
+#         self.blockNumber    = bnum
+#         self.inodeNumber    = inodenum
+#         self.entryNumber    = entrynum
+#         self.referencePtrs  = []
+
 class blockObj():
-    def __init__(self, bnum, inodenum, entrynum):
+    def __init__(self, bnum, inodenum, entrynum, indirectblock = 0):
         self.blockNumber    = bnum
         self.inodeNumber    = inodenum
         self.entryNumber    = entrynum
-        self.referencePtrs  = []
+        self.indirectBlock  = indirectblock
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
@@ -105,8 +112,8 @@ def initStructs():
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
-        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
+        ALL_BLOCKS[free_inode_bitmap_block] = [blockObj(free_inode_bitmap_block, 0, 0)]
+        ALL_BLOCKS[free_block_bitmap_block] = [blockObj(free_block_bitmap_block, 0, 0)]
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
@@ -124,6 +131,15 @@ def initStructs():
     # UNALLOCATED_DIRECTORY :
 
 
+def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
+    if ptr == 0: return
+    obj = blockObj(ptr, inodenum, entrynum, indirectblock)
+    if ptr in ALL_BLOCKS:
+        ALL_BLOCKS[ptr].append(obj)
+    else:
+        ALL_BLOCKS[ptr] = [obj]
+    return
+
 def handleInodesInUse():
     # Parse Inodes into INODES_IN_USE
     for line in inode:
@@ -134,6 +150,19 @@ def handleInodesInUse():
         for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
         iobj.blockPtrs = blkptrs
         INODES_IN_USE[inodenum] = iobj
+
+        # Read blocks
+        entrynum = 0
+
+        # Direct pointers
+        for i in range(i_firstblockpointer, i_firstblockpointer + min(12, line[i_numblocks])):
+            ptr = line[i]
+            addReferenceToBlock(ptr, inodenum, entrynum)
+            entrynum = entrynum + 1
+
+        # Single indirect pointers
+
+    return
 
 
 def handleDirectories():
@@ -178,15 +207,25 @@ def handleIndirectBlocks():
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
+# # 1. UNALLOCATED BLOCKS
+# def write1():
+#     buff = ""
+#     for item in ALL_BLOCKS:
+#         if item in FreeBlocks:
+#             buff += "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
+#             for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+#                 buff += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+#                 output_file.write(buff.strip() + "\n");
+#     return
+
 # 1. UNALLOCATED BLOCKS
 def write1():
-    return
-    for item in ALL_BLOCKS:
-        if item in BitmapPointers_FreeBlocks:
-            line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
-                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
-                output_file.write(line.strip() + "\n");
+    buff = ""
+    for (bnum, refs) in ALL_BLOCKS.iteritems():
+        if bnum in FreeBlocks:
+            buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
+            for entry in sorted(refs):
+                buff += ()" INODE < " + str(entry.inodeNumber) + " >")
     return
 
 # 2. DUPLICATELY ALLOCATED BLOCKS
