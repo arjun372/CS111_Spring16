@@ -62,3 +62,6 @@ if verbose == True:
 bbmapblocks = []
 for row in group_descriptor: bbmapblocks.append(int(row[bg_block_bitmap_block]))
 print(bbmapblocks)
+
+
+# Missing iNode :: inodes that are not in use, and not listed on the free bitmap
