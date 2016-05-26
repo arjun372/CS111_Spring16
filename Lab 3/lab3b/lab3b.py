@@ -118,8 +118,8 @@ def initStructs():
         INODES_IN_USE[inodenum] = iobj
 
     for line in directory :
-        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), int(line[dir_name]))
-        if(this_DirEntry.parentInode == 2):
+        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
+        #if this_DirEntry.parentInode == 2:
         ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
 
         # if   EntryNumber >= 1:
@@ -128,11 +128,6 @@ def initStructs():
         elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
     #    else
 
-
-        self.inodeNumber = inodenumber
-        self.parentInode = parentinode
-        self.entryNumber = entrynum
-        self.entryName   = entryname
 
 
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
