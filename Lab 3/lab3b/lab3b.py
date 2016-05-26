@@ -141,6 +141,8 @@ def initStructs():
 
 
 def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
+    global ALL_BLOCKS
+
     if ptr == 0: return
     obj = blockObj(ptr, inodenum, entrynum, indirectblock)
     if ptr in ALL_BLOCKS:
@@ -171,7 +173,12 @@ def handleInodesInUse():
             entrynum = entrynum + 1
 
         # Single indirect pointers
-
+        ptr = int(line[i_firstblockpointer + 12 + 1], 16)
+        if ptr == 0: continue
+        blocks = INDIRECT_BLOCKS[ptr]
+        for (entrynum, blockval) in blocks:
+            addReferenceToBlock(blockval, inodenum, 12+1)
+            entrynum = entrynum + 1
     return
 
 def handleDirectories():
@@ -205,15 +212,18 @@ def handleMissingInodes():
     MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
 
 def handleIndirectBlocks():
+    global INDIRECT_BLOCKS
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
     for line in indirect_blocks:
-        ContainingBlockNumber             = int(line[0], 16)
-        (EntryNumber, BlockPointer_Value) = (int(line[1]), int(line[2], 16))
+        ContainingBlockNumber             = int(line[ind_containingblock], 16)
+        (EntryNumber, BlockPointer_Value) = (int(line[ind_entrynum]), int(line[ind_blockpointerval], 16))
         if ContainingBlockNumber not in INDIRECT_BLOCKS:
             INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
+
+    return
 
 # # 1. UNALLOCATED BLOCKS
 # def write1():
@@ -230,10 +240,10 @@ def handleIndirectBlocks():
 def write1():
     return
     buff = ""
-    for (bnum, refs) in ALL_BLOCKS.iteritems():
+    for bnum in ALL_BLOCKS:
         if bnum in FreeBlocks:
             buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
-            for entry in sorted(refs):
+            for entry in sorted(ALL_BLOCKS[bnum]):
                 buff += (" INODE < " + str(entry.inodeNumber) + " >")
     return
 
