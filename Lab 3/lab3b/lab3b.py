@@ -110,6 +110,15 @@ def initStructs():
         elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
 
+    if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
+    # UNALLOCATED BLOCK : Blocks that are in use but also listed on the free bitmap.
+    #                     Here the INODEs should be listed in increasing order of inode_num.
+
+
+    # UNALLOCATED_DIRECTORY :
+
+
+def handleInodesInUse():
     # Parse Inodes into INODES_IN_USE
     for line in inode:
         inodenum    = line[i_num]
@@ -117,6 +126,7 @@ def initStructs():
         iobj = inodeObj(inodenum, linkcount)
         INODES_IN_USE[inodenum] = iobj
 
+def handleDirectories():
     for line in directory :
         this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
         #if this_DirEntry.parentInode == 2:
@@ -128,11 +138,13 @@ def initStructs():
         elif this_DirEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
     #    else
 
+def handleMissingInodes():
     # Finding Missing inodes
     totalinodes = 0
     for line in superblock: totalinodes = line[s_total_inodes]
     MISSING_INODES = [i for i in range(totalinodes) if i not in ALL_DIR_ENTRIES]
 
+def handleIndirectBlocks():
     # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
     #                             The blocks that contain indirect block pointers are included.
     for line in indirect_blocks:
@@ -143,28 +155,15 @@ def initStructs():
         else:
             INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
 
-    if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
-
-
-
-
-    # UNALLOCATED BLOCK : Blocks that are in use but also listed on the free bitmap.
-    #                     Here the INODEs should be listed in increasing order of inode_num.
-
-
-    # UNALLOCATED_DIRECTORY :
-
-
-
-
-
-    # Missing iNode :: inodes that are not in use, and not listed on the free bitmap
-
 
 if __name__ == "__main__":
     # Open file to write the resulting output
     output_file = open('lab3b_check.txt', 'w+')
 
     initStructs()
+    handleInodesInUse()
+    handleIndirectBlocks()
+    handleDirectories()
+    handleMissingInodes()
 
     for item in UNALLOCATED_BLOCKS : output_file.write("UNALLOCATED BLOCK < " + 1035 + " > REFERENCED BY INODE < " + 16 + " > ENTRY < " + 0 + " > INODE < " + 17 + " > INDIRECT BLOCK < " + 10 + " > ENTRY < " + 0 + " >\n")
