@@ -36,6 +36,9 @@ Each of these functions were tested individually, with the verbose option, to
 ensure that each structure is properly filled from the respective .csv files.
 Similar checks were also completed on the "write" functions.
 
+Furthermore, we included a Makefile "make test" that would sort and diff the
+program and official output to determine validity.
+
 --------------------------------------------------------------------------------
 Known bugs - None, although our code runs quite slowly.
 ---------------
