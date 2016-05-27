@@ -158,6 +158,7 @@ def handleInodesInUse():
     global BlockCount
     global INODES_IN_USE
     global INDIRECT_BLOCKS
+    global INVALID_BLOCK_POINTERS
     for line in inode:
         blkptrs                 = []
         inodenum                = int(line[0])
@@ -177,9 +178,9 @@ def handleInodesInUse():
                 if currentBlock == 0 or currentBlock > BlockCount :
                     INVALID_BLOCK_POINTERS.append((currentBlock, inodenum, 0, i+11))
                 else:
-                    if i==1: blocksInsideBlock = getNumBlocks_Single(currentBlock, inodenum, 0, i+11)
-                    if i==2: blocksInsideBlock = getNumBlocks_Double(currentBlock, inodenum, 0, i+11)
-                    if i==3: blocksInsideBlock = getNumBlocks_Triple(currentBlock, inodenum, 0, i+11)
+                    if   i==1: blocksInsideBlock = getNumBlocks_Single(currentBlock, inodenum, 0, i+11)
+                    elif i==2: blocksInsideBlock = getNumBlocks_Double(currentBlock, inodenum, 0, i+11)
+                    elif i==3: blocksInsideBlock = getNumBlocks_Triple(currentBlock, inodenum, 0, i+11)
                     pendingIndirectBlocks -= blocksInsideBlock
     return
 
