@@ -208,16 +208,6 @@ def handleDirectories():
             INCORRECT_DIRECTORY_ENTRIES.append((currEntry.parentInode, currEntry.entryName, currEntry.inodeNumber, correctParentInode))
     return
 
-
-# Finding Missing inodes
-def handleMissingInodes():
-    global DIRS_IN_USE
-    global MISSING_INODES
-    global InodeCount
-    # totalinodes = 0
-    # for line in superblock: totalinodes = line[s_total_inodes]
-    MISSING_INODES = [i for i in range(InodeCount) if i not in DIRS_IN_USE]
-
 # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
 #                             The blocks that contain indirect block pointers are included.
 def handleIndirectBlocks():
@@ -237,8 +227,9 @@ def write1():
     for item in sorted(BLOCKS_IN_USE):
         if item in FreeBlocks:
             line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(BLOCKS_IN_USE[item].referencePtrs):
-                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+            for (inodeNum, indirectBlockNum, entryNum) in sorted(BLOCKS_IN_USE[item].referencePtrs):
+                if int(indirectBlockNum == 0): line += "INODE < " + str(inodeNum) + " > ENTRY < " + str(entryNum) + " > "
+                else: line += "INODE < " + str(inodeNum) + " > INDIRECT BLOCK < " + str(indirectBlockNum) + " > ENTRY < " + str(entryNum) + " > "
             output_file.write(line.strip() + "\n");
     return
 
@@ -247,9 +238,10 @@ def write2():
     global BLOCKS_IN_USE
     for item in sorted(BLOCKS_IN_USE):
         if len(BLOCKS_IN_USE[item].referencePtrs) > 1:
-            line = "MULTIPLY REFERENCED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(BLOCKS_IN_USE[item].referencePtrs):
-                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+            line = "MULTIPLY REFERENCED BLOCK < " + str(item) + " > BY "
+            for (inodeNum, indirectBlockNum, entryNum) in sorted(BLOCKS_IN_USE[item].referencePtrs):
+                if int(indirectBlockNum == 0): line += "INODE < " + str(inodeNum) + " > ENTRY < " + str(entryNum) + " > "
+                else: line += "INODE < " + str(inodeNum) + " > INDIRECT BLOCK < " + str(indirectBlockNum) + " > ENTRY < " + str(entryNum) + " > "
             output_file.write(line.strip() + "\n");
     return
 
@@ -273,7 +265,7 @@ def write4and5():
         dirlinks = len(entry.dirEntries)
         if inum > 10 and dirlinks == 0:
             buff += ("MISSING INODE < " + str(inum) + " > SHOULD BE IN FREE LIST < ")
-            buff += str(BitmapPointers_FreeBlocks[int(inum)/InodesPerGroup]+1)
+            buff += str(BitmapPointers_FreeInodes[int(inum)/InodesPerGroup])
             buff += " >\n"
         elif dirlinks != entry.linkCount:
             buff += ("LINKCOUNT < " + str(inum) + " >")
@@ -303,7 +295,7 @@ def write7():
     for (blocknum, inodenum, indirect_block, entry) in sorted(INVALID_BLOCK_POINTERS):
         buff += ("INVALID BLOCK < " + str(blocknum) + " >")
         buff += (" IN INODE < "     + str(inodenum) + " >")
-        if int(indirect_block): # ensure that indirect block is not zero
+        if int(indirect_block > 0): # ensure that indirect block is not zero
             buff += (" INDIRECT BLOCK < " + str(indirect_block) + " >")
         buff += (" ENTRY < " + str(entry) + " >\n")
     if verbose: print(buff)
