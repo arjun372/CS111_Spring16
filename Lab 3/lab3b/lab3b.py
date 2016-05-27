@@ -2,12 +2,6 @@ import csv
 from optparse import OptionParser
 
 ROOT_DIR = 2
-bm_map_blocknum, bm_num = tuple(range(2))
-ind_containingblock, ind_entrynum, ind_blockpointerval = tuple(range(3))
-dir_parentinode, dir_entrynum, dir_entrylen, dir_namelen, dir_fileinode, dir_name = tuple(range(6))
-bg_total_blocks, bg_free_blocks, bg_free_inodes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
-i_num, i_filetype, i_mode, i_owner, i_group, i_linkcount, i_createtime, i_modtime, i_accesstime, i_filesize, i_numblocks, i_firstblockpointer = tuple(range(12))
-s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
 
 # Read verbose option, if any
 parser          = OptionParser()
@@ -37,28 +31,19 @@ class directoryEntry():
         self.entryNumber = entrynum
         self.entryName   = entryname
 
-# initialize helper data structures
-BitmapPointers_FreeInodes = [];
-BitmapPointers_FreeBlocks = [];
-FreeInodes                = [];
-FreeBlocks                = [];
+# global arrays that contain final values to be printed
+BitmapPointers_FreeInodes    = []
+BitmapPointers_FreeBlocks    = []
+FreeInodes                   = []
+FreeBlocks                   = []
+INVALID_BLOCK_POINTERS       = []
+INCORRECT_DIRECTORY_ENTRIES  = []
 
 BLOCKS_IN_USE       = dict()
 INODES_IN_USE       = dict()
 INDIRECT_BLOCKS     = dict()
 UNALLOCATED_INODES  = dict()
-DIRS_IN_USE     = dict()
-
-# global arrays that contain final values to be printed
-MISSING_INODES               = []
-UNALLOCATED_BLOCKS           = []
-INVALID_BLOCK_POINTERS       = []
-INCORRECT_LINKCOUNT_INODES   = []
-INCORRECT_DIRECTORY_ENTRIES  = []
-DUPLICATELY_ALLOCATED_BLOCKS = []
-
-# Super block entries
-MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([0]*9)
+DIRS_IN_USE         = dict()
 
 # Read CSV files into program
 superblock       = csv.reader(open('super.csv', 'rb'), delimiter=',', quotechar='"');
@@ -260,6 +245,12 @@ def write3():
 # Incorrect Link Count
 def write4and5():
     buff = ""
+    global InodeCount
+    global FreeInodes
+    global INODES_IN_USE
+    global InodesPerGroup
+    global BitmapPointers_FreeInodes
+    global BitmapPointers_FreeBlocks
     for inum in sorted(INODES_IN_USE):
         entry    = INODES_IN_USE[inum]
         dirlinks = len(entry.dirEntries)
@@ -272,6 +263,16 @@ def write4and5():
             buff += (" IS < " + str(entry.linkCount) + " >")
             buff += (" SHOULD BE < " + str(dirlinks) + " >")
             buff += "\n"
+        if inum in FreeInodes:
+            buff += ("UNALLOCATED INODE < " + str(inum) + " >\n")
+    if verbose: print(buff)
+    output_file.write(buff)
+    buff = ""
+    for inode in range(11, InodeCount):
+        if inode not in INODES_IN_USE and inode not in FreeInodes:
+            buff += ("MISSING INODE < " + str(inode) + " > SHOULD BE IN FREE LIST < ")
+            buff += str(BitmapPointers_FreeBlocks[int(inode)/InodesPerGroup])
+            buff += " >\n"
     if verbose: print(buff)
     output_file.write(buff)
     return
@@ -279,6 +280,7 @@ def write4and5():
 # Incorrect Directory Entry
 def write6():
     buff = ""
+    global INCORRECT_DIRECTORY_ENTRIES
     for (parentInode, entryName, inodeNum, correct) in INCORRECT_DIRECTORY_ENTRIES:
         buff += ("INCORRECT ENTRY IN < " + str(parentInode) + " >")
         buff += (" NAME < " + str(entryName) + " >")
@@ -308,13 +310,12 @@ if __name__ == "__main__":
     handleIndirectBlocks()
     handleInodesInUse()
     handleDirectories()
-    #handleMissingInodes()
 
-    write1()        # NOT WORKING
-    write2()        # NOT WORKING
-    write3()        # NOT WORKING
+    write1()
+    write2()
+    write3()
     write4and5()
     write6()
-    write7()        # NOT WORKING
+    write7()
 
     output_file.close() # finally close the file to ensure that all buffers are flushed
