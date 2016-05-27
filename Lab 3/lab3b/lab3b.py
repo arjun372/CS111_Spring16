@@ -132,7 +132,7 @@ def getNumBlocks_Single(blockNum, inodeNum, indirectBlockNum, entry):
     if blockNum in INDIRECT_BLOCKS:
       for item in INDIRECT_BLOCKS[blockNum]:
         count += 1
-        appendReference(item[1], inodeNum, item[0], indirectBlockNum)
+        appendReference(item[1], inodeNum, item[0], blockNum)
     return count
 
 def getNumBlocks_Double(blockNum, inodeNum, indirectBlockNum, entry):
@@ -141,7 +141,7 @@ def getNumBlocks_Double(blockNum, inodeNum, indirectBlockNum, entry):
     appendReference(blockNum, inodeNum, entry, indirectBlockNum)
     if blockNum in INDIRECT_BLOCKS:
       for item in INDIRECT_BLOCKS[blockNum]:
-        count += getNumBlocks_Single(item[1], inodeNum, indirectBlockNum, item[0])
+        count += getNumBlocks_Single(item[1], inodeNum, blockNum, item[0])
     return count
 
 def getNumBlocks_Triple(blockNum, inodeNum, indirectBlockNum, entry):
@@ -150,14 +150,13 @@ def getNumBlocks_Triple(blockNum, inodeNum, indirectBlockNum, entry):
     appendReference(blockNum, inodeNum, entry, indirectBlockNum)
     if blockNum in INDIRECT_BLOCKS:
       for item in INDIRECT_BLOCKS[blockNum]:
-        count += getNumBlocks_Double(item[1], inodeNum, indirectBlockNum, item[0])
+        count += getNumBlocks_Double(item[1], inodeNum, blockNum, item[0])
     return count
 
 # Parse Inodes into INODES_IN_USE
 def handleInodesInUse():
     global BlockCount
     global INODES_IN_USE
-    global INDIRECT_BLOCKS
     global INVALID_BLOCK_POINTERS
     for line in inode:
         blkptrs                 = []
@@ -174,7 +173,7 @@ def handleInodesInUse():
         # now iterate over the indirect block pointers recursively
         for i in range(1, 4):
             if (pendingIndirectBlocks > 0):
-                currentBlock = int(line[i+22], 16)                                                                         # TODO :: Check if this is supposed to be 0 or not
+                currentBlock = int(line[i+22], 16) # TODO :: Check if this is supposed to be 0 or not
                 if currentBlock == 0 or currentBlock > BlockCount :
                     INVALID_BLOCK_POINTERS.append((currentBlock, inodenum, 0, i+11))
                 else:
@@ -256,7 +255,6 @@ def write2():
 
 # 3. UNALLOCATED INODE
 def write3():
-    return
     global FreeInodes
     global INODES_IN_USE
     global UNALLOCATED_INODES
@@ -318,7 +316,7 @@ if __name__ == "__main__":
     handleIndirectBlocks()
     handleInodesInUse()
     handleDirectories()
-    handleMissingInodes()
+    #handleMissingInodes()
 
     write1()        # NOT WORKING
     write2()        # NOT WORKING
