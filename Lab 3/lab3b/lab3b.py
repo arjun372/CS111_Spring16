@@ -171,7 +171,7 @@ def handleInodesInUse():
             appendReference(int(line[ptrEntry], 16), inodenum, ptrEntry-11, 0)
 
         # now iterate over the indirect block pointers recursively
-        for i in range(1, 3):
+        for i in range(1, 4):
             if (pendingIndirectBlocks > 0):
                 currentBlock = int(line[i+22], 16)                                                                         # TODO :: Check if this is supposed to be 0 or not
                 if currentBlock == 0 or currentBlock > BlockCount :
