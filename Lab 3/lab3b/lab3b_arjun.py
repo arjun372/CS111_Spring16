@@ -222,3 +222,39 @@ if __name__ == "__main__":
     write1()
     write2()
     write6()
+    #
+    #
+    # # Read blocks
+    # entrynum = 0
+    #
+    # # Direct pointers
+    # for i in range(i_firstblockpointer, i_firstblockpointer + min(12, line[i_numblocks])):
+    #     ptr = line[i]
+    #     #addReferenceToBlock(ptr, inodenum, entrynum)
+    #     entrynum = entrynum + 1
+    #
+    # # Single indirect pointers
+    # ptr = int(line[i_firstblockpointer + 12 + 1], 16)
+    # if ptr == 0: continue
+    # blocks = INDIRECT_BLOCKS[ptr]
+    # for (entrynum, blockval) in blocks:
+    #     #addReferenceToBlock(blockval, inodenum, 12+1)
+    #     entrynum = entrynum + 1
+    #
+    # # Double indirect pointers
+    # ptr = int(line[i_firstblockpointer + 12 + 2], 16)
+    # if ptr == 0: continue
+    # blocks = INDIRECT_BLOCKS[ptr]
+    # for (en, bv) in blocks:
+    #     if bw == 0: continue
+    #     blocks2 = INDIRECT_BLOCKS[bv]
+    #     for (entrynum, blockval) in blocks2:
+    #         if blockval == 0: continue
+    #         addReferenceToBlock(blockval, inodenum, 12+1)
+    #         entrynum = entrynum + 1
+    #
+    # # Triple Indirect pointers
+    #
+    # buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
+    # for entry in sorted(BLOCKS_IN_USE[bnum].referencePtrs):
+    #     buff += (" INODE < " + str(entry[0]) + " >")

@@ -2,12 +2,12 @@ import csv
 from optparse import OptionParser
 
 ROOT_DIR = 2
-s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
-bg_total_blocks, bg_free_blocks, bg_free_inodes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
 bm_map_blocknum, bm_num = tuple(range(2))
-i_num, i_filetype, i_mode, i_owner, i_group, i_linkcount, i_createtime, i_modtime, i_accesstime, i_filesize, i_numblocks, i_firstblockpointer = tuple(range(12))
-dir_parentinode, dir_entrynum, dir_entrylen, dir_namelen, dir_fileinode, dir_name = tuple(range(6))
 ind_containingblock, ind_entrynum, ind_blockpointerval = tuple(range(3))
+dir_parentinode, dir_entrynum, dir_entrylen, dir_namelen, dir_fileinode, dir_name = tuple(range(6))
+bg_total_blocks, bg_free_blocks, bg_free_inodes, bg_total_dirs, bg_inode_bitmap_block, bg_block_bitmap_block, bg_inode_start_block = tuple(range(7))
+i_num, i_filetype, i_mode, i_owner, i_group, i_linkcount, i_createtime, i_modtime, i_accesstime, i_filesize, i_numblocks, i_firstblockpointer = tuple(range(12))
+s_magic, s_total_inodes, s_total_blocks, s_blocksize, s_fragsize, s_blocks_per_group, s_inodes_per_group, s_frags_per_group, s_first_data_block = tuple(range(9))
 
 # Read verbose option, if any
 parser          = OptionParser()
@@ -21,6 +21,7 @@ class blockObj():
         self.inodeNumber    = inodenum
         self.entryNumber    = entrynum
         self.indirectBlock  = indirectblock
+        self.referencePtrs  = []
 
 class inodeObj():
     def __init__(self, inum, linkcount = 0):
@@ -46,6 +47,7 @@ BLOCKS_IN_USE       = dict()
 INODES_IN_USE       = dict()
 INDIRECT_BLOCKS     = dict()
 UNALLOCATED_INODES  = dict()
+ALL_DIR_ENTRIES     = dict()
 
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
@@ -54,10 +56,6 @@ INVALID_BLOCK_POINTERS       = []
 INCORRECT_LINKCOUNT_INODES   = []
 INCORRECT_DIRECTORY_ENTRIES  = []
 DUPLICATELY_ALLOCATED_BLOCKS = []
-
-ALL_DIR_ENTRIES = dict()
-ALL_BLOCKS      = dict()
-ALL_INODES      = dict()
 
 # Super block entries
 MagicNumber,InodeCount,BlockCount,BlockSize,FragmentSize,BlocksPerGroup,InodesPerGroup,FragmentsPerGroup,FirstDataBlock = tuple([0]*9)
@@ -95,24 +93,22 @@ def initStructs():
 
     # parse group descriptor data : information for each group descriptor
     for line in group_descriptor:
-        global ALL_BLOCKS
+        global BLOCKS_IN_USE
         global BitmapPointers_FreeInodes
         global BitmapPointers_FreeBlocks
         free_inode_bitmap_block = int(line[4], 16)
         free_block_bitmap_block = int(line[5], 16)
         BitmapPointers_FreeInodes.append(free_inode_bitmap_block)
         BitmapPointers_FreeBlocks.append(free_block_bitmap_block)
-        ALL_BLOCKS[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
-        ALL_BLOCKS[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
+        BLOCKS_IN_USE[free_inode_bitmap_block] = blockObj(free_inode_bitmap_block, 0, 0)
+        BLOCKS_IN_USE[free_block_bitmap_block] = blockObj(free_block_bitmap_block, 0, 0)
 
     # parse free_bitmap_entry data : list of free inodes and free blocks
     for line in bitmap:
-        #global BitmapPointers_FreeInodes
-        #global BitmapPointers_FreeBlocks
         global FreeInodes
         global FreeBlocks
-        MapBlock_Number       = int(line[0], 16);
         Block_or_Inode_Number = int(line[1]);
+        MapBlock_Number       = int(line[0], 16);
         if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
         elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
@@ -120,60 +116,72 @@ def initStructs():
     if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
     return
 
-def addReferenceToBlock(ptr, inodenum, entrynum, indirectblock = 0):
-    global ALL_BLOCKS
-    if ptr == 0: return
-    obj = blockObj(ptr, inodenum, entrynum, indirectblock)
-    if ptr in ALL_BLOCKS:
-        ALL_BLOCKS[ptr].append(obj)
+def appendReference(blockNum, inodeNum, entry, indirectBlockNum):
+    global BlockCount
+    global BLOCKS_IN_USE
+    global INVALID_BLOCK_POINTERS
+    if blockNum == 0 or blockNum > BlockCount : INVALID_BLOCK_POINTERS.append((blockNum, inodeNum, indirectBlockNum, entry))
     else:
-        ALL_BLOCKS[ptr] = [obj]
+        if blockNum not in BLOCKS_IN_USE: BLOCKS_IN_USE[blockNum] = blockObj(blockNum, inodeNum, entry, indirectBlockNum)
+        BLOCKS_IN_USE[blockNum].referencePtrs.append((inodeNum, indirectBlockNum, entry))
     return
 
+def getNumBlocks_Single(blockNum, inodeNum, indirectBlockNum, entry):
+    global INDIRECT_BLOCKS
+    count = 1
+    appendReference(blockNum, inodeNum, entry, indirectBlockNum)
+    if blockNum in INDIRECT_BLOCKS:
+      for item in INDIRECT_BLOCKS[blockNum]:
+        count += 1
+        appendReference(item[1], inodeNum, item[0], indirectBlockNum)
+    return count
+
+def getNumBlocks_Double(blockNum, inodeNum, indirectBlockNum, entry):
+    global INDIRECT_BLOCKS
+    count = 1
+    appendReference(blockNum, inodeNum, entry, indirectBlockNum)
+    if blockNum in INDIRECT_BLOCKS:
+      for item in INDIRECT_BLOCKS[blockNum]:
+        count += getNumBlocks_Single(item[1], inodeNum, indirectBlockNum, item[0])
+    return count
+
+def getNumBlocks_Triple(blockNum, inodeNum, indirectBlockNum, entry):
+    global INDIRECT_BLOCKS
+    count = 1
+    appendReference(blockNum, inodeNum, entry, indirectBlockNum)
+    if blockNum in INDIRECT_BLOCKS:
+      for item in INDIRECT_BLOCKS[blockNum]:
+        count += getNumBlocks_Double(item[1], inodeNum, indirectBlockNum, item[0])
+    return count
+
+# Parse Inodes into INODES_IN_USE
 def handleInodesInUse():
-    # Parse Inodes into INODES_IN_USE
+    global BlockCount
     global INODES_IN_USE
     global INDIRECT_BLOCKS
     for line in inode:
-        inodenum    = int(line[i_num])
-        linkcount   = int(line[i_linkcount])
-        iobj = inodeObj(inodenum, linkcount)
-        blkptrs = []
-        for i in range(15) : blkptrs.append(int(line[i_firstblockpointer], 16) + i)
-        iobj.blockPtrs = blkptrs
-        INODES_IN_USE[inodenum] = iobj
+        blkptrs                 = []
+        inodenum                = int(line[0])
+        linkcount               = int(line[5])
+        numBlocks               = int(line[10])
+        pendingIndirectBlocks   = numBlocks - 12
+        INODES_IN_USE[inodenum] = inodeObj(inodenum, linkcount)
 
-        # Read blocks
-        entrynum = 0
+        # While iterating thru all the blockPtrs, check to see if they are valid and referenced correctly :
+        for ptrEntry in range(11, 11 + min(11+1, numBlocks)) :
+            appendReference(int(line[ptrEntry], 16), inodenum, ptrEntry-11, 0)
 
-        # Direct pointers
-        for i in range(i_firstblockpointer, i_firstblockpointer + min(12, line[i_numblocks])):
-            ptr = line[i]
-            addReferenceToBlock(ptr, inodenum, entrynum)
-            entrynum = entrynum + 1
-
-        # Single indirect pointers
-        ptr = int(line[i_firstblockpointer + 12 + 1], 16)
-        if ptr == 0: continue
-        blocks = INDIRECT_BLOCKS[ptr]
-        for (entrynum, blockval) in blocks:
-            addReferenceToBlock(blockval, inodenum, 12+1)
-            entrynum = entrynum + 1
-
-        # Double indirect pointers
-        ptr = int(line[i_firstblockpointer + 12 + 2], 16)
-        if ptr == 0: continue
-        blocks = INDIRECT_BLOCKS[ptr]
-        for (en, bv) in blocks:
-            if bw == 0: continue
-            blocks2 = INDIRECT_BLOCKS[bv]
-            for (entrynum, blockval) in blocks2:
-                if blockval == 0: continue
-                addReferenceToBlock(blockval, inodenum, 12+1)
-                entrynum = entrynum + 1
-
-        # Triple Indirect pointers
-
+        # now iterate over the indirect block pointers recursively
+        for i in range(1, 3):
+            if pendingIndirectBlocks:
+                currentBlock = int(line[i+22], 16)                                                                         # TODO :: Check if this is supposed to be 0 or not
+                if currentBlock == 0 or currentBlock > BlockCount :
+                    INVALID_BLOCK_POINTERS.append((currentBlock, inodenum, 0, i+11))
+                else:
+                    if i==1: blocksInsideBlock = getNumBlocks_Single(currentBlock, inodenum, 0, i+11)
+                    if i==2: blocksInsideBlock = getNumBlocks_Double(currentBlock, inodenum, 0, i+11)
+                    if i==3: blocksInsideBlock = getNumBlocks_Triple(currentBlock, inodenum, 0, i+11)
+                    pendingIndirectBlocks -= blocksInsideBlock
     return
 
 def handleDirectories():
@@ -227,28 +235,41 @@ def handleIndirectBlocks():
 
 # 1. UNALLOCATED BLOCKS
 def write1():
-    return
-    buff = ""
-    for bnum in ALL_BLOCKS:
-        if bnum in FreeBlocks:
-            buff += "UNALLOCATED BLOCK < " + str(bnum) + " > REFERENCED BY"
-            for entry in sorted(ALL_BLOCKS[bnum]):
-                buff += (" INODE < " + str(entry.inodeNumber) + " >")
-    return
-
-# 2. DUPLICATELY ALLOCATED BLOCKS
-def write2():
-    return
-    for item in ALL_BLOCKS:
-        if len(ALL_BLOCKS[item].referencePtrs) > 1:
+    global FreeBlocks
+    global BLOCKS_IN_USE
+    for item in sorted(BLOCKS_IN_USE):
+        if item in FreeBlocks:
             line = "UNALLOCATED BLOCK < " + str(item) + " > REFERENCED BY "
-            for entry in sorted(ALL_BLOCKS[item].referencePtrs):
+            for entry in sorted(BLOCKS_IN_USE[item].referencePtrs):
                 line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
             output_file.write(line.strip() + "\n");
     return
 
+# 2. DUPLICATELY ALLOCATED BLOCKS
+def write2():
+    global BLOCKS_IN_USE
+    for item in sorted(BLOCKS_IN_USE):
+        if len(BLOCKS_IN_USE[item].referencePtrs) > 1:
+            line = "MULTIPLY REFERENCED BLOCK < " + str(item) + " > REFERENCED BY "
+            for entry in sorted(BLOCKS_IN_USE[item].referencePtrs):
+                line += "INODE < " + str(entry[0]) + " > " + ("", "INDIRECT BLOCK < " + str(entry[1]) + " > ")[entry[1] == 0] + "ENTRY < " + str(entry[2]) + " > "
+            output_file.write(line.strip() + "\n");
+    return
+
+# 3. UNALLOCATED INODE
+def write3():
+    global FreeInodes
+    global INODES_IN_USE
+    global UNALLOCATED_INODES
+    for item in sorted(UNALLOCATED_INODES):
+        line = "UNALLOCATED INODE < " + str(item) + " > REFERENCED BY "
+        for entry in sorted(UNALLOCATED_INODES[item]):
+            line += "DIRECTORY < " + str(entry[0]) + " > ENTRY < " + str(entry[1]) + " > "
+        output_file.write(line.strip() + "\n");
+    return
+
 # Incorrect Link Count
-def write5():
+def write4and5():
     buff = ""
     for inum in sorted(INODES_IN_USE):
         entry    = INODES_IN_USE[inum]
@@ -279,6 +300,20 @@ def write6():
     output_file.write(buff)
     return
 
+# invalid block pointers
+def write7():
+    # global INVALID_BLOCK_POINTERS
+    # buff = ""
+    # for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
+    #     buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
+    #     buff += (" NAME < " + str(entry.entryName) + " >")
+    #     buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
+    #     buff += (" SHOULD BE < " + str(shouldbe) + " >")
+    #     buff += "\n"
+    # if verbose: print(buff)
+    # output_file.write(buff)
+    return
+
 if __name__ == "__main__":
 
     initStructs()
@@ -287,8 +322,11 @@ if __name__ == "__main__":
     handleDirectories()
     handleMissingInodes()
 
-    ALL_BLOCKS = sorted(ALL_BLOCKS)
-    write1()
-    write2()
-    write5()    # NOT WORKING
+    write1()        # NOT WORKING
+    write2()        # NOT WORKING
+    write3()        # NOT WORKING
+    write4and5()
     write6()
+    write7()
+
+    output_file.close() # finally close the file to ensure that all buffers are flushed
