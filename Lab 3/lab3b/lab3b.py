@@ -254,6 +254,8 @@ def write4and5():
     for inum in sorted(INODES_IN_USE):
         entry    = INODES_IN_USE[inum]
         dirlinks = len(entry.dirEntries)
+        if inum in FreeInodes:
+            buff += ("UNALLOCATED INODE < " + str(inum) + " >\n")
         if inum > 10 and dirlinks == 0:
             buff += ("MISSING INODE < " + str(inum) + " > SHOULD BE IN FREE LIST < ")
             buff += str(BitmapPointers_FreeInodes[int(inum)/InodesPerGroup])
@@ -263,8 +265,6 @@ def write4and5():
             buff += (" IS < " + str(entry.linkCount) + " >")
             buff += (" SHOULD BE < " + str(dirlinks) + " >")
             buff += "\n"
-        if inum in FreeInodes:
-            buff += ("UNALLOCATED INODE < " + str(inum) + " >\n")
     if verbose: print(buff)
     output_file.write(buff)
     buff = ""
