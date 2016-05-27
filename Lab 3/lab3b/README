@@ -12,7 +12,7 @@ Files
 
 2. lab3b.py     - Python source for analyzing the CSV files
 
-4. README   :: [[ self ]]
+3. README   :: [[ self ]]
 
 ---------------
 Extra features
@@ -22,9 +22,23 @@ Extra features
    as the code executes. Helpful in debugging.
 
 ----------------
-Use of slip days - None
+Use of slip days - 1 from Rahul Malavalli
 ----------------
 
+----------------
+Testing Methodology
+----------------
+
+The program is broken up into "handle..." functions and "write#" functions that
+complete, respectively, populating of the respective structures and writing
+those structures to the output file.
+Each of these functions were tested individually, with the verbose option, to
+ensure that each structure is properly filled from the respective .csv files.
+Similar checks were also completed on the "write" functions.
+
+Furthermore, we included a Makefile "make test" that would sort and diff the
+program and official output to determine validity.
+
 --------------------------------------------------------------------------------
-Known bugs - None, although our code runs quite slowly (about 16sec).
+Known bugs - None, although our code runs quite slowly.
 ---------------
