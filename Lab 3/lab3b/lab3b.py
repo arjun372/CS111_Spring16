@@ -47,7 +47,7 @@ BLOCKS_IN_USE       = dict()
 INODES_IN_USE       = dict()
 INDIRECT_BLOCKS     = dict()
 UNALLOCATED_INODES  = dict()
-ALL_DIR_ENTRIES     = dict()
+DIRS_IN_USE     = dict()
 
 # global arrays that contain final values to be printed
 MISSING_INODES               = []
@@ -185,39 +185,38 @@ def handleInodesInUse():
 
 def handleDirectories():
     global INODES_IN_USE
-    global ALL_DIR_ENTRIES
+    global DIRS_IN_USE
     global UNALLOCATED_INODES
     global INCORRECT_DIRECTORY_ENTRIES
     for line in directory :
         currEntry = directoryEntry(int(line[4]), int(line[0]), int(line[1]), str(line[5]))
-        if currEntry.inodeNumber != currEntry.parentInode or currEntry.parentInode == ROOT_DIR:
-            ALL_DIR_ENTRIES[currEntry.inodeNumber] = currEntry
+        error_entries = (currEntry.parentInode, currEntry.entryNumber)
+        if currEntry.parentInode == ROOT_DIR or currEntry.inodeNumber != currEntry.parentInode:
+            DIRS_IN_USE[currEntry.inodeNumber] = currEntry
 
-        if currEntry.inodeNumber in INODES_IN_USE :
-            INODES_IN_USE[currEntry.inodeNumber].dirEntries.append(currEntry)
-        elif currEntry.inodeNumber in UNALLOCATED_INODES :
-            UNALLOCATED_INODES[currEntry.inodeNumber].append(currEntry)
-        else:
-            UNALLOCATED_INODES[currEntry.inodeNumber] = [currEntry]
+        if currEntry.inodeNumber in INODES_IN_USE : INODES_IN_USE[currEntry.inodeNumber].dirEntries.append(error_entries)
+        elif currEntry.inodeNumber in UNALLOCATED_INODES : UNALLOCATED_INODES[currEntry.inodeNumber].append(error_entries)
+        else: UNALLOCATED_INODES[currEntry.inodeNumber] = [error_entries]
 
-        inum = currEntry.inodeNumber; entry = currEntry
-        if (entry.entryNumber == 0 or entry.entryName == '.') and (entry.inodeNumber != entry.parentInode):
-            INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
-            #                                 DirEntry, Should link to value
-        elif (entry.entryNumber == 1 or entry.entryName == '..') and ((entry.inodeNumber != ALL_DIR_ENTRIES[entry.parentInode].parentInode) or (entry.parentInode not in ALL_DIR_ENTRIES)):
-            INCORRECT_DIRECTORY_ENTRIES.append((entry, ALL_DIR_ENTRIES[entry.parentInode].parentInode))
-            #                                 DirEntry, Should link to value
+        # DirEntry, Should link to value
+        correctParentInode = -1
+        if (currEntry.entryNumber == 0 or currEntry.entryName == '.') and (currEntry.inodeNumber != currEntry.parentInode):
+            correctParentInode = currEntry.parentInode
+        elif (currEntry.entryNumber == 1 or currEntry.entryName == '..') and ((currEntry.inodeNumber != DIRS_IN_USE[currEntry.parentInode].parentInode) or (currEntry.parentInode not in DIRS_IN_USE)):
+            correctParentInode = DIRS_IN_USE[currEntry.parentInode].parentInode
+        if correctParentInode != -1:
+            INCORRECT_DIRECTORY_ENTRIES.append((currEntry.parentInode, currEntry.entryName, currEntry.inodeNumber, correctParentInode))
     return
 
 
 # Finding Missing inodes
 def handleMissingInodes():
-    global ALL_DIR_ENTRIES
+    global DIRS_IN_USE
     global MISSING_INODES
     global InodeCount
     # totalinodes = 0
     # for line in superblock: totalinodes = line[s_total_inodes]
-    MISSING_INODES = [i for i in range(InodeCount) if i not in ALL_DIR_ENTRIES]
+    MISSING_INODES = [i for i in range(InodeCount) if i not in DIRS_IN_USE]
 
 # parse indirect block entry: These are all the non-zero block pointers in an indirect block.
 #                             The blocks that contain indirect block pointers are included.
@@ -289,11 +288,11 @@ def write4and5():
 # Incorrect Directory Entry
 def write6():
     buff = ""
-    for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
-        buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
-        buff += (" NAME < " + str(entry.entryName) + " >")
-        buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
-        buff += (" SHOULD BE < " + str(shouldbe) + " >\n")
+    for (parentInode, entryName, inodeNum, correct) in INCORRECT_DIRECTORY_ENTRIES:
+        buff += ("INCORRECT ENTRY IN < " + str(parentInode) + " >")
+        buff += (" NAME < " + str(entryName) + " >")
+        buff += (" LINK TO < " + str(inodeNum) + " >")
+        buff += (" SHOULD BE < " + str(correct) + " >\n")
     if verbose: print(buff)
     output_file.write(buff)
     return
