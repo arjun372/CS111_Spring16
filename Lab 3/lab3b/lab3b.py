@@ -40,8 +40,8 @@ class directoryEntry():
 # initialize helper data structures
 BitmapPointers_FreeInodes = [];
 BitmapPointers_FreeBlocks = [];
-FreeInodes        = [];
-FreeBlocks        = [];
+FreeInodes                = [];
+FreeBlocks                = [];
 
 BLOCKS_IN_USE       = dict()
 INODES_IN_USE       = dict()
@@ -109,10 +109,9 @@ def initStructs():
         global FreeBlocks
         Block_or_Inode_Number = int(line[1]);
         MapBlock_Number       = int(line[0], 16);
-        if   MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
-        elif MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
+        if   MapBlock_Number in BitmapPointers_FreeBlocks: FreeBlocks.append(Block_or_Inode_Number)
+        elif MapBlock_Number in BitmapPointers_FreeInodes: FreeInodes.append(Block_or_Inode_Number)
         elif (verbose == True): print "MapBlock_Number: %s is not present in either bitmap file!!" % MapBlock_Number
-
     if MagicNumber != 0xef53 : print 'This doesnt appear to be an EXT2 Filesytem. No guarantees from this point on...'
     return
 
@@ -190,18 +189,18 @@ def handleDirectories():
     global UNALLOCATED_INODES
     global INCORRECT_DIRECTORY_ENTRIES
     for line in directory :
-        this_DirEntry  = directoryEntry(int(line[dir_fileinode]), int(line[dir_parentinode]), int(line[dir_entrynum]), line[dir_name])
-        if this_DirEntry.inodeNumber != this_DirEntry.parentInode or this_DirEntry.parentInode == ROOT_DIR:
-            ALL_DIR_ENTRIES[this_DirEntry.inodeNumber] = this_DirEntry
+        currEntry = directoryEntry(int(line[4]), int(line[0]), int(line[1]), str(line[5]))
+        if currEntry.inodeNumber != currEntry.parentInode or currEntry.parentInode == ROOT_DIR:
+            ALL_DIR_ENTRIES[currEntry.inodeNumber] = currEntry
 
-        if this_DirEntry.inodeNumber in INODES_IN_USE :
-            INODES_IN_USE[this_DirEntry.inodeNumber].dirEntries.append(this_DirEntry)
-        elif this_DirEntry.inodeNumber in UNALLOCATED_INODES :
-            UNALLOCATED_INODES[this_DirEntry.inodeNumber].append(this_DirEntry)
+        if currEntry.inodeNumber in INODES_IN_USE :
+            INODES_IN_USE[currEntry.inodeNumber].dirEntries.append(currEntry)
+        elif currEntry.inodeNumber in UNALLOCATED_INODES :
+            UNALLOCATED_INODES[currEntry.inodeNumber].append(currEntry)
         else:
-            UNALLOCATED_INODES[this_DirEntry.inodeNumber] = [this_DirEntry]
+            UNALLOCATED_INODES[currEntry.inodeNumber] = [currEntry]
 
-        inum = this_DirEntry.inodeNumber; entry = this_DirEntry
+        inum = currEntry.inodeNumber; entry = currEntry
         if (entry.entryNumber == 0 or entry.entryName == '.') and (entry.inodeNumber != entry.parentInode):
             INCORRECT_DIRECTORY_ENTRIES.append((entry, entry.parentInode))
             #                                 DirEntry, Should link to value
@@ -225,12 +224,11 @@ def handleMissingInodes():
 def handleIndirectBlocks():
     global INDIRECT_BLOCKS
     for line in indirect_blocks:
-        ContainingBlockNumber             = int(line[ind_containingblock], 16)
-        (EntryNumber, BlockPointer_Value) = (int(line[ind_entrynum]), int(line[ind_blockpointerval], 16))
-        if ContainingBlockNumber not in INDIRECT_BLOCKS:
-            INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
-        else:
-            INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
+        ContainingBlockNumber = int(line[0], 16)
+        EntryNumber           = int(line[1])
+        BlockPointer_Value    = int(line[2], 16)
+        if ContainingBlockNumber not in INDIRECT_BLOCKS: INDIRECT_BLOCKS[ContainingBlockNumber] = [(EntryNumber, BlockPointer_Value)]
+        else: INDIRECT_BLOCKS[ContainingBlockNumber].append((EntryNumber, BlockPointer_Value))
     return
 
 # 1. UNALLOCATED BLOCKS
@@ -258,6 +256,7 @@ def write2():
 
 # 3. UNALLOCATED INODE
 def write3():
+    return
     global FreeInodes
     global INODES_IN_USE
     global UNALLOCATED_INODES
@@ -294,24 +293,23 @@ def write6():
         buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
         buff += (" NAME < " + str(entry.entryName) + " >")
         buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
-        buff += (" SHOULD BE < " + str(shouldbe) + " >")
-        buff += "\n"
+        buff += (" SHOULD BE < " + str(shouldbe) + " >\n")
     if verbose: print(buff)
     output_file.write(buff)
     return
 
 # invalid block pointers
 def write7():
-    # global INVALID_BLOCK_POINTERS
-    # buff = ""
-    # for (entry, shouldbe) in INCORRECT_DIRECTORY_ENTRIES:
-    #     buff += ("INCORRECT ENTRY IN < " + str(entry.parentInode) + " >")
-    #     buff += (" NAME < " + str(entry.entryName) + " >")
-    #     buff += (" LINK TO < " + str(entry.inodeNumber) + " >")
-    #     buff += (" SHOULD BE < " + str(shouldbe) + " >")
-    #     buff += "\n"
-    # if verbose: print(buff)
-    # output_file.write(buff)
+    global INVALID_BLOCK_POINTERS
+    buff = ""
+    for (blocknum, inodenum, indirect_block, entry) in sorted(INVALID_BLOCK_POINTERS):
+        buff += ("INVALID BLOCK < " + str(blocknum) + " >")
+        buff += (" IN INODE < "     + str(inodenum) + " >")
+        if int(indirect_block): # ensure that indirect block is not zero
+            buff += (" INDIRECT BLOCK < " + str(indirect_block) + " >")
+        buff += (" ENTRY < " + str(entry) + " >\n")
+    if verbose: print(buff)
+    output_file.write(buff)
     return
 
 if __name__ == "__main__":
@@ -327,6 +325,6 @@ if __name__ == "__main__":
     write3()        # NOT WORKING
     write4and5()
     write6()
-    write7()
+    write7()        # NOT WORKING
 
     output_file.close() # finally close the file to ensure that all buffers are flushed
