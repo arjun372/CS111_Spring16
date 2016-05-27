@@ -172,7 +172,7 @@ def handleInodesInUse():
 
         # now iterate over the indirect block pointers recursively
         for i in range(1, 3):
-            if pendingIndirectBlocks:
+            if (pendingIndirectBlocks > 0):
                 currentBlock = int(line[i+22], 16)                                                                         # TODO :: Check if this is supposed to be 0 or not
                 if currentBlock == 0 or currentBlock > BlockCount :
                     INVALID_BLOCK_POINTERS.append((currentBlock, inodenum, 0, i+11))
