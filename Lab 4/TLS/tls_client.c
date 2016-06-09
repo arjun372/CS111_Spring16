@@ -27,8 +27,8 @@ int rate;
 
 int main(int args, char *argv[])
 {
-        int port, range, rate;
         int server;
+        int port, range;
         int receive_length, line_length;
         char ip_addr[BUFSIZE];
         char *my_ip_addr;
