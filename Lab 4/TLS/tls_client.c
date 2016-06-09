@@ -17,6 +17,7 @@
  */
 #define  TRUE 1
 #define  LOGFILE_NAME "log_file"
+#include "fcntl.h"
 #include "pthread.h"
 #include "tls_header.h"
 
