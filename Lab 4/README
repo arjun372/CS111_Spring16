@@ -1,0 +1,42 @@
+UCLA CS 111 - Spring '16
+Arjun Arjun     - 504078752
+Lab 4 - IoT Security
+
+------
+Files
+------
+
+1. Makefile     - Commands for building the executable & creating a tarball for
+                  submission.
+
+2. lab3a.h      - Header file containing some structure definitions & constants
+                  used throughout the lab3a.c source module.
+
+3. lab3a.c      - C source module containing the code that parses the ext2 file
+                  system, given the disk image as an argument.
+
+4. README   :: [[ self ]]
+
+---------
+Lab4-B-1
+---------
+Examine the output that is being sent to the server, and write a brief
+description of that output and the security/privacy implications of what you see
+
+
+---------
+Lab4-B-2
+---------
+Examine the output from the packet sniffer, and write a brief description of
+security/privacy implications of what you see.
+
+---------
+Lab4-B-3
+---------
+Write a brief description of how the output changes.
+
+
+---------
+Lab4-B-4
+---------
+Examine the output, and write a brief description of how the output changes.
