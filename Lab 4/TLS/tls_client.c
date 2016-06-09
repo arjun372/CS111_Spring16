@@ -107,7 +107,7 @@ int main(int args, char *argv[])
 
         while(TRUE) {
                 printf("Current settings: rate: %d, range: %d\n", rate, range);
-                dprint(LOGFILE_FD, "Current settings: rate: %d, range: %d\n", rate, range);
+                dprintf(LOGFILE_FD, "Current settings: rate: %d, range: %d\n", rate, range);
 
                 heart_rate = generate_random_number(AVERAGE_HEART_RATE-(double)range, AVERAGE_HEART_RATE+(double)range);
 
