@@ -6,29 +6,58 @@ Lab 4 - IoT Security
 Files
 ------
 
-1. Makefile     - Commands for building the executable & creating a tarball for
-                  submission.
+1. Lab4-E-2.txt -
 
-2. lab3a.h      - Header file containing some structure definitions & constants
-                  used throughout the lab3a.c source module.
+2. tls_client.c - Threaded TLS implementation (in C).
 
-3. lab3a.c      - C source module containing the code that parses the ext2 file
-                  system, given the disk image as an argument.
+3. Lab4-B-x.png - Screenshots for Part B [UDP] of the assignment.
 
-4. README   :: [[ self ]]
+4. Lab4-D-x.png - Screenshots for Part D [TLS] of the assignment.
+
+5. README   :: [[ self ]]
 
 ---------
 Lab4-B-1
 ---------
-Examine the output that is being sent to the server, and write a brief
-description of that output and the security/privacy implications of what you see
+Heart-rate information for the patient is being send to the server. Both the
+heart-rate value and the IP address of the client is visible in plaintext.
+Implication : Since the message is in plaintext, it can be seen by anyone
+sniffing for data-packets on the network.
+
+---------
+Lab4-B-2
+---------
+The entire UDP data can be seen in the output of the packet sniffer. This
+includes the IP address and the heart-rate for out patient. This is a major
+privacy loophole as all this data is publicly visible.
+
+---------
+Lab4-B-3
+---------
+Upon running 'set_rate 5', a command was sent to the UDP server on port 8000 in
+plaintext format. The UDP server responded with a message indicating that the
+rate had been updated. Now the output rate has changed from 3 to 5 and the
+terminal window for the udp_client displays this new change (3 to 5).
+
+---------
+Lab4-B-4
+---------
+The attacking program (3rd party) has cleverly changed the sampling rate of the
+heart-rate sensor from 5 to 15. This demonstrates a security vulnerability
+allows external malicious programs to interfere and disrupt communication.
+
+---------
+Lab4-D-1
+---------
+Examine the output that is being sent to the server, and write a brief description of that
+output.
 
 
 ---------
 Lab4-B-2
 ---------
-Examine the output from the packet sniffer, and write a brief description of
-security/privacy implications of what you see.
+Examine the output from the packet sniffer, and write a brief description how
+this is different from the output you saw in part B.
 
 ---------
 Lab4-B-3
@@ -37,6 +66,6 @@ Write a brief description of how the output changes.
 
 
 ---------
-Lab4-B-4
+Lab4-D-1
 ---------
 Examine the output, and write a brief description of how the output changes.
